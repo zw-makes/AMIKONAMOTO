@@ -562,6 +562,10 @@ function createCell(day, isOtherMonth, isToday) {
   span.innerText = day;
   cell.appendChild(span);
 
+  if (!isOtherMonth) {
+    cell.dataset.day = day;
+  }
+
   // Check for subscriptions on this day (only for current month)
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => s.date === day);
@@ -781,19 +785,27 @@ window.showDayDetails = async function (day, subs) {
 
     return `
       <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
-        <div class="swipe-actions-bg">
-          <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            CANCEL
-          </div>
-          <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              ${isStopped
+        <div class="swipe-actions-bg" style="justify-content: space-between;">
+          <div style="display: flex; height: 100%;">
+            <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 80px; font-size: 0.6rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;">
+                ${isStopped
         ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>'}
-            </svg>
-            ${isStopped ? 'STOPPED' : 'STOP'}
+              </svg>
+              ${isStopped ? 'RESTART' : 'STOP'}
+            </div>
+            <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 80px; font-size: 0.6rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              CANCEL
+            </div>
           </div>
+          ${s.type === 'trial' ? `
+            <div class="swipe-action freq" onclick="showTrialPath(${s.id}, event)" style="width: 100px; color: var(--accent-purple) !important; font-size: 0.6rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
+              FREQUENCY
+            </div>
+          ` : ''}
         </div>
         <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
           <div class="detail-logo">
@@ -921,21 +933,28 @@ function attachSwipeEvents() {
       const wrapper = item.parentElement;
       const del = wrapper.querySelector('.delete');
       const stp = wrapper.querySelector('.stop');
+      const frq = wrapper.querySelector('.freq');
 
-      const translate = Math.max(-maxTranslateX, Math.min(maxTranslateX, walk));
+      // Max swipe distances
+      const maxRight = 160;
+      const maxLeft = 100;
 
-      // Fluid background reveal (better opacity curves)
+      const translate = Math.max(-maxLeft, Math.min(maxRight, walk));
+
+      // Show left side buttons (Stop & Cancel) when swiping right
       if (translate > 0) {
-        del.style.opacity = Math.min(translate / 60, 1);
-        stp.style.opacity = 0;
+        if (del) del.style.opacity = Math.min(translate / 60, 1);
+        if (stp) stp.style.opacity = Math.min(translate / 60, 1);
+        if (frq) frq.style.opacity = 0;
       } else {
-        stp.style.opacity = Math.min(-translate / 60, 1);
-        del.style.opacity = 0;
+        // Show right side button (Freq) when swiping left
+        if (frq) frq.style.opacity = Math.min(-translate / 60, 1);
+        if (del) del.style.opacity = 0;
+        if (stp) stp.style.opacity = 0;
       }
 
       item.style.transform = `translateX(${translate}px)`;
 
-      // Stop vertical scroll only when horizontal swipe is clear
       if (Math.abs(walk) > 10 && e.cancelable) {
         e.preventDefault();
       }
@@ -1184,7 +1203,8 @@ subForm.addEventListener('submit', (e) => {
     color: type === 'trial' ? '--accent-purple' : (type === 'one-time' ? '--accent-orange' : '--accent-blue'),
     trialDays: type === 'trial' ? document.getElementById('trial-days-val').value : null,
     trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null,
-    recurring: type === 'monthly' ? document.getElementById('sub-recurring-val').value : null
+    recurring: type === 'monthly' ? document.getElementById('sub-recurring-val').value : null,
+    startDate: new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(document.getElementById('sub-date').value)).toISOString()
   };
 
   subscriptions.push(newSub);
@@ -1378,6 +1398,45 @@ authForm.addEventListener('submit', async (e) => {
     authSubmitBtn.innerText = isSignUp ? 'Sign Up' : 'Log In';
   }
 });
+
+window.showTrialPath = function (id, e) {
+  if (e) e.stopPropagation();
+  const sub = subscriptions.find(s => s.id === id);
+  if (!sub || sub.type !== 'trial') return;
+
+  const start = new Date(sub.startDate);
+  const days = parseInt(sub.trialDays) || 0;
+  const months = parseInt(sub.trialMonths) || 0;
+
+  const end = new Date(start);
+  if (days) end.setDate(end.getDate() + days);
+  if (months) end.setMonth(end.getMonth() + months);
+
+  // Close the modal
+  dayDetailModal.classList.add('hidden');
+
+  // Highlight cells
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  document.querySelectorAll('.calendar-cell:not(.other-month)').forEach(cell => {
+    const day = parseInt(cell.dataset.day);
+    const cellDate = new Date(currentYear, currentMonth, day);
+
+    // Check if cellDate is within [start, end]
+    // Normalized to midnight for accurate comparison
+    const cellTime = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()).getTime();
+    const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+
+    if (cellTime >= startTime && cellTime <= endTime) {
+      cell.classList.add('trial-path');
+      setTimeout(() => {
+        cell.classList.remove('trial-path');
+      }, 7000);
+    }
+  });
+};
 
 // Logout logic
 document.getElementById('logout-btn').addEventListener('click', async () => {

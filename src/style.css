@@ -1200,9 +1200,37 @@ button:active {
   position: absolute;
   inset: 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   pointer-events: none;
+  padding: 0 4px;
+  /* Tiny buffer */
+}
+
+/* Visual Train Path Class */
+.calendar-cell.trial-path {
+  background: rgba(168, 85, 247, 0.45) !important;
+  /* var(--accent-purple) at 45% */
+  box-shadow: inset 0 0 15px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
+  border-color: rgba(168, 85, 247, 0.8) !important;
+  z-index: 5;
+  transform: scale(1.02);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pulsePath 1.5s infinite ease-in-out;
+}
+
+@keyframes pulsePath {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 25px rgba(168, 85, 247, 0.7), 0 0 35px rgba(168, 85, 247, 0.4);
+  }
+
+  100% {
+    opacity: 0.8;
+  }
 }
 
 .swipe-action {
