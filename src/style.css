@@ -1701,16 +1701,44 @@ input:checked+.slider:before {
   color: #ff8080;
 }
 
-/* Profile Pic Selector Modal Styles */
-.free-pic-option:hover {
-  transform: scale(1.05);
-  border-color: rgba(255, 255, 255, 0.4) !important;
+/* Avatar Selection Modal Styles */
+.avatar-grid {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 5px 2px;
 }
 
-.free-pic-option:active {
-  transform: scale(0.95);
+.avatar-option {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: var(--transition);
+  position: relative;
 }
 
-.free-pic-option img {
-  pointer-events: none;
+.avatar-option:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-option.selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.avatar-option.selected::after {
+  display: none;
+}
+
+.avatar-selection-content .glass-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }

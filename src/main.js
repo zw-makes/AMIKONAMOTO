@@ -80,6 +80,14 @@ const TIMEZONES = [
   { label: 'UTC+12:00 (New Zealand Standard Time)', value: 'UTC+12:00' },
 ];
 
+const FREE_AVATARS = [
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(1).jpg",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(2).jpg",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(3).jpg",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(4).jpg",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(5).jpg"
+];
+
 // --- State Management ---
 let currentUser = null;
 let currentDate = new Date();
@@ -146,13 +154,6 @@ const settingsCurrencyDropdown = document.getElementById('settings-currency-drop
 const settingsCurrencySelected = document.getElementById('settings-currency-selected');
 const settingsCurrencyList = document.getElementById('settings-currency-list');
 const prefCurrencyHidden = document.getElementById('settings-pref-currency');
-
-// Profile Pic Modal Selectors
-const profilePicModal = document.getElementById('profile-pic-modal');
-const closeProfilePic = document.getElementById('close-profile-pic');
-const uploadCustomPic = document.getElementById('upload-custom-pic');
-const freePicOptions = document.querySelectorAll('.free-pic-option');
-
 
 let isSignUp = false;
 let userProfile = null; // { name, age, gender }
@@ -2022,38 +2023,42 @@ closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hi
 appSettingsBtn.addEventListener('click', () => window.showAppSettings());
 closeAppSettingsBtn.addEventListener('click', () => appSettingsModal.classList.add('hidden'));
 
-// Avatar Selection Logic
+// Avatar Selection Modal Logic
+const avatarModal = document.getElementById('avatar-modal');
+const closeAvatarModalBtn = document.getElementById('close-avatar-modal');
+const uploadCustomBtn = document.getElementById('upload-custom-btn');
+const freeAvatarGrid = document.getElementById('free-avatar-grid');
+
+function renderFreeAvatars() {
+  if (!freeAvatarGrid) return;
+  freeAvatarGrid.innerHTML = FREE_AVATARS.map(url => `
+    <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectFreeAvatar('${url}')" 
+      style="cursor: pointer; transition: var(--transition);">
+      <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+    </div>
+  `).join('');
+}
+
+window.selectFreeAvatar = function (url) {
+  userProfile.avatar_url = url;
+  updateProfileUI();
+  renderFreeAvatars();
+  avatarModal.classList.add('hidden');
+};
+
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
-  profilePicModal.classList.remove('hidden');
-
-  // Highlight currently selected free pic if applicable
-  if (userProfile?.avatar_url) {
-    document.querySelectorAll('.free-pic-option').forEach(el => {
-      el.style.borderColor = el.dataset.url === userProfile.avatar_url ? 'var(--accent-blue)' : 'transparent';
-    });
-  }
+  avatarModal.classList.remove('hidden');
+  renderFreeAvatars();
 });
 
-closeProfilePic.addEventListener('click', () => profilePicModal.classList.add('hidden'));
+closeAvatarModalBtn.addEventListener('click', () => {
+  avatarModal.classList.add('hidden');
+});
 
-uploadCustomPic.addEventListener('click', () => {
+uploadCustomBtn.addEventListener('click', () => {
   avatarUpload.click();
-  profilePicModal.classList.add('hidden');
+  avatarModal.classList.add('hidden');
 });
-
-document.querySelectorAll('.free-pic-option').forEach(option => {
-  option.addEventListener('click', () => {
-    const url = option.dataset.url;
-    userProfile.avatar_url = url;
-    updateProfileUI();
-    profilePicModal.classList.add('hidden');
-
-    // Immediate feedback: highlight selection
-    document.querySelectorAll('.free-pic-option').forEach(el => el.style.borderColor = 'transparent');
-    option.style.borderColor = 'var(--accent-blue)';
-  });
-});
-
 
 avatarUpload.addEventListener('change', (e) => {
   const file = e.target.files[0];
