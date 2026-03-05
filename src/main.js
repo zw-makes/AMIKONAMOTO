@@ -1080,14 +1080,32 @@ document.querySelectorAll('.freq-btn').forEach(btn => {
     const type = btn.dataset.value;
     document.getElementById('sub-type').value = type;
 
-    // Toggle Trial Duration Section
+    // Toggle Sections Based on Type
     const trialSection = document.getElementById('trial-duration-section');
+    const monthlySection = document.getElementById('monthly-options-section');
+
     if (type === 'trial') {
       trialSection.classList.remove('hidden');
+      monthlySection.classList.add('hidden');
+    } else if (type === 'monthly') {
+      monthlySection.classList.remove('hidden');
+      trialSection.classList.add('hidden');
     } else {
       trialSection.classList.add('hidden');
+      monthlySection.classList.add('hidden');
       document.getElementById('trial-error').classList.add('hidden');
+      document.getElementById('monthly-error').classList.add('hidden');
     }
+  });
+});
+
+// Monthly Recurring Logic
+document.querySelectorAll('.recur-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.recur-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sub-recurring-val').value = btn.dataset.value;
+    document.getElementById('monthly-error').classList.add('hidden');
   });
 });
 
@@ -1144,6 +1162,15 @@ subForm.addEventListener('submit', (e) => {
     }
   }
 
+  // Validation for Monthly
+  if (type === 'monthly') {
+    const recurring = document.getElementById('sub-recurring-val').value;
+    if (!recurring) {
+      document.getElementById('monthly-error').classList.remove('hidden');
+      return;
+    }
+  }
+
   const newSub = {
     // Add a random integer offset to prevent double-click millisecond collisions
     id: Date.now() + Math.floor(Math.random() * 10000),
@@ -1156,7 +1183,8 @@ subForm.addEventListener('submit', (e) => {
     symbol: document.getElementById('sub-currency-symbol').value,
     color: type === 'trial' ? '--accent-purple' : (type === 'one-time' ? '--accent-orange' : '--accent-blue'),
     trialDays: type === 'trial' ? document.getElementById('trial-days-val').value : null,
-    trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null
+    trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null,
+    recurring: type === 'monthly' ? document.getElementById('sub-recurring-val').value : null
   };
 
   subscriptions.push(newSub);
@@ -1165,11 +1193,15 @@ subForm.addEventListener('submit', (e) => {
   renderCalendar();
   addModal.classList.add('hidden');
   document.getElementById('trial-duration-section').classList.add('hidden');
+  document.getElementById('monthly-options-section').classList.add('hidden');
   subForm.reset(); // Reset form after success
   document.getElementById('trial-days-val').value = '';
   document.getElementById('trial-months-val').value = '';
   document.getElementById('trial-days-selected').innerText = 'Days';
   document.getElementById('trial-months-selected').innerText = 'Months';
+  document.getElementById('sub-recurring-val').value = '';
+  document.querySelectorAll('.recur-btn').forEach(b => b.classList.remove('active'));
+
 
   // Background sync and ID replacement
   saveToSupabase(newSub).then(savedSub => {
