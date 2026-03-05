@@ -805,45 +805,13 @@ window.showDayDetails = async function (day, subs) {
       symbol = targetSymbol || '$';
       displayPrice = `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${symbol}${convertedDisplayPrice.toFixed(2)}`;
     }
-
-    if (!isStopped) {
+    if (!s.stopped) {
       totalImpact += convertedMathPrice;
     }
 
-    return `
-      <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
-        <div class="swipe-actions-bg" style="justify-content: space-between;">
-          <div style="display: flex; height: 100%; gap: 5px;">
-            <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;">
-                ${isStopped
-        ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>'}
-              </svg>
-              ${isStopped ? 'RESTART' : 'STOP'}
-            </div>
-            <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              CANCEL
-            </div>
-          </div>
-          <div class="swipe-action freq" onclick="showTrialPath(${s.id}, event)" style="width: 50px; color: var(--accent-purple) !important; font-size: 0.5rem; text-align: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
-            <span class="freq-btn-text">FREQ</span>
-          </div>
-        </div>
-        <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
-          <div class="detail-logo">
-            <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
-          </div>
-          <div class="detail-info">
-            <span class="detail-name">${s.name}</span>
-            <span class="detail-type">${s.type} plan</span>
-          </div>
-          <div class="detail-price" style="font-size: 0.85rem;">${displayPrice}</div>
-        </div>
-      </div>
-    `;
+    // UI display converted price
+    s.displayPrice = getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates);
+    return getSwipeTemplate(s);
   }).join('');
 
   // Choose symbol based on mathematical conversion
@@ -930,6 +898,31 @@ window.stopSubscription = function (id, e) {
   }
 };
 
+window.togglePaidStatus = function (id, e) {
+  if (e) e.stopPropagation();
+  const sub = subscriptions.find(s => s.id === id);
+  if (sub) {
+    sub.paid = !sub.paid;
+    saveToSupabase(sub);
+    renderCalendar();
+    updateStats();
+    if (!document.getElementById('stats-modal').classList.contains('hidden')) {
+      showMonthlyBreakdown(currentStatsFilter);
+    } else {
+      const daySubs = subscriptions.filter(s => s.date === sub.date);
+      showDayDetails(sub.date, daySubs);
+    }
+    const wrapper = document.getElementById(`sw-wrapper-${id}`);
+    if (wrapper) {
+      const item = wrapper.querySelector('.detail-item');
+      item.style.transition = 'none';
+      item.style.transform = 'translateX(-105px)';
+      wrapper.querySelector('.paid').style.opacity = '1';
+      wrapper.querySelector('.freq').style.opacity = '1';
+    }
+  }
+};
+
 function attachSwipeEvents() {
   const items = document.querySelectorAll('.detail-item');
   items.forEach(item => {
@@ -962,7 +955,7 @@ function attachSwipeEvents() {
 
       // Max swipe distances
       const maxRight = 105;
-      const maxLeft = 50;
+      const maxLeft = 105;
 
       const translate = Math.max(-maxLeft, Math.min(maxRight, walk));
 
@@ -972,8 +965,9 @@ function attachSwipeEvents() {
         if (stp) stp.style.opacity = Math.min(translate / 60, 1);
         if (frq) frq.style.opacity = 0;
       } else {
-        // Show right side button (Freq) when swiping left
+        // Show right side button (Freq & Paid) when swiping left
         if (frq) frq.style.opacity = Math.min(-translate / 60, 1);
+        if (wrapper.querySelector('.paid')) wrapper.querySelector('.paid').style.opacity = Math.min(-translate / 60, 1);
         if (del) del.style.opacity = 0;
         if (stp) stp.style.opacity = 0;
       }
@@ -1229,7 +1223,8 @@ subForm.addEventListener('submit', (e) => {
     trialDays: type === 'trial' ? document.getElementById('trial-days-val').value : null,
     trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null,
     recurring: type === 'monthly' ? document.getElementById('sub-recurring-val').value : null,
-    startDate: new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(document.getElementById('sub-date').value)).toISOString()
+    startDate: new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(document.getElementById('sub-date').value)).toISOString(),
+    paid: false
   };
 
   subscriptions.push(newSub);
@@ -1877,39 +1872,8 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       totalImpact += convertedMathPrice;
     }
 
-    return `
-      <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
-        <div class="swipe-actions-bg">
-          <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            CANCEL
-          </div>
-          <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              ${isStopped
-        ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
-        : '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>'}
-            </svg>
-            ${isStopped ? 'STOPPED' : 'STOP'}
-          </div>
-        </div>
-        <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
-          <div class="detail-logo">
-            <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
-          </div>
-          <div class="detail-info">
-            <span class="detail-name">${s.name}</span>
-            <span class="detail-type" style="display:flex; align-items:center; gap:8px;">
-              DUE ON ${s.date}${s.date === 1 ? 'st' : s.date === 2 ? 'nd' : s.date === 3 ? 'rd' : 'th'}
-              <span class="status-badge ${s.stopped ? 'status-stopped' : 'status-active'}">
-                ${s.stopped ? 'STOPPED' : 'ACTIVE'}
-              </span>
-            </span>
-          </div>
-          <div class="detail-price" style="font-size: 0.85rem;">${displayPrice}</div>
-        </div>
-      </div>
-    `;
+    s.displayPrice = displayPrice;
+    return getSwipeTemplate(s);
   }).join('');
 
   // Choose label and total based on filter
@@ -2384,6 +2348,69 @@ function showToast(message, type = 'success') {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 500);
   }, 2500);
+}
+
+function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {
+  let itemPrice = s.price;
+  const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)}`;
+  if (useAutoCurrency && displayRates && (s.currency || 'USD') !== targetCurrency) {
+    const convertedDisplayPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, displayRates);
+    const targetSymbol = (CURRENCIES.find(c => c.code === targetCurrency) || {}).symbol || '$';
+    return `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedDisplayPrice.toFixed(2)}`;
+  }
+  return originalPriceStr;
+}
+
+function getSwipeTemplate(s) {
+  const isStopped = s.stopped;
+  const isPaid = s.paid;
+  const domain = getDomain(s);
+  return `
+    <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
+      <div class="swipe-actions-bg" style="justify-content: space-between;">
+        <div style="display: flex; height: 100%; gap: 5px;">
+          <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;">
+              ${isStopped
+      ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
+      : '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>'}
+            </svg>
+            ${isStopped ? 'RESTART' : 'STOP'}
+          </div>
+          <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            CANCEL
+          </div>
+        </div>
+        <div style="display: flex; height: 100%; gap: 5px;">
+          <div class="swipe-action paid ${isPaid ? 'paid-active' : ''}" onclick="togglePaidStatus(${s.id}, event)" style="width: 50px; color: ${isPaid ? '#fff' : 'var(--accent-green)'} !important; font-size: 0.5rem; text-align: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${isPaid ? 4 : 3}" style="width: 18px; height: 18px;"><path d="M20 6L9 17l-5-5"/></svg>
+            ${isPaid ? 'PAID' : 'PAY'}
+          </div>
+          <div class="swipe-action freq" onclick="showTrialPath(${s.id}, event)" style="width: 50px; color: var(--accent-purple) !important; font-size: 0.5rem; text-align: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
+            <span class="freq-btn-text">FREQ</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
+        <div class="detail-logo">
+          <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
+        </div>
+        <div class="detail-info">
+          <span class="detail-name">${s.name}</span>
+          <div class="tag-container" style="display: flex; gap: 4px; margin-top: 2px;">
+            ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
+            ${isStopped
+      ? '<span class="status-tag tag-stopped">STOPPED</span>'
+      : '<span class="status-tag tag-active">ACTIVE</span>'}
+            <span class="detail-type" style="margin-left: 4px; font-size: 0.6rem; opacity: 0.6;">${s.type} plan</span>
+          </div>
+        </div>
+        <div class="detail-price" style="font-size: 0.85rem;">${s.displayPrice || ''}</div>
+      </div>
+    </div>
+  `;
 }
 
 // Initial Render
