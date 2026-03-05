@@ -568,7 +568,20 @@ function createCell(day, isOtherMonth, isToday) {
 
   // Check for subscriptions on this day (only for current month)
   if (!isOtherMonth) {
-    const daySubs = subscriptions.filter(s => s.date === day);
+    const daySubs = subscriptions.filter(s => {
+      if (s.date !== day) return false;
+
+      // Recurring monthly/yearly shows every month/year
+      if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+      if (s.type === 'yearly') return true;
+
+      // Non-recurring, Trials, and One-time only show on their specific start month
+      const start = new Date(s.startDate);
+      const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+      return start.getMonth() === calendarDate.getMonth() &&
+        start.getFullYear() === calendarDate.getFullYear();
+    });
 
     if (daySubs.length > 0) {
       // Dots container (top right)
@@ -654,7 +667,14 @@ function createCell(day, isOtherMonth, isToday) {
   // Click listener for detailed view
   cell.addEventListener('click', () => {
     if (!isOtherMonth) {
-      const daySubs = subscriptions.filter(s => s.date === day);
+      const daySubs = subscriptions.filter(s => {
+        if (s.date !== day) return false;
+        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+        if (s.type === 'yearly') return true;
+        const start = new Date(s.startDate);
+        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      });
       if (daySubs.length > 0) {
         showDayDetails(day, daySubs);
       }
@@ -663,7 +683,14 @@ function createCell(day, isOtherMonth, isToday) {
 
   // Tooltip listeners
   if (!isOtherMonth) {
-    const daySubs = subscriptions.filter(s => s.date === day);
+    const daySubs = subscriptions.filter(s => {
+      if (s.date !== day) return false;
+      if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+      if (s.type === 'yearly') return true;
+      const start = new Date(s.startDate);
+      const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+    });
     if (daySubs.length > 0) {
       cell.addEventListener('mouseenter', (e) => showTooltip(e, daySubs));
       cell.addEventListener('mousemove', (e) => moveTooltip(e));
@@ -786,26 +813,24 @@ window.showDayDetails = async function (day, subs) {
     return `
       <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
         <div class="swipe-actions-bg" style="justify-content: space-between;">
-          <div style="display: flex; height: 100%;">
-            <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 80px; font-size: 0.6rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;">
+          <div style="display: flex; height: 100%; gap: 5px;">
+            <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;">
                 ${isStopped
         ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
         : '<circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>'}
               </svg>
               ${isStopped ? 'RESTART' : 'STOP'}
             </div>
-            <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 80px; font-size: 0.6rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               CANCEL
             </div>
           </div>
-          ${s.type === 'trial' ? `
-            <div class="swipe-action freq" onclick="showTrialPath(${s.id}, event)" style="width: 100px; color: var(--accent-purple) !important; font-size: 0.6rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 20px; height: 20px;"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
-              FREQUENCY
-            </div>
-          ` : ''}
+          <div class="swipe-action freq" onclick="showTrialPath(${s.id}, event)" style="width: 50px; color: var(--accent-purple) !important; font-size: 0.5rem; text-align: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
+            <span class="freq-btn-text">FREQ</span>
+          </div>
         </div>
         <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
           <div class="detail-logo">
@@ -936,8 +961,8 @@ function attachSwipeEvents() {
       const frq = wrapper.querySelector('.freq');
 
       // Max swipe distances
-      const maxRight = 160;
-      const maxLeft = 100;
+      const maxRight = 105;
+      const maxLeft = 50;
 
       const translate = Math.max(-maxLeft, Math.min(maxRight, walk));
 
@@ -1402,40 +1427,70 @@ authForm.addEventListener('submit', async (e) => {
 window.showTrialPath = function (id, e) {
   if (e) e.stopPropagation();
   const sub = subscriptions.find(s => s.id === id);
-  if (!sub || sub.type !== 'trial') return;
+  if (!sub) return;
+
+  const btn = e.currentTarget;
+  const btnText = btn.querySelector('.freq-btn-text');
+  const originalText = btnText.innerText;
 
   const start = new Date(sub.startDate);
-  const days = parseInt(sub.trialDays) || 0;
-  const months = parseInt(sub.trialMonths) || 0;
+  let infoText = "";
+  let end = null;
 
-  const end = new Date(start);
-  if (days) end.setDate(end.getDate() + days);
-  if (months) end.setMonth(end.getMonth() + months);
-
-  // Close the modal
-  dayDetailModal.classList.add('hidden');
-
-  // Highlight cells
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-
-  document.querySelectorAll('.calendar-cell:not(.other-month)').forEach(cell => {
-    const day = parseInt(cell.dataset.day);
-    const cellDate = new Date(currentYear, currentMonth, day);
-
-    // Check if cellDate is within [start, end]
-    // Normalized to midnight for accurate comparison
-    const cellTime = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()).getTime();
-    const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-    const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
-
-    if (cellTime >= startTime && cellTime <= endTime) {
-      cell.classList.add('trial-path');
-      setTimeout(() => {
-        cell.classList.remove('trial-path');
-      }, 7000);
+  if (sub.type === 'trial') {
+    const days = parseInt(sub.trialDays) || 0;
+    const months = parseInt(sub.trialMonths) || 0;
+    end = new Date(start);
+    if (days) end.setDate(end.getDate() + days);
+    if (months) end.setMonth(end.getMonth() + months);
+    infoText = `ENDS: ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  } else if (sub.type === 'one-time') {
+    infoText = "ENDS TODAY";
+  } else if (sub.type === 'monthly') {
+    if (sub.recurring === 'recurring') {
+      infoText = "RENEWS MONTHLY";
+    } else {
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+      infoText = `ENDS: ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
     }
-  });
+  } else if (sub.type === 'yearly') {
+    infoText = "RENEWS YEARLY";
+  }
+
+  // Show info text on button
+  btnText.innerText = infoText;
+  btn.style.width = "80px"; // Expanded narrow width
+
+  // Also show visual path if applicable
+  if ((sub.type === 'trial' || sub.type === 'monthly') && end) {
+    // Keep it open for a moment before closing modal for path
+    setTimeout(() => {
+      dayDetailModal.classList.add('hidden');
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+
+      document.querySelectorAll('.calendar-cell:not(.other-month)').forEach(cell => {
+        const day = parseInt(cell.dataset.day);
+        const cellDate = new Date(currentYear, currentMonth, day);
+        const cellTime = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()).getTime();
+        const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+        const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+
+        if (cellTime >= startTime && cellTime <= endTime) {
+          const pathClass = sub.type === 'trial' ? 'trial-path' : 'monthly-path';
+          cell.classList.add(pathClass);
+          setTimeout(() => cell.classList.remove(pathClass), 7000);
+        }
+      });
+    }, 1500);
+  } else {
+    // Revert text after 3 seconds for non-trials
+    setTimeout(() => {
+      btnText.innerText = originalText;
+      btn.style.width = "50px";
+    }, 3000);
+  }
 };
 
 // Logout logic
