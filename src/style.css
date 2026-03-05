@@ -620,7 +620,7 @@ button:active {
 
 .modal-content {
   width: 100%;
-  max-width: 450px;
+  max-width: 480px;
   background: rgba(255, 255, 255, 0.03) !important;
   /* Ultra transparent glass color */
   backdrop-filter: blur(40px) saturate(150%) !important;
@@ -1705,14 +1705,31 @@ input:checked+.slider:before {
 .avatar-grid {
   display: flex;
   justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
-  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 250px;
   padding: 5px 2px;
+  /* Custom Scrollbar for inner grid */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.avatar-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.avatar-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
 }
 
 .avatar-option {
-  width: 60px;
-  height: 60px;
+  width: calc(20% - 10px);
+  /* 5 items per row taking gap into account */
+  aspect-ratio: 1 / 1;
+  /* Keep it square */
+  height: auto;
   flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;

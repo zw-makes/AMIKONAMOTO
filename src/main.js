@@ -88,6 +88,28 @@ const FREE_AVATARS = [
   "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/FREE%20ONES/FREE%20(5).jpg"
 ];
 
+const PAID_AVATARS = [
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(1).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(10).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(11).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(12).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(13).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(14).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(15).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(17).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(18).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(19).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(2).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(20).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(21).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(3).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(4).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(5).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(6).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(8).gif",
+  "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/USER%20IMAGES/PAID%20ONES/PAID%20(9).gif"
+];
+
 // --- State Management ---
 let currentUser = null;
 let currentDate = new Date();
@@ -2028,27 +2050,38 @@ const avatarModal = document.getElementById('avatar-modal');
 const closeAvatarModalBtn = document.getElementById('close-avatar-modal');
 const uploadCustomBtn = document.getElementById('upload-custom-btn');
 const freeAvatarGrid = document.getElementById('free-avatar-grid');
+const paidAvatarGrid = document.getElementById('paid-avatar-grid');
 
-function renderFreeAvatars() {
-  if (!freeAvatarGrid) return;
-  freeAvatarGrid.innerHTML = FREE_AVATARS.map(url => `
-    <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectFreeAvatar('${url}')" 
-      style="cursor: pointer; transition: var(--transition);">
-      <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
-    </div>
-  `).join('');
+function renderAvatars() {
+  if (freeAvatarGrid) {
+    freeAvatarGrid.innerHTML = FREE_AVATARS.map(url => `
+      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')" 
+        style="cursor: pointer; transition: var(--transition);">
+        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+      </div>
+    `).join('');
+  }
+
+  if (paidAvatarGrid) {
+    paidAvatarGrid.innerHTML = PAID_AVATARS.map(url => `
+      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')" 
+        style="cursor: pointer; transition: var(--transition);">
+        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+      </div>
+    `).join('');
+  }
 }
 
-window.selectFreeAvatar = function (url) {
+window.selectAvatar = function (url) {
   userProfile.avatar_url = url;
   updateProfileUI();
-  renderFreeAvatars();
+  renderAvatars();
   avatarModal.classList.add('hidden');
 };
 
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
   avatarModal.classList.remove('hidden');
-  renderFreeAvatars();
+  renderAvatars();
 });
 
 closeAvatarModalBtn.addEventListener('click', () => {
