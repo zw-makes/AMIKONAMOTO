@@ -351,6 +351,12 @@ document.addEventListener('click', (e) => {
   if (!document.getElementById('currency-picker').contains(e.target)) {
     document.getElementById('currency-dropdown').classList.add('hidden');
   }
+  if (!document.getElementById('trial-days-picker').contains(e.target)) {
+    document.getElementById('trial-days-dropdown').classList.add('hidden');
+  }
+  if (!document.getElementById('trial-months-picker').contains(e.target)) {
+    document.getElementById('trial-months-dropdown').classList.add('hidden');
+  }
 });
 
 // --- Currency Exchange ---
@@ -1071,12 +1077,72 @@ document.querySelectorAll('.freq-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('sub-type').value = btn.dataset.value;
+    const type = btn.dataset.value;
+    document.getElementById('sub-type').value = type;
+
+    // Toggle Trial Duration Section
+    const trialSection = document.getElementById('trial-duration-section');
+    if (type === 'trial') {
+      trialSection.classList.remove('hidden');
+    } else {
+      trialSection.classList.add('hidden');
+      document.getElementById('trial-error').classList.add('hidden');
+    }
+  });
+});
+
+// Trial Custom Dropdowns Logic
+document.getElementById('trial-days-trigger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('trial-days-dropdown').classList.toggle('hidden');
+  document.getElementById('trial-months-dropdown').classList.add('hidden');
+});
+
+document.getElementById('trial-months-trigger').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('trial-months-dropdown').classList.toggle('hidden');
+  document.getElementById('trial-days-dropdown').classList.add('hidden');
+});
+
+[
+  { id: 'days', trigger: 'trial-days-trigger', dropdown: 'trial-days-dropdown', list: 'trial-days-list', selected: 'trial-days-selected', val: 'trial-days-val' },
+  { id: 'months', trigger: 'trial-months-trigger', dropdown: 'trial-months-dropdown', list: 'trial-months-list', selected: 'trial-months-selected', val: 'trial-months-val' }
+].forEach(pick => {
+  const listEl = document.getElementById(pick.list);
+  const selectedEl = document.getElementById(pick.selected);
+  const valEl = document.getElementById(pick.val);
+  const dropdownEl = document.getElementById(pick.dropdown);
+
+  listEl.querySelectorAll('li').forEach(li => {
+    li.addEventListener('click', () => {
+      const val = li.dataset.value;
+      valEl.value = val;
+      selectedEl.innerText = li.innerText;
+      dropdownEl.classList.add('hidden');
+      document.getElementById('trial-error').classList.add('hidden');
+
+      // Clear other picker if one is selected
+      const otherId = pick.id === 'days' ? 'trial-months' : 'trial-days';
+      document.getElementById(`${otherId}-val`).value = '';
+      document.getElementById(`${otherId}-selected`).innerText = pick.id === 'days' ? 'Months' : 'Days';
+    });
   });
 });
 
 subForm.addEventListener('submit', (e) => {
   e.preventDefault();
+
+  const type = document.getElementById('sub-type').value;
+
+  // Validation for Trial
+  if (type === 'trial') {
+    const days = document.getElementById('trial-days-val').value;
+    const months = document.getElementById('trial-months-val').value;
+    if (!days && !months) {
+      document.getElementById('trial-error').classList.remove('hidden');
+      return;
+    }
+  }
 
   const newSub = {
     // Add a random integer offset to prevent double-click millisecond collisions
@@ -1084,11 +1150,13 @@ subForm.addEventListener('submit', (e) => {
     name: document.getElementById('sub-name').value,
     price: parseFloat(document.getElementById('sub-price').value),
     date: parseInt(document.getElementById('sub-date').value),
-    type: document.getElementById('sub-type').value,
+    type: type,
     domain: document.getElementById('sub-domain').value,
     currency: document.getElementById('sub-currency').value,
     symbol: document.getElementById('sub-currency-symbol').value,
-    color: '--accent-blue' // Default for new ones
+    color: type === 'trial' ? '--accent-purple' : (type === 'one-time' ? '--accent-orange' : '--accent-blue'),
+    trialDays: type === 'trial' ? document.getElementById('trial-days-val').value : null,
+    trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null
   };
 
   subscriptions.push(newSub);
@@ -1096,6 +1164,12 @@ subForm.addEventListener('submit', (e) => {
   // Update UI Instantly
   renderCalendar();
   addModal.classList.add('hidden');
+  document.getElementById('trial-duration-section').classList.add('hidden');
+  subForm.reset(); // Reset form after success
+  document.getElementById('trial-days-val').value = '';
+  document.getElementById('trial-months-val').value = '';
+  document.getElementById('trial-days-selected').innerText = 'Days';
+  document.getElementById('trial-months-selected').innerText = 'Months';
 
   // Background sync and ID replacement
   saveToSupabase(newSub).then(savedSub => {
@@ -1110,7 +1184,6 @@ subForm.addEventListener('submit', (e) => {
   });
 
   // Reset form and currency
-  subForm.reset();
   selectCurrency('USD', '$');
   updatePlatformIcon(null);
   document.getElementById('sub-domain').value = '';

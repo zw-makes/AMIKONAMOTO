@@ -293,14 +293,64 @@
           </div>
           <div class="form-group">
             <label>Frequency</label>
-            <div class="freq-selector">
+            <div class="freq-selector" style="margin-bottom: 5px;">
               <button type="button" class="freq-btn active" data-value="monthly">Monthly</button>
               <button type="button" class="freq-btn" data-value="yearly">Yearly</button>
               <button type="button" class="freq-btn" data-value="trial">Trial</button>
+              <button type="button" class="freq-btn" data-value="one-time">One time</button>
             </div>
             <input type="hidden" id="sub-type" value="monthly">
           </div>
-          <button type="submit" class="submit-btn">Save Subscription</button>
+
+          <!-- Trial Duration Section (Hidden by default) -->
+          <div id="trial-duration-section" class="form-group hidden"
+            style="margin-top: 15px; animation: slideDown 0.3s ease;">
+            <label>Trial Duration (Pick one)</label>
+            <div style="display: flex; gap: 10px;">
+              <!-- Custom Days Picker -->
+              <div class="custom-dropdown" id="trial-days-picker" style="flex: 1;">
+                <button type="button" class="dropdown-trigger" id="trial-days-trigger">
+                  <span id="trial-days-selected">Days</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="trial-days-dropdown">
+                  <ul id="trial-days-list">
+                    <li data-value="7">7 Days</li>
+                    <li data-value="14">14 Days</li>
+                    <li data-value="30">30 Days</li>
+                  </ul>
+                </div>
+                <input type="hidden" id="trial-days-val" value="">
+              </div>
+
+              <!-- Custom Months Picker -->
+              <div class="custom-dropdown" id="trial-months-picker" style="flex: 1;">
+                <button type="button" class="dropdown-trigger" id="trial-months-trigger">
+                  <span id="trial-months-selected">Months</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="trial-months-dropdown">
+                  <ul id="trial-months-list">
+                    <li data-value="1">1 Month</li>
+                    <li data-value="3">3 Months</li>
+                    <li data-value="6">6 Months</li>
+                    <li data-value="12">12 Months</li>
+                  </ul>
+                </div>
+                <input type="hidden" id="trial-months-val" value="">
+              </div>
+            </div>
+            <p id="trial-error" class="hidden"
+              style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
+              Please select the trial frequency duration!
+            </p>
+          </div>
+
+          <button type="submit" class="submit-btn" style="margin-top: 10px;">Save Subscription</button>
         </form>
       </div>
     </div>
