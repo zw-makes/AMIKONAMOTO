@@ -1377,10 +1377,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (profile) {
           console.log('[Auth] Profile fetched successfully.');
           userProfile = profile;
-          safeSetLocalStorage(`profile_${currentUser.id} `, JSON.stringify(userProfile));
+          safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
         } else {
           console.warn('[Auth] No profile in Supabase, checking local cache...');
-          const saved = localStorage.getItem(`profile_${currentUser.id} `);
+          const saved = localStorage.getItem(`profile_${currentUser.id}`);
           if (saved) userProfile = JSON.parse(saved);
         }
 
@@ -1394,7 +1394,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         updateTime();
       } catch (err) {
         console.error('[Auth] Profile fetch failed/timed out:', err.message);
-        const saved = localStorage.getItem(`profile_${currentUser.id} `);
+        const saved = localStorage.getItem(`profile_${currentUser.id}`);
         if (saved) userProfile = JSON.parse(saved);
       } finally {
         // Always try to update UI and show welcome, even if fetch failed
@@ -1421,12 +1421,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         event: '*',
         schema: 'public',
         table: 'profiles',
-        filter: `id = eq.${currentUser.id} `
+        filter: `id=eq.${currentUser.id}`
       }, payload => {
         if (payload.new) {
           console.log('[Realtime] Profile update received.');
           userProfile = payload.new;
-          safeSetLocalStorage(`profile_${currentUser.id} `, JSON.stringify(userProfile));
+          safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
           updateProfileUI();
 
           const pName = document.querySelector('.profile-info h4');
@@ -1486,10 +1486,10 @@ function showOnboarding() {
 
 function goToOnboardStep(step) {
   document.querySelectorAll('.onboard-step').forEach(s => s.classList.add('hidden'));
-  document.getElementById(`onboard - step - ${step} `).classList.remove('hidden');
+  document.getElementById(`onboard-step-${step}`).classList.remove('hidden');
   // Update dots
   [1, 2, 3].forEach(i => {
-    const dot = document.getElementById(`dot - ${i} `);
+    const dot = document.getElementById(`dot-${i}`);
     if (i < step) dot.className = 'step-dot done';
     else if (i === step) dot.className = 'step-dot active';
     else dot.className = 'step-dot';
@@ -1537,7 +1537,7 @@ document.getElementById('onboard-finish').addEventListener('click', async () => 
     if (error) throw error;
 
     // Save to LocalStorage as fallback/cache
-    localStorage.setItem(`profile_${currentUser.id} `, JSON.stringify(userProfile));
+    localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
 
     onboardingScreen.classList.add('hidden');
     showWelcomeScreen();
