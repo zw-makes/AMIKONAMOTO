@@ -607,18 +607,21 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   // Check for subscriptions on this day (only for current month)
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
-      if (s.date !== day) return false;
-
-      // Recurring monthly/yearly shows every month/year
-      if (s.type === 'monthly' && s.recurring === 'recurring') return true;
-      if (s.type === 'yearly') return true;
-
-      // Non-recurring, Trials, and One-time only show on their specific start month
       const start = new Date(s.startDate);
-      const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-
-      return start.getMonth() === calendarDate.getMonth() &&
-        start.getFullYear() === calendarDate.getFullYear();
+      if (s.type === 'monthly' || s.type === 'trial') {
+        if (s.date !== day) return false;
+        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      }
+      if (s.type === 'yearly') {
+        if (s.date !== day) return false;
+        // Visible every month within the 12-month frequency window
+        const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+        const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+      }
+      return false;
     });
 
     if (daySubs.length > 0) {
@@ -706,12 +709,20 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   cell.addEventListener('click', () => {
     if (!isOtherMonth) {
       const daySubs = subscriptions.filter(s => {
-        if (s.date !== day) return false;
-        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
-        if (s.type === 'yearly') return true;
         const start = new Date(s.startDate);
-        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+        if (s.type === 'monthly' || s.type === 'trial') {
+          if (s.date !== day) return false;
+          if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+          const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+          return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+        }
+        if (s.type === 'yearly') {
+          if (s.date !== day) return false;
+          const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+          const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+          return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+        }
+        return false;
       });
       if (daySubs.length > 0) {
         showDayDetails(day, daySubs);
@@ -722,17 +733,50 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   // Tooltip listeners
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
-      if (s.date !== day) return false;
-      if (s.type === 'monthly' && s.recurring === 'recurring') return true;
-      if (s.type === 'yearly') return true;
       const start = new Date(s.startDate);
-      const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      // For monthly/trial, check if it matches the day and we are in the correct month view
+      if (s.type === 'monthly' || s.type === 'trial') {
+        if (s.date !== day) return false;
+        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+
+        // One-time or first month of recurring
+        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      }
+
+      // For yearly, show every month within the 12-month frequency window
+      if (s.type === 'yearly') {
+        if (s.date !== day) return false;
+        const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+        const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+      }
+
+      return false;
     });
     if (daySubs.length > 0) {
       cell.addEventListener('mouseenter', (e) => showTooltip(e, daySubs));
       cell.addEventListener('mousemove', (e) => moveTooltip(e));
       cell.addEventListener('mouseleave', hideTooltip);
+
+      // Long-press logic (1 second)
+      let holdTimer;
+      const startHold = (e) => {
+        holdTimer = setTimeout(() => {
+          showTooltip(e, daySubs);
+        }, 1000);
+      };
+      const clearHold = () => {
+        clearTimeout(holdTimer);
+        hideTooltip();
+      };
+
+      cell.addEventListener('mousedown', startHold);
+      cell.addEventListener('touchstart', startHold, { passive: true });
+      cell.addEventListener('mouseup', clearHold);
+      cell.addEventListener('mouseleave', clearHold);
+      cell.addEventListener('touchend', clearHold);
+      cell.addEventListener('touchmove', clearHold, { passive: true });
     }
   }
 }
@@ -773,8 +817,12 @@ async function showTooltip(e, subs) {
 }
 
 function moveTooltip(e) {
-  const x = e.clientX + 10;
-  const y = e.clientY + 10;
+  // Handle both mouse and touch events
+  const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+  const x = clientX + 10;
+  const y = clientY + 10;
 
   // Keep tooltip on screen
   const rect = tooltip.getBoundingClientRect();
@@ -1083,7 +1131,18 @@ async function updateStats() {
       price = getConvertedPrice(price, s.currency || 'USD', targetCurrency, mathRates);
     }
 
-    monthlyTotal += price;
+    // For yearly subs, only count in their specific renewal month
+    let skipPrice = false;
+    if (s.type === 'yearly') {
+      const start = new Date(s.startDate);
+      if (currentDate.getMonth() !== start.getMonth()) {
+        skipPrice = true;
+      }
+    }
+
+    if (!skipPrice) {
+      monthlyTotal += price;
+    }
   });
 
   const activeCount = activeSubs.length;
@@ -1490,6 +1549,9 @@ window.showTrialPath = function (id, e) {
     }
   } else if (sub.type === 'yearly') {
     infoText = "RENEWS YEARLY";
+    // FIX: Calculate end date for yearly animation
+    end = new Date(start);
+    end.setFullYear(end.getFullYear() + 1);
   }
 
   // Show info text on button
@@ -1497,7 +1559,50 @@ window.showTrialPath = function (id, e) {
   btn.style.width = "80px"; // Expanded narrow width
 
   // Also show visual path if applicable
-  if ((sub.type === 'trial' || sub.type === 'monthly') && end) {
+  if (sub.type === 'yearly' && end) {
+    const originalDate = new Date(currentDate);
+    dayDetailModal.classList.add('hidden');
+
+    // Animation Logic for Yearly: Month per second
+    let animMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+    const runFrame = () => {
+      currentDate = new Date(animMonth);
+      renderHeader();
+      renderCalendar();
+
+      // Highlight path in current view
+      setTimeout(() => {
+        document.querySelectorAll('.calendar-cell').forEach(cell => {
+          const cellTime = parseInt(cell.dataset.time);
+          const startTimeMs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+          const targetTimeMs = endMidnight.getTime();
+
+          if (cellTime >= startTimeMs && cellTime <= targetTimeMs) {
+            cell.classList.add('yearly-path');
+            setTimeout(() => cell.classList.remove('yearly-path'), 2000);
+          }
+        });
+      }, 50);
+
+      // Next step
+      animMonth.setMonth(animMonth.getMonth() + 1);
+      if (animMonth <= endMidnight) {
+        setTimeout(runFrame, 1000);
+      } else {
+        // Return to present after a short wait
+        setTimeout(() => {
+          currentDate = originalDate;
+          renderHeader();
+          renderCalendar();
+        }, 3000);
+      }
+    };
+
+    runFrame();
+
+  } else if ((sub.type === 'trial' || sub.type === 'monthly') && end) {
     // If end date is in a different month, switch to it!
     const endMonth = end.getMonth();
     const endYear = end.getFullYear();
@@ -1943,7 +2048,16 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       displayPrice = `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${symbol}${convertedDisplayPrice.toFixed(2)} `;
     }
 
-    if (!isStopped) {
+    // For yearly, only count impact if it's the renewal month
+    let skipImpact = false;
+    if (s.type === 'yearly') {
+      const start = new Date(s.startDate);
+      if (currentDate.getMonth() !== start.getMonth()) {
+        skipImpact = true;
+      }
+    }
+
+    if (!isStopped && !skipImpact) {
       totalImpact += convertedMathPrice;
     }
 
@@ -1968,8 +2082,16 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     subscriptions.forEach(s => {
       let p = s.price;
       if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
-      sumAll += p;
-      if (s.stopped) sumStopped += p;
+      let skip = false;
+      if (s.type === 'yearly') {
+        const startDateObj = new Date(s.startDate);
+        if (currentDate.getMonth() !== startDateObj.getMonth()) skip = true;
+      }
+
+      if (!skip) {
+        sumAll += p;
+        if (s.stopped) sumStopped += p;
+      }
     });
     const grandTotal = sumAll - sumStopped;
 
