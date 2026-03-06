@@ -709,21 +709,37 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   cell.addEventListener('click', () => {
     if (!isOtherMonth) {
       const daySubs = subscriptions.filter(s => {
-        const start = new Date(s.startDate);
+        const { start, end } = getSubDates(s);
+
+        // Starts today logic
+        let startsToday = false;
         if (s.type === 'monthly' || s.type === 'trial') {
-          if (s.date !== day) return false;
-          if (s.type === 'monthly' && s.recurring === 'recurring') return true;
-          const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-          return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+          if (s.date === day) {
+            if (s.type === 'monthly' && s.recurring === 'recurring') startsToday = true;
+            else {
+              const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              if (start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear()) startsToday = true;
+            }
+          }
+        } else if (s.type === 'yearly') {
+          if (s.date === day) {
+            const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+            const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+            if (currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12) startsToday = true;
+          }
         }
-        if (s.type === 'yearly') {
-          if (s.date !== day) return false;
-          const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
-          const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
-          return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+
+        // Ends today logic
+        let endsToday = false;
+        if (end) {
+          if (end.getDate() === day && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear()) {
+            endsToday = true;
+          }
         }
-        return false;
+
+        return startsToday || endsToday;
       });
+
       if (daySubs.length > 0) {
         showDayDetails(day, daySubs);
       }
@@ -839,7 +855,35 @@ function hideTooltip() {
 
 window.showDayDetails = async function (day, subs) {
   const monthName = currentDate.toLocaleString('default', { month: 'long' });
-  document.getElementById('detail-date-title').innerText = `${monthName} ${day}`;
+  const header = document.querySelector('#day-detail-modal .detail-header');
+
+  // Refined header logic: Only build the toggle structure once
+  if (!header.querySelector('.detail-header-container')) {
+    header.innerHTML = `
+      <div class="detail-header-container">
+        <div class="day-title-group">
+          <h3 id="detail-date-title" style="margin:0;">${monthName} ${day}</h3>
+          <div class="detail-header-toggle">
+            <span class="toggle-link active bought" id="toggle-bought">BOUGHT</span>
+            <span class="toggle-divider">/</span>
+            <span class="toggle-link ends" id="toggle-ends">ENDS</span>
+          </div>
+        </div>
+        <button class="close-detail" id="close-detail">&times;</button>
+      </div>
+    `;
+    // Attach close listener
+    document.getElementById('close-detail').onclick = () => dayDetailModal.classList.add('hidden');
+  } else {
+    // Already built, just update content
+    const title = document.getElementById('detail-date-title');
+    if (title) title.innerText = `${monthName} ${day}`;
+    // Reset toggle states
+    const tb = document.getElementById('toggle-bought');
+    const te = document.getElementById('toggle-ends');
+    if (tb) { tb.classList.add('active'); }
+    if (te) { te.classList.remove('active'); }
+  }
 
   const settings = userProfile?.settings || {};
   let useAutoCurrency = settings.autoCurrency !== false;
@@ -860,78 +904,95 @@ window.showDayDetails = async function (day, subs) {
     displayRates = await fetchExchangeRates(targetCurrency);
     mathRates = displayRates;
   } else {
-    // Check for mixed currencies for smart total globally for consistent totals
     const uniqueCurrencies = new Set(subscriptions.map(s => s.currency || 'USD'));
     if (uniqueCurrencies.size > 1) {
       mathRates = await fetchExchangeRates(targetCurrency);
     }
   }
 
-  let totalImpact = 0;
-  const list = document.getElementById('detail-list');
-  list.innerHTML = subs.map(s => {
-    let domain = getDomain(s);
-    const isStopped = s.stopped;
+  const boughtToday = [];
+  const endsToday = [];
 
-    // Use full price for the "Monthly Impact" list view in modals
-    let itemPrice = s.price;
-    const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)}`;
-    let convertedMathPrice = itemPrice;
-    let symbol = s.symbol || '$';
-    let displayPrice = originalPriceStr;
-
-    // Background math converted price
-    if (mathRates && (s.currency || 'USD') !== targetCurrency) {
-      convertedMathPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, mathRates);
-    }
-
-    // UI display converted price
-    if (useAutoCurrency && displayRates && (s.currency || 'USD') !== targetCurrency) {
-      const convertedDisplayPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, displayRates);
-      symbol = targetSymbol || '$';
-      displayPrice = `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${symbol}${convertedDisplayPrice.toFixed(2)}`;
-    }
-    if (!s.stopped) {
-      totalImpact += convertedMathPrice;
-    }
-
-    // UI display converted price
-    s.displayPrice = getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates);
-    return getSwipeTemplate(s);
-  }).join('');
-
-  // Choose symbol based on mathematical conversion
-  let finalSymbol = '$';
-  if (mathRates) {
-    finalSymbol = targetSymbol;
-  } else if (subs.length > 0) {
-    finalSymbol = subs[0].symbol || '$';
-  }
-
-  // Calculate sums for the day
-  let sumAll = 0;
-  let sumStopped = 0;
   subs.forEach(s => {
-    let p = s.price;
-    if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
-    sumAll += p;
-    if (s.stopped) sumStopped += p;
+    const { start, end } = getSubDates(s);
+    let isStart = false;
+    if (s.date === day) {
+      if (s.type === 'monthly' && s.recurring === 'recurring') isStart = true;
+      else if (s.type === 'yearly') {
+        const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+        const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+        if (currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12) isStart = true;
+      } else {
+        if (start.getMonth() === currentDate.getMonth() && start.getFullYear() === currentDate.getFullYear()) isStart = true;
+      }
+    }
+
+    let isEnd = false;
+    if (end && end.getDate() === day && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear()) {
+      isEnd = true;
+    }
+
+    if (isStart) boughtToday.push(s);
+    if (isEnd) endsToday.push(s);
   });
-  const grandTotal = sumAll - sumStopped;
 
+  const list = document.getElementById('detail-list');
+  const footTotal = document.getElementById('detail-total-amount');
   const labelEl = document.querySelector('#detail-total-amount')?.previousElementSibling;
-  const footTotal = document.querySelector('#detail-total-amount');
+  const finalSymbol = mathRates ? targetSymbol : (subs[0]?.symbol || '$');
 
-  if (sumStopped > 0) {
-    if (labelEl) labelEl.innerHTML = `<span style="opacity:0.5">${finalSymbol}${sumAll.toFixed(2)}</span> - <span style="color:var(--accent-red)">${finalSymbol}${sumStopped.toFixed(2)}</span> = GRAND TOTAL:`;
-  } else {
-    if (labelEl) labelEl.innerText = "GRAND TOTAL FOR THIS DAY:";
-  }
+  const updateModalContent = (activeList, type) => {
+    // 1. Update List
+    if (activeList.length === 0) {
+      list.innerHTML = `<div style="padding:60px 20px; text-align:center; color:var(--text-dim); font-style:italic; font-size:0.9rem;">
+        No subscriptions ${type === 'bought' ? 'bought' : 'ending'} on this day.
+      </div>`;
+    } else {
+      list.innerHTML = activeList.map(s => {
+        s.displayPrice = getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates);
+        return getSwipeTemplate(s);
+      }).join('');
+      attachSwipeEvents();
+    }
 
-  if (footTotal) footTotal.innerText = `${finalSymbol}${grandTotal.toFixed(2)}`;
+    // 2. Update Total & Paid Badge
+    let sum = 0;
+    let allPaid = activeList.length > 0;
+    activeList.forEach(s => {
+      let p = s.price;
+      if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
+      if (!s.stopped) sum += p;
+      if (!s.paid) allPaid = false;
+    });
 
+    if (footTotal) {
+      let totalHtml = `${finalSymbol}${sum.toFixed(2)}`;
+      if (allPaid && activeList.length > 0) {
+        totalHtml = `<div class="footer-badge-container">${totalHtml} <span class="tag-paid-small">PAID</span></div>`;
+      }
+      footTotal.innerHTML = totalHtml;
+    }
+    if (labelEl) labelEl.innerText = "SECTION TOTAL:";
+  };
+
+  const boughtToggle = document.getElementById('toggle-bought');
+  const endsToggle = document.getElementById('toggle-ends');
+
+  boughtToggle.onclick = () => {
+    boughtToggle.classList.add('active');
+    endsToggle.classList.remove('active');
+    updateModalContent(boughtToday, 'bought');
+  };
+
+  endsToggle.onclick = () => {
+    endsToggle.classList.add('active');
+    boughtToggle.classList.remove('active');
+    updateModalContent(endsToday, 'ends');
+  };
+
+  // Initial View
+  updateModalContent(boughtToday, 'bought');
   dayDetailModal.classList.remove('hidden');
-  attachSwipeEvents();
 };
 
 window.deleteSubscription = function (id, e) {
@@ -2690,3 +2751,26 @@ updateTime();
 setInterval(updateTime, 30000); // Update every 30s
 renderHeader();
 loadSubscriptions(); // Fetch from Supabase
+
+// --- Helper to get normalized start and end dates for a subscription ---
+function getSubDates(sub) {
+  const start = new Date(sub.startDate);
+  let end = null;
+
+  if (sub.type === 'trial' || (sub.type === 'monthly' && sub.recurring !== 'recurring')) {
+    end = new Date(start);
+    if (sub.type === 'trial') {
+      const tDays = parseInt(sub.trialDays) || 0;
+      const tMonths = parseInt(sub.trialMonths) || 0;
+      end.setMonth(end.getMonth() + tMonths);
+      end.setDate(end.getDate() + tDays);
+    } else {
+      end.setMonth(end.getMonth() + 1);
+    }
+  } else if (sub.type === 'yearly') {
+    end = new Date(start);
+    end.setFullYear(end.getFullYear() + 1);
+  }
+
+  return { start, end };
+}
