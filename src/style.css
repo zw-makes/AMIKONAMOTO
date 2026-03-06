@@ -2190,3 +2190,27 @@ input:checked+.slider:before {
     opacity: 0.8;
   }
 }
+
+/* Blue visual trail for yearly carry-over subs */
+.detail-item.carry-over-path-blue {
+  background: rgba(0, 162, 255, 0.05) !important;
+  border-color: rgba(0, 162, 255, 0.4) !important;
+  box-shadow: inset 0 0 15px rgba(0, 162, 255, 0.1), 0 0 20px rgba(0, 162, 255, 0.05);
+  border-style: dashed !important;
+  animation: pulsePathBlue 1.5s infinite ease-in-out;
+}
+
+@keyframes pulsePathBlue {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 25px rgba(0, 162, 255, 0.3), 0 0 35px rgba(0, 162, 255, 0.1);
+  }
+
+  100% {
+    opacity: 0.8;
+  }
+}

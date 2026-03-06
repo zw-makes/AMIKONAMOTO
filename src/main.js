@@ -2147,14 +2147,13 @@ function isSubRelevantToMonth(sub, monthDate) {
   if (start > viewEnd) return false;
   if (end && end < viewStart) return false;
 
-  // 2. Yearly: Only relevant in its renewal month
-  if (sub.type === 'yearly') {
-    return start.getMonth() === monthDate.getMonth();
-  }
+  // 2. Yearly: Always relevant once started
+  if (sub.type === 'yearly') return true;
 
-  // 3. User Rule: Subscriptions from precious months 
+  if (end && end < viewStart) return false;
+
+  // 3. User Rule: Subscriptions from previous months (trials/one-time)
   // ONLY show if they end in the current month.
-  // (Exempting recurring monthly subs which are active ongoing services)
   if (start < viewStart && end) {
     const endsThisMonth = end.getMonth() === monthDate.getMonth() && end.getFullYear() === monthDate.getFullYear();
     return endsThisMonth;
@@ -2321,6 +2320,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     if (s.type === 'yearly') {
       if (currentDate.getMonth() !== start.getMonth()) {
         skipImpact = true;
+        isCarryOver = true;
       }
     }
 
@@ -2919,7 +2919,7 @@ function getSwipeTemplate(s) {
           </div>
         </div>
       </div>
-      <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? 'carry-over-path' : ''}" data-id="${s.id}">
+      <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : 'carry-over-path') : ''}" data-id="${s.id}">
         <div class="detail-logo">
           <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
         </div>
