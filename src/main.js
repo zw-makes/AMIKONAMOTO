@@ -465,13 +465,43 @@ async function loadSubscriptions() {
 async function saveToSupabase(sub) {
   if (!currentUser) return null;
   try {
-    const subToSave = { ...sub, user_id: currentUser.id };
-    const { data, error } = await supabase.from('subscriptions').upsert(subToSave).select().single();
-    if (error) throw error;
+    // Only send columns that exist in the database to avoid 400 "Bad Request" errors
+    const subToSave = {
+      id: sub.id,
+      name: sub.name,
+      price: sub.price,
+      date: sub.date,
+      type: sub.type,
+      domain: sub.domain,
+      currency: sub.currency,
+      symbol: sub.symbol,
+      color: sub.color,
+      stopped: sub.stopped ?? false,
+      paid: sub.paid ?? false,
+      trialDays: sub.trialDays,
+      trialMonths: sub.trialMonths,
+      recurring: sub.recurring,
+      startDate: sub.startDate,
+      user_id: currentUser.id
+    };
 
+    console.log('[Supabase] Attempting to save:', subToSave);
+
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .upsert(subToSave)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Supabase] Save Error:', error.message, error.details, error.hint);
+      throw error;
+    }
+
+    console.log('[Supabase] Save successful:', data);
     return data;
   } catch (err) {
-    console.error('Error saving to Supabase:', err.message);
+    console.error('[Supabase] Error saving to Supabase:', err.message);
     return null;
   }
 }
