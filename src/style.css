@@ -1939,6 +1939,7 @@ input:checked+.slider:before {
   background: rgba(255, 255, 255, 0.1) !important;
   border-color: rgba(255, 255, 255, 0.3) !important;
 }
+
 /* Blue Visual Path for Yearly */
 .calendar-cell.yearly-path {
   background: rgba(59, 130, 246, 0.45) !important;
@@ -1951,9 +1952,18 @@ input:checked+.slider:before {
 }
 
 @keyframes pulsePathBlue {
-  0% { opacity: 0.8; }
-  50% { opacity: 1; box-shadow: inset 0 0 25px rgba(59, 130, 246, 0.7), 0 0 35px rgba(59, 130, 246, 0.4); }
-  100% { opacity: 0.8; }
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 25px rgba(59, 130, 246, 0.7), 0 0 35px rgba(59, 130, 246, 0.4);
+  }
+
+  100% {
+    opacity: 0.8;
+  }
 }
 
 /* ========================
@@ -2128,4 +2138,28 @@ input:checked+.slider:before {
   border-radius: 4px;
   font-weight: 800;
   letter-spacing: 0.5px;
+}
+
+/* White visual trail for carry-over subs */
+.detail-item.carry-over-path {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 0.05);
+  border-style: dashed !important;
+  animation: pulsePathWhite 1.5s infinite ease-in-out;
+}
+
+@keyframes pulsePathWhite {
+  0% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.3), 0 0 35px rgba(255, 255, 255, 0.1);
+  }
+
+  100% {
+    opacity: 0.8;
+  }
 }

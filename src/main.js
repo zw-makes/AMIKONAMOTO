@@ -608,9 +608,16 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
       const start = new Date(s.startDate);
-      if (s.type === 'monthly' || s.type === 'trial') {
+      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
         if (s.date !== day) return false;
-        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+        if (s.type === 'monthly' && s.recurring === 'recurring') {
+          const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+          const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+          if (startTime <= viewTime) return true;
+          return false;
+        }
+
+        // Month-exact matching required for one-time, trial, or non-recurring monthly
         const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
       }
@@ -713,10 +720,13 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
 
         // Starts today logic
         let startsToday = false;
-        if (s.type === 'monthly' || s.type === 'trial') {
+        if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
           if (s.date === day) {
-            if (s.type === 'monthly' && s.recurring === 'recurring') startsToday = true;
-            else {
+            if (s.type === 'monthly' && s.recurring === 'recurring') {
+              const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+              const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+              if (startTime <= viewTime) startsToday = true;
+            } else {
               const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
               if (start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear()) startsToday = true;
             }
@@ -750,10 +760,15 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
       const start = new Date(s.startDate);
-      // For monthly/trial, check if it matches the day and we are in the correct month view
-      if (s.type === 'monthly' || s.type === 'trial') {
+      // For monthly/trial/one-time, check if it matches the day and we are in the correct month view
+      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
         if (s.date !== day) return false;
-        if (s.type === 'monthly' && s.recurring === 'recurring') return true;
+        if (s.type === 'monthly' && s.recurring === 'recurring') {
+          const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+          const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+          if (startTime <= viewTime) return true;
+          return false;
+        }
 
         // One-time or first month of recurring
         const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -1156,8 +1171,8 @@ function attachSwipeEvents() {
 }
 
 async function updateStats() {
-  // Main aggregate footer should only show ACTIVE monthly commitment
-  const activeSubs = subscriptions.filter(s => !s.stopped);
+  // Main aggregate footer should only show ACTIVE monthly commitment relevant to THE VIEWED month
+  const activeSubs = subscriptions.filter(s => !s.stopped && isSubRelevantToMonth(s, currentDate));
   const settings = userProfile?.settings || {};
   let useAutoCurrency = settings.autoCurrency !== false;
   let targetCurrency = settings.currency || 'USD';
@@ -1169,6 +1184,7 @@ async function updateStats() {
   }
 
   let monthlyTotal = 0;
+  let actuallyActiveOnes = [];
   let displayRates = null; // For UI display
   let mathRates = null;    // For background math
 
@@ -1192,21 +1208,28 @@ async function updateStats() {
       price = getConvertedPrice(price, s.currency || 'USD', targetCurrency, mathRates);
     }
 
-    // For yearly subs, only count in their specific renewal month
     let skipPrice = false;
+    const { start: startDateObj, end: endDateObj } = getSubDates(s);
+    const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    // 1. Exclude strictly past ended subs
+    if (endDateObj && endDateObj < viewStart) skipPrice = true;
+
+    // 2. Exclude carry-overs (started in past, ends now or future, not yearly)
+    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') skipPrice = true;
+
+    // 3. Yearly plans only count in their renewal month
     if (s.type === 'yearly') {
-      const start = new Date(s.startDate);
-      if (currentDate.getMonth() !== start.getMonth()) {
-        skipPrice = true;
-      }
+      if (currentDate.getMonth() !== startDateObj.getMonth()) skipPrice = true;
     }
 
     if (!skipPrice) {
       monthlyTotal += price;
+      actuallyActiveOnes.push(s);
     }
   });
 
-  const activeCount = activeSubs.length;
+  const activeCount = actuallyActiveOnes.length;
 
   subCountEl.innerText = subscriptions.length;
   newCountEl.innerText = activeCount;
@@ -1233,18 +1256,21 @@ document.getElementById('prev-month').addEventListener('click', () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
   renderHeader();
   renderCalendar();
+  updateStats();
 });
 
 document.getElementById('next-month').addEventListener('click', () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
   renderHeader();
   renderCalendar();
+  updateStats();
 });
 
 document.getElementById('today-btn').addEventListener('click', () => {
   currentDate = new Date();
   renderHeader();
   renderCalendar();
+  updateStats();
 });
 
 document.getElementById('add-sub-btn').addEventListener('click', () => {
@@ -2110,6 +2136,47 @@ function showWelcomeScreen() {
   }, 2600);
 }
 
+// --- Helper to check if a subscription is relevant to a specific month ---
+function isSubRelevantToMonth(sub, monthDate) {
+  const { start, end } = getSubDates(sub);
+  const viewStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const viewEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+
+  // Starts after the view ends -> Not relevant
+  const subStartTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+  const viewStartTime = viewStart.getTime();
+  if (subStartTime > viewStartTime && (start.getMonth() !== monthDate.getMonth() || start.getFullYear() !== monthDate.getFullYear())) {
+    return false;
+  }
+
+  // One-time: Only relevant in the month it was bought
+  if (sub.type === 'one-time') {
+    return start.getMonth() === monthDate.getMonth() && start.getFullYear() === monthDate.getFullYear();
+  }
+
+  // Monthly Recurring: Relevant if started on/before this month
+  if (sub.type === 'monthly' && !end) {
+    return subStartTime <= viewStartTime;
+  }
+
+  // One-time Monthly: Only relevant in that specific month
+  if (sub.type === 'monthly' && end && start.getTime() === end.getTime()) {
+    return start.getMonth() === monthDate.getMonth() && start.getFullYear() === monthDate.getFullYear();
+  }
+
+  // Trial / One-time with end: Relevant if the interval [start, end] overlaps with the month
+  if (end) {
+    return start <= viewEnd && end >= viewStart;
+  }
+
+  // Yearly: Always relevant once started
+  if (sub.type === 'yearly') {
+    return subStartTime <= viewStartTime;
+  }
+
+  return true;
+}
+
 window.showMonthlyBreakdown = async function (filter = 'all') {
   currentStatsFilter = filter;
   const modal = document.getElementById('stats-modal');
@@ -2145,34 +2212,109 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     }
   }
 
-  const activeCount = subscriptions.filter(s => !s.stopped).length;
-  const stoppedCount = subscriptions.filter(s => s.stopped).length;
-  const totalCount = subscriptions.length;
+  // --- GET RELEVANT SUBSCRIPTIONS FOR THIS MONTH ---
+  const relevantSubs = subscriptions.filter(s => isSubRelevantToMonth(s, currentDate));
+
+  // Determine what counts towards numerical totals (exclude carry-overs)
+  const summedSubs = relevantSubs.filter(s => {
+    const { start: startDateObj, end: endDateObj } = getSubDates(s);
+    const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    // 1. Exclude strictly past ended subs
+    if (endDateObj && endDateObj < viewStart) return false;
+
+    // 2. Exclude carry-overs (started in past, ends now or future, not yearly)
+    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') return false;
+
+    // 3. Yearly plans only count in their renewal month
+    if (s.type === 'yearly') {
+      if (currentDate.getMonth() !== startDateObj.getMonth()) return false;
+    }
+
+    return true;
+  });
+
+  const activeCount = summedSubs.filter(s => !s.stopped).length;
+  const stoppedCount = summedSubs.filter(s => s.stopped).length;
+  const paidCount = summedSubs.filter(s => !s.stopped && s.paid).length;
+  const unpaidCount = summedSubs.filter(s => !s.stopped && !s.paid).length;
+
+  const boughtCount = summedSubs.filter(s => {
+    const { start } = getSubDates(s);
+    return start.getMonth() === currentDate.getMonth() && start.getFullYear() === currentDate.getFullYear();
+  }).length;
+
+  const endsCount = summedSubs.filter(s => {
+    const { end } = getSubDates(s);
+    return end && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear();
+  }).length;
+
+  const totalCount = summedSubs.length;
 
   summary.innerHTML = `
     <span class="${filter === 'all' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('all')">${totalCount} TOTAL</span> /
     <span class="${filter === 'active' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('active')">${activeCount} ACTIVE</span> /
+    <span class="${filter === 'bought' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('bought')" style="color:var(--accent-green)">${boughtCount} BOUGHT</span> /
+    <span class="${filter === 'ends' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('ends')" style="color:var(--accent-red)">${endsCount} ENDS</span> /
+    <span class="${filter === 'paid' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('paid')">${paidCount} PAID</span> /
+    <span class="${filter === 'unpaid' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('unpaid')">${unpaidCount} UNPAID</span> /
     <span class="${filter === 'stopped' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('stopped')">${stoppedCount} STOPPED</span>
   `;
 
-  let filtered = [...subscriptions];
-  if (filter === 'active') filtered = subscriptions.filter(s => !s.stopped);
-  if (filter === 'stopped') filtered = subscriptions.filter(s => s.stopped);
+  let filtered = [...relevantSubs];
+  if (filter === 'active') filtered = relevantSubs.filter(s => !s.stopped);
+  if (filter === 'stopped') filtered = relevantSubs.filter(s => s.stopped);
+  if (filter === 'paid') filtered = relevantSubs.filter(s => !s.stopped && s.paid);
+  if (filter === 'unpaid') filtered = relevantSubs.filter(s => !s.stopped && !s.paid);
 
-  // Sort by billing date
-  filtered.sort((a, b) => a.date - b.date);
+  if (filter === 'bought') {
+    filtered = relevantSubs.filter(s => {
+      const { start } = getSubDates(s);
+      return start.getMonth() === currentDate.getMonth() && start.getFullYear() === currentDate.getFullYear();
+    });
+  }
+  if (filter === 'ends') {
+    filtered = relevantSubs.filter(s => {
+      const { end } = getSubDates(s);
+      return end && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear();
+    });
+  }
 
+  // Sort by billing date/end date
+  if (filter === 'ends') {
+    filtered.sort((a, b) => getSubDates(a).end - getSubDates(b).end);
+  } else if (filter === 'bought') {
+    filtered.sort((a, b) => getSubDates(a).start - getSubDates(b).start);
+  } else {
+    filtered.sort((a, b) => a.date - b.date);
+  }
+
+  const monthName = currentDate.toLocaleString('default', { month: 'long' }).toUpperCase();
   let totalImpact = 0;
+  let lastDay = null;
+
   list.innerHTML = filtered.map(s => {
     let domain = getDomain(s);
     const isStopped = s.stopped;
+    const { start, end } = getSubDates(s);
+
+    // Grouping Header Logic
+    let headerHtml = '';
+    if (filter === 'bought' || filter === 'ends') {
+      const targetDate = filter === 'bought' ? start : end;
+      const day = targetDate.getDate();
+      if (day !== lastDay) {
+        headerHtml = `<div class="detail-section-header ${filter}">${monthName} ${day}</div>`;
+        lastDay = day;
+      }
+    }
 
     // Use full price for modal lists, not averaged commitment
     let itemPrice = s.price;
     const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)} `;
-    let convertedMathPrice = itemPrice; // Used for the sum
+    let convertedMathPrice = itemPrice;
     let symbol = s.symbol || '$';
-    let displayPrice = originalPriceStr; // Used for UI
+    let displayPrice = originalPriceStr;
 
     if (mathRates && (s.currency || 'USD') !== targetCurrency) {
       convertedMathPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, mathRates);
@@ -2184,21 +2326,35 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       displayPrice = `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${symbol}${convertedDisplayPrice.toFixed(2)} `;
     }
 
-    // For yearly, only count impact if it's the renewal month
+    // For yearly, only count impact if it's the exact month and year it was bought/renews
+    // For past carry-over subscriptions, don't count amount
     let skipImpact = false;
+    const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    let isCarryOver = false;
+
     if (s.type === 'yearly') {
-      const start = new Date(s.startDate);
       if (currentDate.getMonth() !== start.getMonth()) {
         skipImpact = true;
       }
     }
+
+    // Carry-over detection for visually marking and skipping impact
+    if (end && (end < viewStart || (start < viewStart && s.type !== 'yearly'))) {
+      skipImpact = true;
+      isCarryOver = true;
+    }
+
+    if (isCarryOver) {
+      displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
+    }
+    s.isCarryOver = isCarryOver;
 
     if (!isStopped && !skipImpact) {
       totalImpact += convertedMathPrice;
     }
 
     s.displayPrice = displayPrice;
-    return getSwipeTemplate(s);
+    return headerHtml + getSwipeTemplate(s);
   }).join('');
 
   // Choose label and total based on filter
@@ -2215,16 +2371,25 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
   if (filter === 'all') {
     let sumAll = 0;
     let sumStopped = 0;
-    subscriptions.forEach(s => {
-      let p = s.price;
-      if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
+
+    relevantSubs.forEach(s => {
       let skip = false;
+      const { start: startDateObj, end: endDateObj } = getSubDates(s);
+      const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
       if (s.type === 'yearly') {
-        const startDateObj = new Date(s.startDate);
-        if (currentDate.getMonth() !== startDateObj.getMonth()) skip = true;
+        if (currentDate.getMonth() !== startDateObj.getMonth()) {
+          skip = true;
+        }
+      }
+
+      if (endDateObj && (endDateObj < viewStart || (startDateObj < viewStart && s.type !== 'yearly'))) {
+        skip = true;
       }
 
       if (!skip) {
+        let p = s.price;
+        if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
         sumAll += p;
         if (s.stopped) sumStopped += p;
       }
@@ -2232,19 +2397,61 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     const grandTotal = sumAll - sumStopped;
 
     if (labelEl) labelEl.innerHTML = `<span style="opacity:0.5">${finalSymbol}${sumAll.toFixed(2)}</span> - <span style="color:var(--accent-red)">${finalSymbol}${sumStopped.toFixed(2)}</span> = GRAND TOTAL: `;
-    if (amountEl) amountEl.innerText = `${finalSymbol}${grandTotal.toFixed(2)} `;
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${grandTotal.toFixed(2)}`;
+    }
   } else if (filter === 'stopped') {
-    const sumStopped = filtered.reduce((acc, s) => {
-      let p = s.price;
-      if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
-      return acc + p;
-    }, 0);
+    let sumStopped = 0;
+    filtered.forEach(s => {
+      let skip = false;
+      const { start: startDateObj, end: endDateObj } = getSubDates(s);
+      const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+      if (s.type === 'yearly') {
+        if (currentDate.getMonth() !== startDateObj.getMonth()) {
+          skip = true;
+        }
+      }
+
+      if (endDateObj && (endDateObj < viewStart || (startDateObj < viewStart && s.type !== 'yearly'))) {
+        skip = true;
+      }
+
+      if (!skip) {
+        let p = s.price;
+        if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
+        sumStopped += p;
+      }
+    });
+
     if (labelEl) labelEl.innerText = "TOTAL SAVED:";
-    if (amountEl) amountEl.innerText = `${finalSymbol}${sumStopped.toFixed(2)} `;
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${sumStopped.toFixed(2)}`;
+    }
+  } else if (filter === 'paid') {
+    if (labelEl) labelEl.innerText = "PAID TOTAL:";
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${totalImpact.toFixed(2)}`;
+    }
+  } else if (filter === 'unpaid') {
+    if (labelEl) labelEl.innerText = "UNPAID TOTAL:";
+    if (amountEl) amountEl.innerText = `${finalSymbol}${totalImpact.toFixed(2)}`;
+  } else if (filter === 'bought') {
+    if (labelEl) labelEl.innerText = "BOUGHT TOTAL:";
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${totalImpact.toFixed(2)}`;
+    }
+  } else if (filter === 'ends') {
+    if (labelEl) labelEl.innerText = "ENDING TOTAL:";
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${totalImpact.toFixed(2)}`;
+    }
   } else {
     // Active only
     if (labelEl) labelEl.innerText = "ACTIVE TOTAL:";
-    if (amountEl) amountEl.innerText = `${finalSymbol}${totalImpact.toFixed(2)} `;
+    if (amountEl) {
+      amountEl.innerHTML = `${finalSymbol}${totalImpact.toFixed(2)}`;
+    }
   }
 
   modal.classList.remove('hidden');
@@ -2726,7 +2933,7 @@ function getSwipeTemplate(s) {
           </div>
         </div>
       </div>
-      <div class="detail-item ${isStopped ? 'dimmed' : ''}" data-id="${s.id}">
+      <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? 'carry-over-path' : ''}" data-id="${s.id}">
         <div class="detail-logo">
           <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
         </div>
@@ -2757,13 +2964,16 @@ function getSubDates(sub) {
   const start = new Date(sub.startDate);
   let end = null;
 
-  if (sub.type === 'trial' || (sub.type === 'monthly' && sub.recurring !== 'recurring')) {
+  if (sub.type === 'trial' || (sub.type === 'monthly' && sub.recurring !== 'recurring') || sub.type === 'one-time') {
     end = new Date(start);
     if (sub.type === 'trial') {
       const tDays = parseInt(sub.trialDays) || 0;
       const tMonths = parseInt(sub.trialMonths) || 0;
       end.setMonth(end.getMonth() + tMonths);
       end.setDate(end.getDate() + tDays);
+    } else if (sub.type === 'one-time') {
+      // One-time ends the same day it starts
+      end = new Date(start);
     } else {
       end.setMonth(end.getMonth() + 1);
     }
