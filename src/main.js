@@ -547,7 +547,9 @@ function renderCalendar() {
   // Previous month trailing days
   const prevMonthDays = getDaysInMonth(year, month - 1);
   for (let i = firstDay - 1; i >= 0; i--) {
-    createCell(prevMonthDays - i, true);
+    const d = prevMonthDays - i;
+    const fullDate = new Date(year, month - 1, d);
+    createCell(d, true, false, fullDate);
   }
 
   // Current month days
@@ -555,13 +557,15 @@ function renderCalendar() {
     const isToday = d === new Date().getDate() &&
       month === new Date().getMonth() &&
       year === new Date().getFullYear();
-    createCell(d, false, isToday);
+    const fullDate = new Date(year, month, d);
+    createCell(d, false, isToday, fullDate);
   }
 
   // Next month leading days (fill up to 42 cells for 6 rows of 7)
   const remainingCells = 42 - calendarGrid.children.length;
   for (let i = 1; i <= remainingCells; i++) {
-    createCell(i, true);
+    const fullDate = new Date(year, month + 1, i);
+    createCell(i, true, false, fullDate);
   }
 
   updateStats();
@@ -583,9 +587,13 @@ function getDomain(s) {
   return domain;
 }
 
-function createCell(day, isOtherMonth, isToday) {
+function createCell(day, isOtherMonth, isToday, fullDate) {
   const cell = document.createElement('div');
   cell.className = `calendar-cell ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
+
+  if (fullDate) {
+    cell.dataset.time = fullDate.getTime();
+  }
 
   const span = document.createElement('span');
   span.className = 'cell-date';
@@ -1490,25 +1498,61 @@ window.showTrialPath = function (id, e) {
 
   // Also show visual path if applicable
   if ((sub.type === 'trial' || sub.type === 'monthly') && end) {
+    // If end date is in a different month, switch to it!
+    const endMonth = end.getMonth();
+    const endYear = end.getFullYear();
+    const currentViewMonth = currentDate.getMonth();
+    const currentViewYear = currentDate.getFullYear();
+
+    let switchExecuted = false;
+    const originalDate = new Date(currentDate);
+
+    // SMARTER LOGIC: Check if the end date is ALREADY visible in the current grid
+    // (even if it's an "other-month" cell)
+    const endTimeValue = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+    const isEndVisible = Array.from(document.querySelectorAll('.calendar-cell'))
+      .some(cell => parseInt(cell.dataset.time) === endTimeValue);
+
+    if (!isEndVisible && (endMonth !== currentViewMonth || endYear !== currentViewYear)) {
+      currentDate = new Date(endYear, endMonth, 1);
+      renderHeader();
+      renderCalendar();
+      switchExecuted = true;
+    }
+
     // Keep it open for a moment before closing modal for path
     setTimeout(() => {
       dayDetailModal.classList.add('hidden');
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth();
 
-      document.querySelectorAll('.calendar-cell:not(.other-month)').forEach(cell => {
-        const day = parseInt(cell.dataset.day);
-        const cellDate = new Date(currentYear, currentMonth, day);
-        const cellTime = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()).getTime();
-        const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
-        const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+      // Delay highlighting slightly more if we switched months to ensure DOM is ready
+      setTimeout(() => {
+        document.querySelectorAll('.calendar-cell').forEach(cell => {
+          const cellTime = parseInt(cell.dataset.time);
+          const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+          const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
 
-        if (cellTime >= startTime && cellTime <= endTime) {
-          const pathClass = sub.type === 'trial' ? 'trial-path' : 'monthly-path';
-          cell.classList.add(pathClass);
-          setTimeout(() => cell.classList.remove(pathClass), 7000);
-        }
-      });
+          if (cellTime >= startTime && cellTime <= endTime) {
+            const pathClass = sub.type === 'trial' ? 'trial-path' : 'monthly-path';
+            cell.classList.add(pathClass);
+
+            // Remove highlight after 7 seconds
+            setTimeout(() => {
+              cell.classList.remove(pathClass);
+
+              // If we switched months, return to original month ONLY ONCE
+              if (switchExecuted) {
+                setTimeout(() => {
+                  currentDate = originalDate;
+                  renderHeader();
+                  renderCalendar();
+                }, 100);
+                switchExecuted = false;
+              }
+            }, 7000);
+          }
+        });
+      }, switchExecuted ? 300 : 50);
+
     }, 1500);
   } else {
     // Revert text after 3 seconds for non-trials
