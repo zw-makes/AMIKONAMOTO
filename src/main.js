@@ -1130,6 +1130,7 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
   }
 
   addModal.classList.remove('hidden');
+  document.getElementById('sub-date').value = new Date().getDate();
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
