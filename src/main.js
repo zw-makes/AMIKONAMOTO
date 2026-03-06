@@ -1,5 +1,6 @@
 import './style.css';
 import { supabase } from './supabase.js';
+import { initNotifications, clearReminders } from './features/notifications/notifications.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -453,6 +454,9 @@ async function loadSubscriptions() {
 
     // Always sync local cache with the exact DB state
     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+
+    // Auto-generate reminders only on fresh loads
+    updateReminders();
   } catch (err) {
     console.error('Error loading subscriptions:', err.message);
     subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
@@ -1017,6 +1021,16 @@ window.showDayDetails = async function (day, subs) {
 window.deleteSubscription = function (id, e) {
   if (e) e.stopPropagation();
 
+  const subToRemove = subscriptions.find(s => s.id === id);
+  if (subToRemove && window.addNotification) {
+    window.addNotification({
+      title: "Subscription Removed",
+      text: `${subToRemove.name} has been deleted from your list.`,
+      type: "info",
+      domain: subToRemove.domain
+    });
+  }
+
   subscriptions = subscriptions.filter(s => s.id !== id);
 
   // Background sync (Optimistic)
@@ -1038,6 +1052,15 @@ window.stopSubscription = function (id, e) {
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
     sub.stopped = !sub.stopped; // Toggle stopped state
+
+    if (window.addNotification) {
+      window.addNotification({
+        title: sub.stopped ? "Subscription Stopped" : "Subscription Resumed",
+        text: `You have ${sub.stopped ? 'paused' : 'restored'} payments for ${sub.name}.`,
+        type: sub.stopped ? "warning" : "success",
+        domain: sub.domain
+      });
+    }
 
     // Background sync (Optimistic)
     saveToSupabase(sub);
@@ -1069,6 +1092,18 @@ window.togglePaidStatus = function (id, e) {
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
     sub.paid = !sub.paid;
+
+    if (window.addNotification) {
+      window.addNotification({
+        title: sub.paid ? "Payment Confirmed" : "Payment Unsettled",
+        text: sub.paid
+          ? `You marked ${sub.name} as paid. Good job!`
+          : `You unmarked ${sub.name} as paid.`,
+        type: sub.paid ? "success" : "info",
+        domain: sub.domain
+      });
+    }
+
     saveToSupabase(sub);
     renderCalendar();
     updateStats();
@@ -1286,6 +1321,15 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
 
   addModal.classList.remove('hidden');
   document.getElementById('sub-date').value = new Date().getDate();
+
+  // Reset frequency to default: One-Time Only
+  document.getElementById('sub-type').value = 'one-time';
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.freq-btn[data-value="one-time"]')?.classList.add('active');
+
+  // Hide extra sections
+  document.getElementById('trial-duration-section')?.classList.add('hidden');
+  document.getElementById('monthly-options-section')?.classList.add('hidden');
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
@@ -1414,6 +1458,16 @@ subForm.addEventListener('submit', (e) => {
   };
 
   subscriptions.push(newSub);
+
+  // Notify user
+  if (window.addNotification) {
+    window.addNotification({
+      title: "Subscription Added",
+      text: `${newSub.name} has been added to your calendar.`,
+      type: "success",
+      domain: newSub.domain
+    });
+  }
 
   // Update UI Instantly
   renderCalendar();
@@ -2767,7 +2821,7 @@ const paidAvatarGrid = document.getElementById('paid-avatar-grid');
 function renderAvatars() {
   if (freeAvatarGrid) {
     freeAvatarGrid.innerHTML = FREE_AVATARS.map(url => `
-      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')" 
+      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')"
         style="cursor: pointer; transition: var(--transition);">
         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
       </div>
@@ -2776,7 +2830,7 @@ function renderAvatars() {
 
   if (paidAvatarGrid) {
     paidAvatarGrid.innerHTML = PAID_AVATARS.map(url => `
-      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')" 
+      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')"
         style="cursor: pointer; transition: var(--transition);">
         <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
       </div>
@@ -2947,6 +3001,7 @@ updateTime();
 setInterval(updateTime, 30000); // Update every 30s
 renderHeader();
 loadSubscriptions(); // Fetch from Supabase
+initNotifications();
 
 // --- Helper to get normalized start and end dates for a subscription ---
 function getSubDates(sub) {
@@ -2971,3 +3026,65 @@ function getSubDates(sub) {
 
   return { start, end };
 }
+
+function updateReminders() {
+  if (!window.addNotification) return;
+  // If they just cleared it, don't spam them again until next reload
+  if (sessionStorage.getItem('notifs_cleared')) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  subscriptions.forEach(s => {
+    if (s.stopped) return;
+
+    // Get original dates to extract the "day" and "month"
+    const { start: origStart, end: origEnd } = getSubDates(s);
+    if (!origStart) return;
+
+    // Helper for interval checking
+    const checkTarget = (targetDate, label) => {
+      if (!targetDate) return;
+      const diffMs = targetDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      // ONLY notify if it's today or within the next 7 days
+      if (diffDays >= 0 && diffDays <= 7) {
+        const dateKey = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        window.addNotification({
+          key: `remind-${label.toLowerCase()}-${s.id}-${dateKey}`,
+          title: diffDays === 0 ? `Due ${label}` : `${label} Soon`,
+          text: diffDays === 0
+            ? `${s.name} ${label.toLowerCase()} today! ⚠️`
+            : `${s.name} ${label.toLowerCase()} in ${diffDays} day${diffDays > 1 ? 's' : ''}.`,
+          type: "warning",
+          domain: s.domain
+        });
+      }
+    };
+
+    // Calculate billing date for current month/year
+    const billingDay = origStart.getDate();
+    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+
+    if (s.type === 'monthly' && s.recurring === 'recurring') {
+      // Check current month billing
+      checkTarget(billingDate, "Payment");
+      // Also check next month's billing (if today is late in the month)
+      const nextMonthBilling = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
+      checkTarget(nextMonthBilling, "Payment");
+
+    } else if (s.type === 'yearly') {
+      const yearlyRenewal = new Date(today.getFullYear(), origStart.getMonth(), billingDay);
+      checkTarget(yearlyRenewal, "Renewal");
+      const nextYearRenewal = new Date(today.getFullYear() + 1, origStart.getMonth(), billingDay);
+      checkTarget(nextYearRenewal, "Renewal");
+
+    } else {
+      // Trials and One-time
+      checkTarget(origStart, "Payment");
+      checkTarget(origEnd, "Ends");
+    }
+  });
+}
+
