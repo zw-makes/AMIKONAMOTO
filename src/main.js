@@ -1631,6 +1631,8 @@ window.showTrialPath = function (id, e) {
 
       // Delay highlighting slightly more if we switched months to ensure DOM is ready
       setTimeout(() => {
+        let endCell = null;
+
         document.querySelectorAll('.calendar-cell').forEach(cell => {
           const cellTime = parseInt(cell.dataset.time);
           const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
@@ -1639,6 +1641,9 @@ window.showTrialPath = function (id, e) {
           if (cellTime >= startTime && cellTime <= endTime) {
             const pathClass = sub.type === 'trial' ? 'trial-path' : 'monthly-path';
             cell.classList.add(pathClass);
+
+            // Track the last cell (end date cell)
+            if (cellTime === endTime) endCell = cell;
 
             // Remove highlight after 7 seconds
             setTimeout(() => {
@@ -1656,6 +1661,76 @@ window.showTrialPath = function (id, e) {
             }, 7000);
           }
         });
+
+        // Inject subscription icon+dot on the end cell
+        if (endCell) {
+          const domain = getDomain(sub);
+          const logoUrl = `https://icon.horse/icon/${domain}`;
+
+          const tempDots = document.createElement('div');
+          tempDots.className = 'sub-dots-container';
+          tempDots.setAttribute('data-temp-freq', 'true');
+
+          const dot = document.createElement('div');
+          dot.className = `sub-dot`;
+          let colorVar;
+          if (sub.type === 'monthly') colorVar = 'var(--accent-green)';
+          else if (sub.type === 'trial') colorVar = 'var(--accent-red)';
+          else colorVar = 'var(--accent-blue)';
+          dot.style.backgroundColor = colorVar;
+          dot.style.color = colorVar;
+          tempDots.appendChild(dot);
+
+          const tempIcons = document.createElement('div');
+          tempIcons.className = 'sub-icons-container';
+          tempIcons.setAttribute('data-temp-freq', 'true');
+
+          const icon = document.createElement('div');
+          icon.className = 'sub-icon';
+          const img = document.createElement('img');
+          img.src = logoUrl;
+          img.alt = sub.name;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'contain';
+          img.style.pointerEvents = 'none';
+          img.onerror = () => {
+            icon.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+          };
+          icon.appendChild(img);
+
+          // Cross sign overlaid directly on the icon
+          const crossBadge = document.createElement('div');
+          crossBadge.style.cssText = `
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 900;
+            color: rgba(239, 68, 68, 1);
+            z-index: 10;
+            text-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+          `;
+          crossBadge.innerText = '✕';
+          icon.style.position = 'relative';
+          icon.appendChild(crossBadge);
+
+          tempIcons.appendChild(icon);
+
+          endCell.appendChild(tempDots);
+          endCell.appendChild(tempIcons);
+
+          // Remove after 7 seconds
+          setTimeout(() => {
+            tempDots.remove();
+            tempIcons.remove();
+          }, 7000);
+        }
+
       }, switchExecuted ? 300 : 50);
 
     }, 1500);
