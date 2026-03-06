@@ -664,7 +664,7 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
         // Create icon (only show first 3 to prevent overflow)
         if (index < 3) {
           const icon = document.createElement('div');
-          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''}`;
+          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''} ${sub.paid ? 'paid-icon' : ''}`;
 
           // Smart brand mapping to ensure legit logos always work
           const brandMap = {
@@ -838,7 +838,10 @@ async function showTooltip(e, subs) {
     }
     return `
       <div class="tooltip-item ${s.stopped ? 'dimmed' : ''}">
-        <span>${s.name}</span>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          ${s.paid ? '<span style="color:var(--accent-green); font-size: 0.7rem; font-weight: 800;">✓</span>' : ''}
+          <span>${s.name}</span>
+        </div>
         <span class="tooltip-price">${displayPrice}</span>
       </div>
     `;
@@ -2920,7 +2923,7 @@ function getSwipeTemplate(s) {
         </div>
       </div>
       <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : 'carry-over-path') : ''}" data-id="${s.id}">
-        <div class="detail-logo">
+        <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
           <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
         </div>
         <div class="detail-info">

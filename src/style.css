@@ -499,6 +499,14 @@ button:active {
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
 }
 
+.sub-icon.paid-icon img,
+.detail-logo.paid-logo img {
+  filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.4));
+  border: 1.5px solid rgba(0, 255, 136, 0.4);
+  border-radius: 50%;
+  padding: 1px;
+}
+
 @keyframes pop-in {
   from {
     transform: scale(0);
