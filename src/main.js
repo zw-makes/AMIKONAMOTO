@@ -607,8 +607,28 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   // Check for subscriptions on this day (only for current month)
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
-      if (s.date !== day) return false;
-      return isSubRelevantToMonth(s, currentDate);
+      const start = new Date(s.startDate);
+      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
+        if (s.date !== day) return false;
+        if (s.type === 'monthly' && s.recurring === 'recurring') {
+          const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+          const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+          if (startTime <= viewTime) return true;
+          return false;
+        }
+
+        // Month-exact matching required for one-time, trial, or non-recurring monthly
+        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      }
+      if (s.type === 'yearly') {
+        if (s.date !== day) return false;
+        // Visible every month within the 12-month frequency window
+        const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+        const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+      }
+      return false;
     });
 
     if (daySubs.length > 0) {
@@ -698,12 +718,35 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
     if (!isOtherMonth) {
       const daySubs = subscriptions.filter(s => {
         const { start, end } = getSubDates(s);
-        const relevant = isSubRelevantToMonth(s, currentDate);
-        if (!relevant) return false;
 
-        // Either it starts today (dot day) OR it ends today
-        const startsToday = s.date === day;
-        const endsToday = end && end.getDate() === day && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear();
+        // Starts today logic
+        let startsToday = false;
+        if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
+          if (s.date === day) {
+            if (s.type === 'monthly' && s.recurring === 'recurring') {
+              const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+              const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+              if (startTime <= viewTime) startsToday = true;
+            } else {
+              const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              if (start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear()) startsToday = true;
+            }
+          }
+        } else if (s.type === 'yearly') {
+          if (s.date === day) {
+            const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+            const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+            if (currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12) startsToday = true;
+          }
+        }
+
+        // Ends today logic
+        let endsToday = false;
+        if (end) {
+          if (end.getDate() === day && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear()) {
+            endsToday = true;
+          }
+        }
 
         return startsToday || endsToday;
       });
@@ -717,8 +760,31 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   // Tooltip listeners
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
-      if (s.date !== day) return false;
-      return isSubRelevantToMonth(s, currentDate);
+      const start = new Date(s.startDate);
+      // For monthly/trial/one-time, check if it matches the day and we are in the correct month view
+      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
+        if (s.date !== day) return false;
+        if (s.type === 'monthly' && s.recurring === 'recurring') {
+          const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
+          const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+          if (startTime <= viewTime) return true;
+          return false;
+        }
+
+        // One-time or first month of recurring
+        const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
+      }
+
+      // For yearly, show every month within the 12-month frequency window
+      if (s.type === 'yearly') {
+        if (s.date !== day) return false;
+        const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
+        const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+      }
+
+      return false;
     });
     if (daySubs.length > 0) {
       cell.addEventListener('mouseenter', (e) => showTooltip(e, daySubs));
@@ -2077,25 +2143,24 @@ function isSubRelevantToMonth(sub, monthDate) {
   const viewStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
   const viewEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
 
-  // 1. Future starts are always irrelevant
+  // 1. Fundamental Overlap Check
   if (start > viewEnd) return false;
+  if (end && end < viewStart) return false;
 
-  // 2. Starts in current month? Always relevant.
-  if (start >= viewStart && start <= viewEnd) return true;
-
-  // 3. Yearly Plan from past: Only relevant in its renewal month
+  // 2. Yearly: Only relevant in its renewal month
   if (sub.type === 'yearly') {
     return start.getMonth() === monthDate.getMonth();
   }
 
-  // 4. Carry-overs (Trial, OTS, Monthly): Relevant ONLY if it ends in this month
-  if (end) {
-    return end >= viewStart && end <= viewEnd;
+  // 3. User Rule: Subscriptions from precious months 
+  // ONLY show if they end in the current month.
+  // (Exempting recurring monthly subs which are active ongoing services)
+  if (start < viewStart && end) {
+    const endsThisMonth = end.getMonth() === monthDate.getMonth() && end.getFullYear() === monthDate.getFullYear();
+    return endsThisMonth;
   }
 
-  // If it's recurring monthly (no end date) and started in the past month, hide it.
-  // Per User: "previous months subscription should only be seen if it ends in that month"
-  return false;
+  return true;
 }
 
 window.showMonthlyBreakdown = async function (filter = 'all') {
