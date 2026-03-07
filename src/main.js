@@ -1,6 +1,7 @@
 import './style.css';
 import { supabase } from './supabase.js';
 import { initNotifications, clearReminders } from './features/notifications/notifications.js';
+import { initPricing } from './features/pricing/pricing.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -3088,3 +3089,7 @@ function updateReminders() {
   });
 }
 
+
+// --- Feature Init ---
+initNotifications();
+initPricing();

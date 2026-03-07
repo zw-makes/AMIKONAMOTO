@@ -1,0 +1,297 @@
+/* ============================================
+   PRICING FEATURE — VERTICAL SCROLL, MOBILE FIRST
+   ============================================ */
+
+/* Modal container — fits perfectly on mobile */
+#pricing-modal .modal-content {
+    max-width: 420px;
+    width: 100%;
+    max-height: 88vh;
+    overflow: hidden;
+    padding: 22px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* Subtitle */
+.pricing-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 2px 0 0;
+}
+
+/* Toggle Row */
+.pricing-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 14px;
+    flex-shrink: 0;
+}
+
+.pricing-toggle-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.pricing-toggle-label.active {
+    color: var(--text-primary);
+}
+
+.pricing-save-tag {
+    font-size: 0.58rem;
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+/* ── Vertical Scroll Track ─────────────────── */
+.pricing-scroll-track {
+    display: flex;
+    flex-direction: column;
+    /* VERTICAL stack */
+    overflow-y: auto;
+    /* VERTICAL scroll */
+    overflow-x: hidden;
+    gap: 35px;
+    /* must be > borderOffset*2 (14*2=28) */
+    padding: 20px 10px 30px;
+    margin: 0;
+    flex: 1;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.pricing-scroll-track::-webkit-scrollbar {
+    width: 3px;
+}
+
+.pricing-scroll-track::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
+
+/* ── Card Wrapper (electric canvas parent) ─── */
+.electric-card-wrapper {
+    position: relative;
+    border-radius: 34px;
+    width: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    isolation: isolate;
+    /* own stacking context = canvas stays inside */
+}
+
+/* Canvas: centered, OVER card inner to trace edges */
+.electric-card-wrapper canvas.electric-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+    /* in front of .electric-card-inner */
+}
+
+/* Static glow borders */
+.electric-card-wrapper .electric-glow-base {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.electric-card-wrapper .electric-glow-hard {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.electric-card-wrapper .electric-bg-bloom {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: -1;
+    transform: scale(1.08);
+    opacity: 0.2;
+}
+
+/* The actual card content — sits on top of canvas */
+.electric-card-inner {
+    position: relative;
+    z-index: 1;
+    border-radius: 32px;
+    background: rgba(10, 10, 22, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: 28px 22px 24px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    box-sizing: border-box;
+}
+
+/* ── Badge ─────────────────────────────────── */
+.pricing-badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.pricing-badge.free-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.pricing-badge.pro-badge {
+    background: rgba(125, 249, 255, 0.1);
+    color: #7df9ff;
+    border: 1px solid rgba(125, 249, 255, 0.28);
+}
+
+.pricing-badge.elite-badge {
+    background: rgba(191, 90, 242, 0.1);
+    color: #bf5af2;
+    border: 1px solid rgba(191, 90, 242, 0.28);
+}
+
+/* ── Plan Name ──────────────────────────────── */
+.pricing-plan-name {
+    font-family: var(--font-display, 'Roboto Mono', monospace);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ── Price Display ──────────────────────────── */
+.pricing-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1;
+}
+
+.pricing-currency {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    align-self: flex-start;
+    padding-top: 6px;
+}
+
+.pricing-amount {
+    font-family: var(--font-display, 'Roboto Mono', monospace);
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.pricing-period {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    align-self: flex-end;
+    padding-bottom: 4px;
+}
+
+/* ── Feature List ───────────────────────────── */
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pricing-features li {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.pricing-features li .check-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.pricing-features li.disabled {
+    opacity: 0.3;
+    text-decoration: line-through;
+}
+
+/* ── CTA Button ─────────────────────────────── */
+.pricing-cta-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.pricing-cta-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.pricing-cta-btn.free-cta {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+.pricing-cta-btn.pro-cta {
+    background: linear-gradient(135deg, rgba(125, 249, 255, 0.16), rgba(125, 249, 255, 0.05));
+    border: 1px solid rgba(125, 249, 255, 0.35);
+    color: #7df9ff;
+    box-shadow: 0 0 18px rgba(125, 249, 255, 0.08);
+}
+
+.pricing-cta-btn.elite-cta {
+    background: linear-gradient(135deg, rgba(191, 90, 242, 0.18), rgba(191, 90, 242, 0.05));
+    border: 1px solid rgba(191, 90, 242, 0.35);
+    color: #bf5af2;
+    box-shadow: 0 0 18px rgba(191, 90, 242, 0.08);
+}
+
+/* ── Hide dots (not needed for vertical layout) ─ */
+.pricing-dots {
+    display: none;
+}
