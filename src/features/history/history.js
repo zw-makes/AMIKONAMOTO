@@ -4,6 +4,12 @@
  */
 
 let historyDate = new Date();
+let exportContext = {
+    mode: 'monthly', // 'monthly' or 'daily'
+    subs: [],
+    title: '',
+    fileName: ''
+};
 
 export function initHistory() {
     const modal = document.getElementById('history-modal');
@@ -45,6 +51,32 @@ export function initHistory() {
     // --- Export Logic ---
     if (downloadBtn) {
         downloadBtn.onclick = () => {
+            const year = historyDate.getFullYear();
+            const month = historyDate.getMonth();
+            const subs = window.subscriptions || [];
+
+            const monthlySubs = subs.filter(s => {
+                const start = new Date(s.startDate);
+                if (s.type === 'monthly' && s.recurring === 'recurring') {
+                    const viewTime = new Date(year, month, 1).getTime();
+                    const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+                    return startTime <= viewTime;
+                }
+                return start.getMonth() === month && start.getFullYear() === year;
+            });
+
+            if (monthlySubs.length === 0) {
+                alert("No records found for this month.");
+                return;
+            }
+
+            const monthName = historyDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            exportContext = {
+                mode: 'monthly',
+                subs: monthlySubs,
+                title: `Monthly Subscription Report - ${monthName}`,
+                fileName: `SubTrack_History_${monthName.replace(' ', '_')}`
+            };
             exportModal.classList.remove('hidden');
         };
     }
@@ -57,32 +89,32 @@ export function initHistory() {
 
     if (choiceCsv) {
         choiceCsv.onclick = () => {
-            downloadMonthlyHistory('csv');
+            downloadCSV(exportContext.subs, exportContext.fileName + '.csv');
             exportModal.classList.add('hidden');
         };
     }
 
     if (choicePdf) {
         choicePdf.onclick = () => {
-            downloadMonthlyHistory('pdf');
+            downloadPDF(exportContext.subs, exportContext.fileName, exportContext.title);
             exportModal.classList.add('hidden');
         };
     }
 
     if (choiceSnap) {
         choiceSnap.onclick = () => {
-            downloadMonthlyHistory('snapshot');
+            downloadSnapshot(exportContext.subs, exportContext.fileName, exportContext.title.split('-').pop().trim());
             exportModal.classList.add('hidden');
         };
     }
 
     if (choiceBoth) {
         choiceBoth.onclick = async () => {
-            downloadMonthlyHistory('csv');
+            downloadCSV(exportContext.subs, exportContext.fileName + '.csv');
             await new Promise(r => setTimeout(r, 500));
-            downloadMonthlyHistory('pdf');
+            downloadPDF(exportContext.subs, exportContext.fileName, exportContext.title);
             await new Promise(r => setTimeout(r, 800));
-            downloadMonthlyHistory('snapshot');
+            downloadSnapshot(exportContext.subs, exportContext.fileName, exportContext.title.split('-').pop().trim());
             exportModal.classList.add('hidden');
         };
     }
@@ -233,7 +265,7 @@ function showHistoryDayPop(day, subs) {
                 <span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;">Full subscription records</span>
             </div>
             <div style="display:flex; gap:8px;">
-                <button id="hist-download-day" class="nav-arrow" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Download PDF History">
+                <button id="hist-download-day" class="nav-arrow" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Export Day History">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 </button>
                 <button onclick="document.getElementById('history-day-pop').classList.add('hidden')" class="nav-arrow" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
@@ -273,42 +305,14 @@ function showHistoryDayPop(day, subs) {
     const downloadDayBtn = document.getElementById('hist-download-day');
     if (downloadDayBtn) {
         downloadDayBtn.onclick = () => {
-            const fileName = `SubTrack_History_${historyDate.getFullYear()}_${historyDate.getMonth() + 1}_Day_${day}`;
-            downloadPDF(subs, fileName, `Daily Subscription Report - Day ${day}`);
+            exportContext = {
+                mode: 'daily',
+                subs: subs,
+                title: `Daily Subscription Report - Day ${day}`,
+                fileName: `SubTrack_History_${historyDate.getFullYear()}_${historyDate.getMonth() + 1}_Day_${day}`
+            };
+            document.getElementById('export-choice-modal').classList.remove('hidden');
         };
-    }
-}
-
-function downloadMonthlyHistory(format) {
-    const year = historyDate.getFullYear();
-    const month = historyDate.getMonth();
-    const subs = window.subscriptions || [];
-
-    // Filter all subscriptions active in this month
-    const monthlySubs = subs.filter(s => {
-        const start = new Date(s.startDate);
-        if (s.type === 'monthly' && s.recurring === 'recurring') {
-            const viewTime = new Date(year, month, 1).getTime();
-            const startTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
-            return startTime <= viewTime;
-        }
-        return start.getMonth() === month && start.getFullYear() === year;
-    });
-
-    if (monthlySubs.length === 0) {
-        alert("No records found for this month.");
-        return;
-    }
-
-    const monthName = historyDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const fileName = `SubTrack_History_${monthName.replace(' ', '_')}`;
-
-    if (format === 'csv') {
-        downloadCSV(monthlySubs, fileName + '.csv');
-    } else if (format === 'pdf') {
-        downloadPDF(monthlySubs, fileName, `Monthly Subscription Report - ${monthName}`);
-    } else if (format === 'snapshot') {
-        downloadSnapshot(monthlySubs, fileName, monthName);
     }
 }
 
@@ -388,12 +392,12 @@ function downloadPDF(subs, fileName, title) {
     doc.save(`${fileName}.pdf`);
 }
 
-async function downloadSnapshot(subs, fileName, monthName) {
+async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
     const template = document.getElementById('premium-report-template');
     if (!template) return;
 
     // Populate Template
-    document.getElementById('st-month').innerText = monthName.toUpperCase();
+    document.getElementById('st-month').innerText = monthOrDayTitle.toUpperCase();
     const total = subs.reduce((acc, s) => acc + s.price, 0);
     document.getElementById('st-total').innerText = `$${total.toFixed(2)}`;
     document.getElementById('st-gen-date').innerText = new Date().toLocaleDateString();
