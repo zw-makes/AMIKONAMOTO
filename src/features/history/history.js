@@ -17,6 +17,7 @@ export function initHistory() {
     const closeExportBtn = document.getElementById('close-export-choice');
     const choiceCsv = document.getElementById('choice-csv');
     const choicePdf = document.getElementById('choice-pdf');
+    const choiceSnap = document.getElementById('choice-snapshot');
     const choiceBoth = document.getElementById('choice-both');
 
     if (closeBtn) {
@@ -68,12 +69,20 @@ export function initHistory() {
         };
     }
 
+    if (choiceSnap) {
+        choiceSnap.onclick = () => {
+            downloadMonthlyHistory('snapshot');
+            exportModal.classList.add('hidden');
+        };
+    }
+
     if (choiceBoth) {
         choiceBoth.onclick = async () => {
             downloadMonthlyHistory('csv');
-            // Small delay to ensure browser handles multiple downloads
             await new Promise(r => setTimeout(r, 500));
             downloadMonthlyHistory('pdf');
+            await new Promise(r => setTimeout(r, 800));
+            downloadMonthlyHistory('snapshot');
             exportModal.classList.add('hidden');
         };
     }
@@ -87,11 +96,13 @@ export function initHistory() {
         }
     });
 
-    exportModal.addEventListener('click', (e) => {
-        if (e.target === exportModal) {
-            exportModal.classList.add('hidden');
-        }
-    });
+    if (exportModal) {
+        exportModal.addEventListener('click', (e) => {
+            if (e.target === exportModal) {
+                exportModal.classList.add('hidden');
+            }
+        });
+    }
 }
 
 export function toggleHistoryMode(btn) {
@@ -294,8 +305,10 @@ function downloadMonthlyHistory(format) {
 
     if (format === 'csv') {
         downloadCSV(monthlySubs, fileName + '.csv');
-    } else {
+    } else if (format === 'pdf') {
         downloadPDF(monthlySubs, fileName, `Monthly Subscription Report - ${monthName}`);
+    } else if (format === 'snapshot') {
+        downloadSnapshot(monthlySubs, fileName, monthName);
     }
 }
 
@@ -373,6 +386,62 @@ function downloadPDF(subs, fileName, title) {
     doc.text(`Total Monthly Spend: $${total.toFixed(2)}`, 14, finalY);
 
     doc.save(`${fileName}.pdf`);
+}
+
+async function downloadSnapshot(subs, fileName, monthName) {
+    const template = document.getElementById('premium-report-template');
+    if (!template) return;
+
+    // Populate Template
+    document.getElementById('st-month').innerText = monthName.toUpperCase();
+    const total = subs.reduce((acc, s) => acc + s.price, 0);
+    document.getElementById('st-total').innerText = `$${total.toFixed(2)}`;
+    document.getElementById('st-gen-date').innerText = new Date().toLocaleDateString();
+
+    const list = document.getElementById('st-list');
+    list.innerHTML = subs.map(s => {
+        const domain = s.domain || (s.name.toLowerCase().replace(/\s+/g, '') + '.com');
+        const { start, end } = calculateSubTimeline(s);
+        return `
+            <div class="st-item">
+                <div class="st-item-main">
+                    <div class="st-item-logo">
+                        <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
+                    </div>
+                    <div class="st-item-meta">
+                        <span class="st-item-name">${s.name}</span>
+                        <div class="st-tags">
+                            <span class="st-tag">${s.type.toUpperCase()}</span>
+                            <span class="st-tag ${s.stopped ? 'st-stopped' : 'st-active'}">${s.stopped ? 'STOPPED' : 'ACTIVE'}</span>
+                            <span class="st-tag ${s.paid ? 'st-paid' : 'st-unpaid'}">${s.paid ? 'PAID' : 'UNPAID'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="st-item-right">
+                    <span class="st-item-price">$${s.price.toFixed(2)}</span>
+                    <span class="st-item-date">${start} — ${end}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Capture with html2canvas (wait for images)
+    try {
+        const canvas = await html2canvas(template.querySelector('.premium-statement-card'), {
+            backgroundColor: '#080808',
+            scale: 2, // High DPI
+            useCORS: true,
+            logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${fileName}_Snapshot.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (err) {
+        console.error("Snapshot failed:", err);
+        alert("Premium Snapshot failed. Please use PDF or CSV.");
+    }
 }
 
 function calculateSubTimeline(s) {
