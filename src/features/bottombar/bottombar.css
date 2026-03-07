@@ -21,7 +21,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0px;
+    gap: 8px;
 
     /* Standard iOS Glass (Not Liquid) */
     background: rgba(15, 15, 15, 0.4);
@@ -56,8 +56,6 @@
     color: rgba(255, 255, 255, 0.85);
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
     width: 100%;
     text-align: center;
 }
@@ -66,12 +64,12 @@
 .feature-buttons-container,
 .grand-total-container {
     pointer-events: auto;
-    background: rgba(255, 255, 255, 0.06) !important;
-    backdrop-filter: blur(45px) saturate(220%) !important;
-    -webkit-backdrop-filter: blur(45px) saturate(220%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(45px) saturate(220%);
+    -webkit-backdrop-filter: blur(45px) saturate(220%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6),
-        inset 0 0 25px rgba(255, 255, 255, 0.04) !important;
+        inset 0 0 25px rgba(255, 255, 255, 0.04);
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 

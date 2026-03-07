@@ -4,6 +4,7 @@ import { supabase } from './supabase.js';
 import { initNotifications, clearReminders, loadNotifications } from './features/notifications/notifications.js';
 import { initPricing } from './features/pricing/pricing.js';
 import { initBottomBar } from './features/bottombar/bottombar.js';
+import { initGlass } from './features/glass/glass.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -3103,3 +3104,4 @@ function updateReminders() {
 initNotifications();
 initPricing();
 initBottomBar();
+initGlass();
