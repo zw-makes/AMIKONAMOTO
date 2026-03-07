@@ -1,6 +1,7 @@
 import './style.css';
 import './features/bottombar/bottombar.css';
 import { supabase } from './supabase.js';
+window.supabase = supabase;
 import { initNotifications, clearReminders, loadNotifications } from './features/notifications/notifications.js';
 import { initPricing } from './features/pricing/pricing.js';
 import { initBottomBar } from './features/bottombar/bottombar.js';
@@ -601,6 +602,16 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
 
   if (fullDate) {
     cell.dataset.time = fullDate.getTime();
+
+    // Check for Starred Dates (Persistent highlights)
+    const starredDatesStr = localStorage.getItem('starred_dates') || '[]';
+    try {
+      const starred = JSON.parse(starredDatesStr);
+      const dateStr = fullDate.toISOString().split('T')[0];
+      if (starred.includes(dateStr)) {
+        cell.classList.add('starred-day');
+      }
+    } catch (e) { }
   }
 
   const span = document.createElement('span');
@@ -1970,6 +1981,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
   if (session) {
     currentUser = session.user;
+    window.currentUser = session.user;
     console.log(`[Auth] Session active for: ${currentUser.email} `);
 
     // 1. IMMEDIATELY hide login screen—don't wait for profile.
@@ -2005,6 +2017,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         // Apply theme immediately after profile is loaded
         if (userProfile?.settings?.theme) {
           applyTheme(userProfile.settings.theme === 'dark');
+        }
+
+        // --- Sync Starred Dates from DB to UI ---
+        if (userProfile?.settings?.starred_dates) {
+          const starredDates = userProfile.settings.starred_dates;
+          localStorage.setItem('starred_dates', JSON.stringify(starredDates));
+          renderCalendar(); // Re-render to show the stars
         }
 
         // Ensure UI reflects latest settings
@@ -2062,6 +2081,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           // Refresh UI with potentially new settings
           if (userProfile.settings) {
             applyTheme(userProfile.settings.theme === 'dark');
+
+            // Sync Starred Dates in Realtime
+            if (userProfile.settings.starred_dates) {
+              localStorage.setItem('starred_dates', JSON.stringify(userProfile.settings.starred_dates));
+              renderCalendar();
+            }
+
             updateStats();
             updateTime();
           }
@@ -2072,6 +2098,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   } else {
     console.log('[Auth] No active session.');
     currentUser = null;
+    window.currentUser = null;
     userProfile = null;
     authScreen.classList.remove('hidden');
     onboardingScreen.classList.add('hidden');
