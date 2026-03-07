@@ -11,14 +11,17 @@ export function initHistory() {
     const prevBtn = document.getElementById('hist-prev');
     const nextBtn = document.getElementById('hist-next');
     const downloadBtn = document.getElementById('hist-download-monthly');
-    const picker = document.getElementById('export-picker');
-    const exportCsv = document.getElementById('export-csv');
-    const exportPdf = document.getElementById('export-pdf');
+
+    // Export Modal Selectors
+    const exportModal = document.getElementById('export-choice-modal');
+    const closeExportBtn = document.getElementById('close-export-choice');
+    const choiceCsv = document.getElementById('choice-csv');
+    const choicePdf = document.getElementById('choice-pdf');
+    const choiceBoth = document.getElementById('choice-both');
 
     if (closeBtn) {
         closeBtn.onclick = () => {
             modal.classList.add('hidden');
-            if (picker) picker.classList.add('hidden');
             const btn = document.getElementById('download-btn');
             if (btn) btn.classList.remove('history-active');
         };
@@ -27,7 +30,6 @@ export function initHistory() {
     if (prevBtn) {
         prevBtn.onclick = () => {
             historyDate.setMonth(historyDate.getMonth() - 1);
-            if (picker) picker.classList.add('hidden');
             renderHistoryCalendar();
         };
     }
@@ -35,29 +37,44 @@ export function initHistory() {
     if (nextBtn) {
         nextBtn.onclick = () => {
             historyDate.setMonth(historyDate.getMonth() + 1);
-            if (picker) picker.classList.add('hidden');
             renderHistoryCalendar();
         };
     }
 
+    // --- Export Logic ---
     if (downloadBtn) {
-        downloadBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (picker) picker.classList.toggle('hidden');
+        downloadBtn.onclick = () => {
+            exportModal.classList.remove('hidden');
         };
     }
 
-    if (exportCsv) {
-        exportCsv.onclick = () => {
+    if (closeExportBtn) {
+        closeExportBtn.onclick = () => {
+            exportModal.classList.add('hidden');
+        };
+    }
+
+    if (choiceCsv) {
+        choiceCsv.onclick = () => {
             downloadMonthlyHistory('csv');
-            if (picker) picker.classList.add('hidden');
+            exportModal.classList.add('hidden');
         };
     }
 
-    if (exportPdf) {
-        exportPdf.onclick = () => {
+    if (choicePdf) {
+        choicePdf.onclick = () => {
             downloadMonthlyHistory('pdf');
-            if (picker) picker.classList.add('hidden');
+            exportModal.classList.add('hidden');
+        };
+    }
+
+    if (choiceBoth) {
+        choiceBoth.onclick = async () => {
+            downloadMonthlyHistory('csv');
+            // Small delay to ensure browser handles multiple downloads
+            await new Promise(r => setTimeout(r, 500));
+            downloadMonthlyHistory('pdf');
+            exportModal.classList.add('hidden');
         };
     }
 
@@ -65,11 +82,14 @@ export function initHistory() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.add('hidden');
-            if (picker) picker.classList.add('hidden');
             const btn = document.getElementById('download-btn');
             if (btn) btn.classList.remove('history-active');
-        } else if (picker && !picker.contains(e.target) && e.target !== downloadBtn) {
-            picker.classList.add('hidden');
+        }
+    });
+
+    exportModal.addEventListener('click', (e) => {
+        if (e.target === exportModal) {
+            exportModal.classList.add('hidden');
         }
     });
 }
@@ -84,8 +104,6 @@ export function toggleHistoryMode(btn) {
         renderHistoryCalendar();
     } else {
         modal.classList.add('hidden');
-        const picker = document.getElementById('export-picker');
-        if (picker) picker.classList.add('hidden');
     }
 }
 
@@ -185,11 +203,7 @@ function createHistoryCell(day, isOtherMonth, year, month) {
                 cell.style.background = 'rgba(255, 255, 255, 0.08)';
             }
 
-            cell.onclick = () => {
-                const picker = document.getElementById('export-picker');
-                if (picker) picker.classList.add('hidden');
-                showHistoryDayPop(day, daySubs);
-            };
+            cell.onclick = () => showHistoryDayPop(day, daySubs);
         }
     }
 
@@ -317,6 +331,10 @@ function downloadCSV(subs, fileName) {
 
 function downloadPDF(subs, fileName, title) {
     const { jsPDF } = window.jspdf;
+    if (!jsPDF) {
+        alert("PDF generator still loading. Please try again in a moment.");
+        return;
+    }
     const doc = new jsPDF();
 
     // Title
@@ -348,7 +366,6 @@ function downloadPDF(subs, fileName, title) {
         styles: { fontSize: 9 },
     });
 
-    // Summary footer on last page
     const total = subs.reduce((acc, s) => acc + s.price, 0);
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(12);
