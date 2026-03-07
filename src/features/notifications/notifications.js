@@ -196,6 +196,15 @@ window.addNotification = async function (notif) {
     }
     if (!currentUser) return;
 
+    // Check if user turned off notifications in settings
+    const saved = localStorage.getItem(`profile_${currentUser.id}`);
+    if (saved) {
+        try {
+            const profile = JSON.parse(saved);
+            if (profile?.settings?.notifications === false) return;
+        } catch (e) { }
+    }
+
     // 1. Prevent exact duplicates in local memory
     if (notif.key && notifications.some(n => n.key === notif.key)) return;
 

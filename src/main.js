@@ -2699,7 +2699,7 @@ saveAppSettingsBtn.addEventListener('click', async () => {
 
     // Local update
     userProfile.settings = newSettings;
-    safeSetLocalStorage(`profile_${currentUser.id} `, JSON.stringify(userProfile));
+    safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
 
     // Apply theme immediately
     applyTheme(newSettings.theme === 'dark');
@@ -2902,7 +2902,7 @@ settingsForm.addEventListener('submit', async (e) => {
     userProfile.gender = updatedGender;
     userProfile.dob = updatedDob;
 
-    localStorage.setItem(`profile_${currentUser.id} `, JSON.stringify(userProfile));
+    localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
 
     // Update main profile name display
     document.querySelector('.profile-info h4').innerText = updatedName.toUpperCase();
