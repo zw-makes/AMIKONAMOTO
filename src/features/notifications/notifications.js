@@ -14,8 +14,30 @@ async function syncUser() {
     }
 }
 
-async function loadNotifications() {
+export async function loadNotifications() {
     if (!currentUser) return;
+
+    // Check if user turned off notifications in settings
+    const saved = localStorage.getItem(`profile_${currentUser.id}`);
+    if (saved) {
+        try {
+            const profile = JSON.parse(saved);
+            if (profile?.settings?.notifications === false) {
+                document.getElementById('notif-badge')?.classList.add('hidden');
+                if (notifList) {
+                    notifList.innerHTML = `
+                        <div class="notif-empty">
+                            <div class="notif-empty-icon">🔕</div>
+                            <p class="notif-empty-text">Notifications are turned off in App Settings.</p>
+                        </div>
+                    `;
+                }
+                notifications = [];
+                return;
+            }
+        } catch (e) { }
+    }
+
     const { data, error } = await supabase
         .from('notifications')
         .select('*')

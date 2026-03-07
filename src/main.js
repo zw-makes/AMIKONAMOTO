@@ -1,6 +1,6 @@
 import './style.css';
 import { supabase } from './supabase.js';
-import { initNotifications, clearReminders } from './features/notifications/notifications.js';
+import { initNotifications, clearReminders, loadNotifications } from './features/notifications/notifications.js';
 import { initPricing } from './features/pricing/pricing.js';
 
 // --- World Currencies ---
@@ -2710,6 +2710,9 @@ saveAppSettingsBtn.addEventListener('click', async () => {
     // Refresh totals with new settings
     updateStats();
 
+    // Refresh notifications immediately to reflect toggle
+    loadNotifications();
+
     // Show success toast
     showToast('App settings saved successfully! ⚙️');
 
@@ -3030,6 +3033,10 @@ function getSubDates(sub) {
 
 function updateReminders() {
   if (!window.addNotification) return;
+
+  // Check if user turned off notifications in settings
+  if (userProfile && userProfile.settings && userProfile.settings.notifications === false) return;
+
   // If they just cleared it, don't spam them again until next reload
   if (sessionStorage.getItem('notifs_cleared')) return;
 
