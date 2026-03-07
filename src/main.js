@@ -118,9 +118,20 @@ const PAID_AVATARS = [
 
 // --- State Management ---
 let currentUser = null;
+let subscriptions = [];
 let currentDate = new Date();
 let currentStatsFilter = 'all';
-let subscriptions = [];
+
+Object.defineProperty(window, 'subscriptions', {
+  get: () => subscriptions,
+  set: (val) => { subscriptions = val; }
+});
+
+Object.defineProperty(window, 'currentDate', {
+  get: () => currentDate,
+  set: (val) => { currentDate = val; }
+});
+
 let exchangeRatesCache = {}; // base -> { rates, timestamp }
 const DEFAULT_SUBS = [
   { name: 'Netflix', price: 15.99, date: 2, type: 'monthly', color: '--accent-pink', currency: 'USD', symbol: '$' },
@@ -530,6 +541,24 @@ async function removeFromSupabase(id) {
 function renderHeader() {
   const options = { month: 'long', year: 'numeric' };
   monthDisplay.innerText = currentDate.toLocaleDateString('en-US', options);
+
+  // --- Past Month Protection Logic ---
+  const addBtn = document.getElementById('add-sub-btn');
+  if (addBtn) {
+    const today = new Date();
+    const currentMonthView = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    if (currentMonthView < thisMonth) {
+      addBtn.classList.add('dimmed');
+      addBtn.disabled = true;
+      addBtn.title = "You cannot add subscriptions to a past month.";
+    } else {
+      addBtn.classList.remove('dimmed');
+      addBtn.disabled = false;
+      addBtn.removeAttribute('title');
+    }
+  }
 }
 
 function getDaysInMonth(year, month) {

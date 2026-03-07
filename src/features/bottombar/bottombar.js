@@ -2,10 +2,13 @@
  * iOS 26 Glassmorphic Bottom Bar Component
  * This initializes the new split bottom bar structure and logic.
  */
+import { initHistory, toggleHistoryMode } from '../history/history.js';
 
 export function initBottomBar() {
     const container = document.querySelector('.bottom-bar-container');
     if (!container) return;
+
+    initHistory();
 
     // The separate grand total container acts as the trigger for the stats modal
     const grandTotalTrigger = container.querySelector('.grand-total-container');
@@ -97,7 +100,7 @@ export function initBottomBar() {
             if (action === 'search-btn') {
                 console.log('Search triggered');
             } else if (action === 'download-btn') {
-                console.log('Download triggered');
+                toggleHistoryMode(btn);
             } else if (action === 'magic-btn') {
                 toggleStarMode(btn);
             }

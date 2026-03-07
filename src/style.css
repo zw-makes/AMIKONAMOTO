@@ -364,6 +364,13 @@ button:active {
   background: #f0f0f0;
 }
 
+.add-btn.dimmed {
+  opacity: 0.3;
+  filter: grayscale(1);
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
 /* Calendar Container */
 .calendar-container {
   flex: 1;
