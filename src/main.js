@@ -1,7 +1,9 @@
 import './style.css';
+import './features/bottombar/bottombar.css';
 import { supabase } from './supabase.js';
 import { initNotifications, clearReminders, loadNotifications } from './features/notifications/notifications.js';
 import { initPricing } from './features/pricing/pricing.js';
+import { initBottomBar } from './features/bottombar/bottombar.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -1272,7 +1274,7 @@ async function updateStats() {
   newCountEl.innerText = activeCount;
 
   // Sync label for clarity
-  const footerLabelEl = document.querySelector('.monthly-total .label');
+  const footerLabelEl = document.querySelector('.total-label');
   if (footerLabelEl) footerLabelEl.innerText = "GRAND TOTAL:";
 
   // IMPORTANT: Choose symbol based on whether conversion actually happened
@@ -1504,7 +1506,7 @@ subForm.addEventListener('submit', (e) => {
 
 // --- Monthly Breakdown Modal ---
 const totalAmountBtn = document.getElementById('total-amount');
-const monthlyTotalContainer = document.querySelector('.monthly-total');
+const monthlyTotalContainer = document.querySelector('.grand-total-container');
 
 const openStats = () => {
   console.log("Opening Monthly Breakdown...");
@@ -3100,3 +3102,4 @@ function updateReminders() {
 // --- Feature Init ---
 initNotifications();
 initPricing();
+initBottomBar();

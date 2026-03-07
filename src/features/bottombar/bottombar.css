@@ -1,0 +1,158 @@
+/* iOS 26 Liquid Glassmorphic Bottom Bar Styling */
+
+.bottom-bar-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0 20px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+/* --- LEGEND BOX (Above Bar) - Original Glass Style --- */
+.calendar-legend-box {
+    pointer-events: auto;
+    border-radius: 28px;
+    padding: 13px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+
+    /* Standard iOS Glass (Not Liquid) */
+    background: rgba(15, 15, 15, 0.4);
+    backdrop-filter: blur(25px) saturate(160%);
+    -webkit-backdrop-filter: blur(25px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sub-stats-text {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+    text-align: center;
+}
+
+/* --- LIQUID GLASS (Bottom Two Bars Only) --- */
+.feature-buttons-container,
+.grand-total-container {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(45px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(45px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6),
+        inset 0 0 25px rgba(255, 255, 255, 0.04) !important;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bottom-controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.feature-buttons-container {
+    width: 210px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0px;
+    height: 64px;
+    border-radius: 32px;
+    padding: 0 20px;
+}
+
+.feature-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 10px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.feature-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.grand-total-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 64px;
+    padding: 0 24px;
+    border-radius: 32px;
+    min-width: 150px;
+    cursor: pointer;
+}
+
+.total-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 2px;
+}
+
+.total-amount {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 0.9;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.45);
+}
+
+.calendar-grid {
+    padding-bottom: 200px !important;
+}
+
+@media (max-width: 380px) {
+    .total-amount {
+        font-size: 1.25rem;
+    }
+
+    .feature-buttons-container {
+        padding: 0 12px;
+        width: 190px;
+    }
+}

@@ -185,58 +185,51 @@
       </div>
     </main>
 
-    <!-- Stats Legend -->
-    <div class="calendar-legend">
-      <div class="legend-item">
-        <span class="dot monthly"></span>
-        <span>MONTHLY</span>
+    <!-- New iOS 26 Glassmorphic Bottom Bar Container -->
+    <div class="bottom-bar-container">
+      <!-- Top Legend Box (Rounded) -->
+      <div class="calendar-legend-box glass">
+        <div class="legend-labels">
+          <div class="legend-item"><span class="dot monthly"></span><span>MONTHLY</span></div>
+          <div class="legend-item"><span class="dot yearly"></span><span>YEARLY</span></div>
+          <div class="legend-item"><span class="dot trial"></span><span>TRIAL</span></div>
+          <div class="legend-item"><span class="dot one-time"></span><span>OTS</span></div>
+        </div>
+        <div class="sub-stats-text">
+          <span id="sub-count">0</span> SUBSCRIPTIONS / <span id="new-count">0</span> ACTIVE
+        </div>
       </div>
-      <div class="legend-item">
-        <span class="dot yearly"></span>
-        <span>YEARLY</span>
-      </div>
-      <div class="legend-item">
-        <span class="dot trial"></span>
-        <span>TRIAL</span>
-      </div>
-      <div class="legend-item">
-        <span class="dot one-time"></span>
-        <span>OTS</span>
-      </div>
-      <div class="sub-stats">
-        <span id="sub-count">0</span> SUBSCRIPTIONS / <span id="new-count">0</span> ACTIVE
+
+      <!-- Bottom Controls Row -->
+      <div class="bottom-controls-row">
+        <!-- Buttons Box (Left) -->
+        <div class="feature-buttons-container glass">
+          <button id="search-btn" class="feature-btn" title="Search">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </button>
+          <button id="download-btn" class="feature-btn" title="Download">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+          </button>
+          <button id="magic-btn" class="feature-btn" title="Magic Tools">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path
+                d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Grand Total Box (Right) -->
+        <div class="grand-total-container glass" id="total-bar-trigger">
+          <span class="total-label">GRAND TOTAL:</span>
+          <span id="total-amount" class="total-amount">$0.00</span>
+        </div>
       </div>
     </div>
-
-    <!-- Footer Bar -->
-    <footer class="app-footer glass">
-      <div class="footer-icons">
-        <button id="menu-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="12" cy="5" r="1" />
-            <circle cx="12" cy="19" r="1" />
-          </svg></button>
-        <button id="search-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg></button>
-        <button id="download-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-          </svg></button>
-        <button id="magic-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2">
-            <path
-              d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z" />
-          </svg></button>
-      </div>
-      <div class="monthly-total">
-        <span class="label">MONTHLY TOTAL:</span>
-        <span id="total-amount" class="amount">$0.00</span>
-      </div>
-    </footer>
 
     <!-- Add Subscription Modal (Hidden by default) -->
     <div id="add-modal" class="modal-overlay hidden">
