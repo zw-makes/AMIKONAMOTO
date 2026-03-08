@@ -3,6 +3,7 @@
  * This initializes the new split bottom bar structure and logic.
  */
 import { initHistory, toggleHistoryMode } from '../history/history.js';
+import { openSearchModal } from '../search/search.js';
 
 export function initBottomBar() {
     const container = document.querySelector('.bottom-bar-container');
@@ -98,7 +99,7 @@ export function initBottomBar() {
 
             const action = btn.id;
             if (action === 'search-btn') {
-                console.log('Search triggered');
+                openSearchModal();
             } else if (action === 'download-btn') {
                 toggleHistoryMode(btn);
             } else if (action === 'magic-btn') {
