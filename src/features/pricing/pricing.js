@@ -13,39 +13,46 @@ function hexToRgba(hex, alpha = 1) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.12) {
+function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.12, ambient = false) {
     const canvas = document.createElement('canvas');
     canvas.className = 'electric-canvas';
     wrapper.appendChild(canvas);
 
-    // Glow layers
-    const glowBase = document.createElement('div');
-    glowBase.className = 'electric-glow-base';
-    glowBase.style.border = `2px solid ${hexToRgba(color, 0.5)}`;
-    glowBase.style.filter = 'blur(1px)';
-    glowBase.style.borderRadius = 'inherit';
-    wrapper.appendChild(glowBase);
-
-    const glowHard = document.createElement('div');
-    glowHard.className = 'electric-glow-hard';
-    glowHard.style.border = `2px solid ${color}`;
-    glowHard.style.filter = 'blur(4px)';
-    glowHard.style.borderRadius = 'inherit';
-    wrapper.appendChild(glowHard);
-
-    const bloom = document.createElement('div');
-    bloom.className = 'electric-bg-bloom';
-    bloom.style.background = `linear-gradient(-30deg, ${color}, transparent, ${color})`;
-    bloom.style.filter = 'blur(32px)';
-    bloom.style.borderRadius = 'inherit';
-    wrapper.appendChild(bloom);
+    if (ambient) {
+        const glow = document.createElement('div');
+        glow.className = 'ambient-glow-layer';
+        glow.style.boxShadow = `0 0 60px 10px ${hexToRgba(color, 0.2)}`;
+        wrapper.appendChild(glow);
+    }
 
     const ctx = canvas.getContext('2d');
     let animId = null;
     let timeRef = 0;
     let lastFrameTime = 0;
-    const displacement = 20;  // wave displacement
-    const borderOffset = 24;  // canvas MUST be larger than card to not clip the stroke
+    const displacement = ambient ? 12 : 8;
+    const borderOffset = 60;
+
+    // --- Particle System (Magnet Effect) ---
+    const particles = [];
+    const particleCount = ambient ? 40 : 15;
+
+    function createParticle(w, h) {
+        // Spawn on the outer edges of the canvas (outside the card)
+        let x, y;
+        const side = Math.floor(Math.random() * 4);
+        if (side === 0) { x = Math.random() * w; y = 0; }
+        else if (side === 1) { x = w; y = Math.random() * h; }
+        else if (side === 2) { x = Math.random() * w; y = h; }
+        else { x = 0; y = Math.random() * h; }
+
+        return {
+            x, y,
+            vx: 0, vy: 0,
+            size: Math.random() * 1.5 + 0.3,
+            opacity: Math.random() * 0.4 + 0.1,
+            life: Math.random() * 150 + 50
+        };
+    }
 
     function rand(x) { return ((Math.sin(x * 12.9898) * 43758.5453) % 1 + 1) % 1; }
     function noise2D(x, y) {
@@ -94,12 +101,18 @@ function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.1
     }
 
     function updateSize() {
-        const rect = wrapper.getBoundingClientRect();
-        const w = rect.width + borderOffset * 2;
-        const h = rect.height + borderOffset * 2;
+        const w_base = wrapper.offsetWidth;
+        const h_base = wrapper.offsetHeight;
+        const w = w_base + borderOffset * 2;
+        const h = h_base + borderOffset * 2;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = w * dpr; canvas.height = h * dpr;
         canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
+
+        // Init particles
+        particles.length = 0;
+        for (let i = 0; i < particleCount; i++) particles.push(createParticle(w, h));
+
         return { w, h };
     }
 
@@ -112,8 +125,6 @@ function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.1
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.scale(dpr, dpr);
-        ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
         const left = borderOffset, top = borderOffset;
         const bw = w - 2 * borderOffset, bh = h - 2 * borderOffset;
@@ -121,16 +132,119 @@ function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.1
         const perimeter = 2 * (bw + bh);
         const samples = Math.floor(perimeter / 2);
 
+        // 1. Draw Energy Base (Dimmer trail)
+        ctx.strokeStyle = color; ctx.lineWidth = ambient ? 1.5 : 0.8;
+        ctx.globalAlpha = 0.2;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        if (ambient) { ctx.shadowBlur = 10; ctx.shadowColor = color; }
+
+        const borderPoints = [];
         ctx.beginPath();
         for (let i = 0; i <= samples; i++) {
             const progress = i / samples;
             const pt = getRoundedRectPoint(progress, left, top, bw, bh, radius);
-            const dx = octavedNoise(progress * 8, 0, timeRef) * displacement;
-            const dy = octavedNoise(progress * 8, 1, timeRef) * displacement;
-            if (i === 0) ctx.moveTo(pt.x + dx, pt.y + dy);
-            else ctx.lineTo(pt.x + dx, pt.y + dy);
+            const jitterX = (Math.random() - 0.5) * (ambient ? 3 : 1);
+            const jitterY = (Math.random() - 0.5) * (ambient ? 3 : 1);
+            const dx = octavedNoise(progress * 8, 0, timeRef) * displacement + jitterX;
+            const dy = octavedNoise(progress * 8, 1, timeRef) * displacement + jitterY;
+            const finalX = pt.x + dx;
+            const finalY = pt.y + dy;
+            borderPoints.push({ x: finalX, y: finalY });
+            if (i === 0) ctx.moveTo(finalX, finalY);
+            else ctx.lineTo(finalX, finalY);
         }
         ctx.closePath(); ctx.stroke();
+
+        // 2. COUNTER-FLOW (Opposite Direction Dimmer)
+        if (ambient) {
+            ctx.globalAlpha = 0.15;
+            const counterFlow = (timeRef * (samples * -0.25)) % samples;
+            const segLen = Math.floor(samples * 0.4);
+            ctx.beginPath();
+            for (let i = 0; i < segLen; i++) {
+                const idx = (Math.floor(counterFlow) + i + samples) % samples;
+                const pt = borderPoints[idx];
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.stroke();
+        }
+
+        // 3. MAIN HOT FLOW (Circulating Effect)
+        ctx.globalAlpha = 1.0;
+        ctx.lineWidth = ambient ? 3.5 : 2.2;
+        if (ambient) { ctx.shadowBlur = 35; }
+
+        const segmentCount = ambient ? 2 : 1;
+        const segmentLength = Math.floor(samples * (ambient ? 0.35 : 0.25));
+        const flowTime = timeRef * (samples * 0.4);
+
+        for (let s = 0; s < segmentCount; s++) {
+            const startIdx = Math.floor(flowTime + (s * (samples / segmentCount))) % samples;
+            ctx.beginPath();
+            for (let i = 0; i < segmentLength; i++) {
+                const idx = (startIdx + i) % samples;
+                const pt = borderPoints[idx];
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+
+                // Lightning Arcs (Discharge)
+                if (ambient && Math.random() < 0.015 && i % 25 === 0) {
+                    const arcX = pt.x + (Math.random() - 0.5) * 40;
+                    const arcY = pt.y + (Math.random() - 0.5) * 40;
+                    ctx.lineTo(arcX, arcY);
+                    ctx.moveTo(pt.x, pt.y);
+                }
+            }
+            ctx.stroke();
+        }
+
+        // 2. Update & Draw Particles (Magnet Effect)
+        ctx.shadowBlur = 0; // Turn off glow for small particles to save perf
+        particles.forEach(p => {
+            // Find nearest point on border
+            let minDist = Infinity;
+            let target = borderPoints[0];
+            // Sampling for performance
+            for (let i = 0; i < borderPoints.length; i += 10) {
+                const dx = borderPoints[i].x - p.x;
+                const dy = borderPoints[i].y - p.y;
+                const d = dx * dx + dy * dy;
+                if (d < minDist) { minDist = d; target = borderPoints[i]; }
+            }
+
+            // Apply magnetic pull
+            const angle = Math.atan2(target.y - p.y, target.x - p.x);
+            const force = (ambient ? 25 : 10) / (Math.sqrt(minDist) + 5);
+            p.vx += Math.cos(angle) * force;
+            p.vy += Math.sin(angle) * force;
+
+            // Add air resistance
+            p.vx *= 0.92; p.vy *= 0.92;
+
+            p.x += p.vx; p.y += p.vy;
+            p.life -= 0.5;
+
+            // Avoid inside of card (X/Y check against card boundary)
+            const margin = 10;
+            const isInside = p.x > (left + margin) && p.x < (left + bw - margin) &&
+                p.y > (top + margin) && p.y < (top + bh - margin);
+
+            // Draw particle
+            ctx.fillStyle = color;
+            ctx.globalAlpha = p.opacity;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Reset if hit the border (harvested), gone inside, or life finished
+            if (minDist < 4 || isInside || p.life <= 0) {
+                const newP = createParticle(w, h);
+                Object.assign(p, newP);
+            }
+        });
+
+        ctx.globalAlpha = 1;
         animId = requestAnimationFrame(draw);
     }
 
@@ -145,14 +259,15 @@ function createElectricBorder(wrapper, color = '#7df9ff', speed = 1, chaos = 0.1
 function getPlans(annual) {
     return [
         {
-            name: 'Free',
+            name: 'Common',
             badge: 'free-badge',
             badgeText: 'FREE',
-            color: '#a3a3a3',
+            color: '#ffffff',
             monthly: 0,
             annual: 0,
             ctaClass: 'free-cta',
-            ctaText: 'Current Plan',
+            ctaText: 'Stay Common',
+            description: 'The baseline experience for everyone.',
             features: [
                 { text: 'Up to 5 subscriptions', active: true },
                 { text: 'Calendar view', active: true },
@@ -164,14 +279,15 @@ function getPlans(annual) {
             ]
         },
         {
-            name: 'Pro',
+            name: 'The Purpose',
             badge: 'pro-badge',
             badgeText: 'PRO',
-            color: '#7df9ff',
+            color: '#00d2ff',
             monthly: 4.99,
             annual: 3.49,
             ctaClass: 'pro-cta',
-            ctaText: 'Get Pro',
+            ctaText: 'Have a Purpose',
+            description: 'SO HUNGRY TO KILL',
             features: [
                 { text: 'Unlimited subscriptions', active: true },
                 { text: 'Calendar view', active: true },
@@ -183,14 +299,15 @@ function getPlans(annual) {
             ]
         },
         {
-            name: 'Elite',
+            name: 'The Sovereign',
             badge: 'elite-badge',
             badgeText: 'ELITE',
-            color: '#bf5af2',
+            color: '#ff3131', // Pure red
             monthly: 9.99,
             annual: 6.99,
             ctaClass: 'elite-cta',
-            ctaText: 'Go Elite',
+            ctaText: 'Be the Sovereign',
+            description: 'WAY MORE HUNGRY',
             features: [
                 { text: 'Everything in Pro', active: true },
                 { text: 'AI-powered insights', active: true },
@@ -222,44 +339,101 @@ function renderPricing(annual) {
         const wrapper = document.createElement('div');
         wrapper.className = 'electric-card-wrapper';
 
+        const bgText = document.createElement('div');
+        bgText.className = 'pricing-bg-text';
+        bgText.innerText = 'Pricing';
+        wrapper.appendChild(bgText);
+
         const inner = document.createElement('div');
         inner.className = 'electric-card-inner';
         inner.innerHTML = `
-      <span class="pricing-badge ${plan.badge}">${plan.badgeText}</span>
-      <div class="pricing-plan-name">${plan.name}</div>
-      <div class="pricing-price">
-        ${price > 0 ? `<span class="pricing-currency">$</span>` : ''}
-        <span class="pricing-amount">${price === 0 ? '0' : price.toFixed(2)}</span>
-        ${price > 0 ? `<span class="pricing-period">/ ${annual ? 'mo' : 'mo'}</span>` : ''}
+      <div class="pricing-card-top">
+        <div class="pricing-plan-name">${plan.name}</div>
+        <div class="pricing-price">
+          ${price > 0 ? `<span class="pricing-currency">$</span>` : ''}
+          <span class="pricing-amount">${price === 0 ? '0' : Math.floor(price)}</span>
+          ${price > 0 ? `<span class="pricing-period">.${(price % 1).toFixed(2).split('.')[1]} /monthly</span>` : ''}
+        </div>
+        <div class="pricing-plan-desc">${plan.description}</div>
       </div>
-      ${annual && price > 0 ? `<span style="font-size:0.6rem; color:#00ff88; font-weight:600;">Billed $${(price * 12).toFixed(2)} annually</span>` : ''}
-      <ul class="pricing-features">
-        ${plan.features.map(f => `
-          <li class="${f.active ? '' : 'disabled'}">
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="${f.active ? plan.color : 'currentColor'}" stroke-width="2.5">
-              ${f.active
+      
+      <div class="pricing-card-divider"></div>
+      
+      <div class="pricing-card-bottom">
+        <ul class="pricing-features">
+          ${plan.features.map(f => `
+            <li class="${f.active ? '' : 'disabled'}">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                ${f.active
                 ? '<path d="M20 6L9 17l-5-5"/>'
                 : '<path d="M18 6L6 18M6 6l12 12"/>'}
-            </svg>
-            ${f.text}
-          </li>
-        `).join('')}
-      </ul>
-      <button class="pricing-cta-btn ${plan.ctaClass}">${plan.ctaText}</button>
+              </svg>
+              ${f.text}
+            </li>
+          `).join('')}
+        </ul>
+        <button class="pricing-cta-btn ${plan.ctaClass}">${plan.ctaText}</button>
+      </div>
     `;
 
         wrapper.appendChild(inner);
         grid.appendChild(wrapper);
 
-        // Start the electric animation — speed 1.2, chaos 0.2, radius 34
-        const cleanup = createElectricBorder(wrapper, plan.color, 1.2, 0.2);
+        // Start the electric animation with distinct speed/chaos/ambient per card
+        let speedVal = 1.2;
+        let chaosVal = 0.2;
+        let isAmbient = false;
+
+        if (plan.name === 'The Purpose') {
+            speedVal = 1.1; // Slower, more elegant
+            chaosVal = 0.4;
+            isAmbient = true;
+        } else if (plan.name === 'The Sovereign') {
+            speedVal = 1.4; // Controlled power
+            chaosVal = 0.6;
+            isAmbient = true;
+        }
+
+        const cleanup = createElectricBorder(wrapper, plan.color, speedVal, chaosVal, isAmbient);
         cleanups.push(cleanup);
         wrappers.push(wrapper);
     });
 
-    // --- Dots (removed for vertical layout) ---
+    // --- Horizontal Dots Logic ---
     const dotsEl = document.getElementById('pricing-dots');
-    if (dotsEl) dotsEl.innerHTML = '';
+    if (dotsEl) {
+        dotsEl.innerHTML = plans.map((_, i) =>
+            `<div class="pricing-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`
+        ).join('');
+
+        // Dots click to scroll
+        const allDots = Array.from(dotsEl.children);
+        allDots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.dataset.index);
+                if (wrappers[idx]) {
+                    wrappers[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            });
+        });
+
+        // Intersection observer to update dots on horizontal scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const idx = wrappers.indexOf(entry.target);
+                    if (idx !== -1) {
+                        allDots.forEach(d => d.classList.remove('active'));
+                        if (allDots[idx]) allDots[idx].classList.add('active');
+                    }
+                }
+            });
+        }, { root: grid, threshold: 0.6 });
+
+        wrappers.forEach(w => observer.observe(w));
+
+        cleanups.push(() => observer.disconnect());
+    }
 
     return () => cleanups.forEach(fn => fn && fn());
 }
@@ -269,18 +443,14 @@ export function initPricing() {
     const pricingBtn = document.getElementById('pricing-btn');
     const pricingModal = document.getElementById('pricing-modal');
     const closePricingBtn = document.getElementById('close-pricing');
-    const monthlyToggle = document.getElementById('pricing-monthly-toggle');
-    const annualToggle = document.getElementById('pricing-annual-toggle');
-    const billingSwitch = document.getElementById('pricing-billing-switch');
 
     if (!pricingBtn || !pricingModal) return;
 
-    let isAnnual = false;
     let cleanupFn = null;
 
     pricingBtn.addEventListener('click', () => {
         if (cleanupFn) cleanupFn();
-        cleanupFn = renderPricing(isAnnual);
+        cleanupFn = renderPricing(false); // Default to monthly since there's no annual toggle anymore
         pricingModal.classList.remove('hidden');
     });
 
@@ -295,26 +465,6 @@ export function initPricing() {
             if (cleanupFn) { cleanupFn(); cleanupFn = null; }
         }
     });
-
-    // Annual / Monthly toggle
-    function setToggle(annual) {
-        isAnnual = annual;
-        if (billingSwitch) billingSwitch.checked = annual;
-
-        if (annual) {
-            annualToggle?.classList.add('active');
-            monthlyToggle?.classList.remove('active');
-        } else {
-            monthlyToggle?.classList.add('active');
-            annualToggle?.classList.remove('active');
-        }
-        if (cleanupFn) cleanupFn();
-        cleanupFn = renderPricing(isAnnual);
-    }
-
-    monthlyToggle?.addEventListener('click', () => setToggle(false));
-    annualToggle?.addEventListener('click', () => setToggle(true));
-    billingSwitch?.addEventListener('change', () => setToggle(billingSwitch.checked));
 
     // Pre-init: don't render until opened
     document.getElementById('pricing-grid').innerHTML = '';
