@@ -15,7 +15,8 @@
     height: 100%;
     max-height: 100vh;
     overflow: hidden;
-    padding: calc(env(safe-area-inset-top, 20px) + 20px) 0 calc(env(safe-area-inset-bottom, 20px) + 20px);
+    padding: 0;
+    /* Handled by internal elements */
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -32,8 +33,9 @@
 .floating-back-btn {
     position: absolute;
     top: calc(env(safe-area-inset-top, 20px) + 25px);
+    /* Moved lower to avoid touch conflicts */
     left: 15px;
-    /* Slightly more to the edge */
+    /* Re-applied wider position for header clearance */
     z-index: 10000;
     /* Higher z-index */
     background: rgba(40, 40, 40, 0.8);
@@ -108,18 +110,20 @@
     display: flex;
     flex-direction: row;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
+    /* Allow glow to be visible */
     scroll-snap-type: x mandatory;
     gap: 120px;
-    padding: 120px 0 40px;
-    /* Removed horizontal hardcoded padding */
+    padding: 0 0 40px;
+    /* Reduced vertical padding, centering via flex */
     margin: 0;
     flex: 1;
     box-sizing: border-box;
     scrollbar-width: none;
     -ms-overflow-style: none;
     justify-content: flex-start;
-    /* Alignment handled by card snap and flex */
+    align-items: center;
+    /* Center the card vertically in the track space */
 }
 
 /* Ensure centering on any screen size */
@@ -156,7 +160,8 @@
 .pricing-bg-text {
     position: absolute;
     top: -100px;
-    /* Lowered to keep it mostly behind the cards rather than the header */
+    /* Re-applied lower position for card background text */
+    /* Pushed much higher for half-visibility */
     left: 50%;
     transform: translateX(-50%);
     font-family: var(--font-display, 'Outfit', sans-serif);
@@ -386,8 +391,8 @@
     justify-content: center;
     gap: 10px;
     position: absolute;
-    bottom: 55px;
-    /* Safely above the bottom edge */
+    bottom: calc(env(safe-area-inset-bottom, 20px) + 30px);
+    /* Positioned relative to bottom safe area */
     left: 0;
     right: 0;
     z-index: 2005;
