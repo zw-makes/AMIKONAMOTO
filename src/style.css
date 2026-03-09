@@ -116,6 +116,7 @@ button:active {
   justify-content: space-between;
   align-items: center;
   z-index: 10;
+  height: calc(env(safe-area-inset-top, 20px) + 40px);
 }
 
 #current-time {
@@ -125,13 +126,9 @@ button:active {
   color: var(--text-primary);
   letter-spacing: 0.05em;
   opacity: 0.9;
-}
-
-@media (max-width: 600px) {
-  #current-time {
-    display: none;
-    /* Hide fake time on mobile to avoid overlap with system clock */
-  }
+  /* Shift time slightly to the right to avoid the left side of the notch if needed, 
+     though usually left-aligned is fine on the island side */
+  padding-left: 5px;
 }
 
 .status-right {
@@ -384,6 +381,11 @@ button:active {
   padding: 0 var(--spacing-md);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  /* Allow the calendar to scroll */
+  padding-bottom: 180px;
+  /* Space for the bottom bar */
+  -webkit-overflow-scrolling: touch;
 }
 
 .weekday-header {
