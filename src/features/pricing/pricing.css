@@ -32,8 +32,8 @@
 .floating-back-btn {
     position: absolute;
     top: calc(env(safe-area-inset-top, 20px) + 25px);
-    /* Moved lower to avoid touch conflicts */
-    left: 20px;
+    left: 15px;
+    /* Slightly more to the edge */
     z-index: 10000;
     /* Higher z-index */
     background: rgba(40, 40, 40, 0.8);
@@ -155,8 +155,8 @@
 /* ── Massive Background Text ─── */
 .pricing-bg-text {
     position: absolute;
-    top: -140px;
-    /* Pushed much higher for half-visibility */
+    top: -100px;
+    /* Lowered to keep it mostly behind the cards rather than the header */
     left: 50%;
     transform: translateX(-50%);
     font-family: var(--font-display, 'Outfit', sans-serif);
