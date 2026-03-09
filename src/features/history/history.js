@@ -1,8 +1,9 @@
+/**
+ * History Tracker Module - Premium Edition
  * Dedicated pop-up for visual overview of subscription dots
  */
-
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 let historyDate = new Date();
 let exportContext = {
@@ -339,43 +340,20 @@ function downloadCSV(subs, fileName) {
         + rows.map(e => e.join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
-    const fileNameFull = fileName.endsWith('.csv') ? fileName : `${fileName}.csv`;
 
-    // --- CAPACITOR MOBILE DOWNLOAD ---
+    // Capacitor / Mobile Support
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        const base64Data = btoa(unescape(encodeURIComponent(csvContent.split(',')[1])));
-        nativeExport(base64Data, fileNameFull, 'text/csv');
+        const base64 = btoa(unescape(encodeURIComponent(csvContent.replace("data:text/csv;charset=utf-8,", ""))));
+        shareFileOnMobile(base64, fileName, 'text/csv');
         return;
     }
 
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileNameFull);
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-}
-
-async function nativeExport(base64Data, fileName, mimeType) {
-    try {
-        // 1. Save to temporary cache
-        const result = await Filesystem.writeFile({
-            path: fileName,
-            data: base64Data,
-            directory: Directory.Cache
-        });
-
-        // 2. Share the file via native iOS sheet
-        await Share.share({
-            title: fileName,
-            text: 'Here is your SubTrack export.',
-            url: result.uri,
-            dialogTitle: 'Export Report'
-        });
-    } catch (err) {
-        console.error("Native Export Error:", err);
-        alert("Failed to export: " + err.message);
-    }
 }
 
 function downloadPDF(subs, fileName, title) {
@@ -421,15 +399,14 @@ function downloadPDF(subs, fileName, title) {
     doc.setTextColor(0);
     doc.text(`Total Monthly Spend: $${total.toFixed(2)}`, 14, finalY);
 
-    const fileNameFull = `${fileName}.pdf`;
-
-    // --- CAPACITOR MOBILE DOWNLOAD ---
+    // Capacitor / Mobile Support
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        const pdfBase64 = doc.output('datauristring').split(',')[1];
-        nativeExport(pdfBase64, fileNameFull, 'application/pdf');
-    } else {
-        doc.save(fileNameFull);
+        const base64 = doc.output('datauristring').split(',')[1];
+        shareFileOnMobile(base64, `${fileName}.pdf`, 'application/pdf');
+        return;
     }
+
+    doc.save(`${fileName}.pdf`);
 }
 
 async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
@@ -479,16 +456,17 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
         });
 
         const link = document.createElement('a');
-        const fileNameFull = `${fileName}_Snapshot.png`;
         const dataUrl = canvas.toDataURL('image/png');
 
         if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-            nativeExport(dataUrl.split(',')[1], fileNameFull, 'image/png');
-        } else {
-            link.download = fileNameFull;
-            link.href = dataUrl;
-            link.click();
+            const base64 = dataUrl.split(',')[1];
+            shareFileOnMobile(base64, `${fileName}_Snapshot.png`, 'image/png');
+            return;
         }
+
+        link.download = `${fileName}_Snapshot.png`;
+        link.href = dataUrl;
+        link.click();
     } catch (err) {
         console.error("Snapshot failed:", err);
         alert("Premium Snapshot failed. Please use PDF or CSV.");
@@ -524,6 +502,27 @@ function calculateSubTimeline(s) {
         end = nextRenewal.toISOString().split('T')[0];
     }
     return { start, end };
+}
+
+// Capacitor Helper for mobile "download" via Share Sheet
+async function shareFileOnMobile(base64Data, fileName, contentType) {
+    try {
+        const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache
+        });
+
+        await Share.share({
+            title: fileName,
+            text: `SubTrack Report: ${fileName}`,
+            url: result.uri,
+            dialogTitle: 'Save Report'
+        });
+    } catch (e) {
+        console.error("Share failed", e);
+        alert("Export failed: " + e.message);
+    }
 }
 
 function getHistoryColor(type) {
