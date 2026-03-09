@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AMIKONAMOTO</string>
+    <string name="title_activity_main">AMIKONAMOTO</string>
+    <string name="package_name">com.amikonamoto.app</string>
+    <string name="custom_url_scheme">com.amikonamoto.app</string>
+</resources>
