@@ -31,13 +31,18 @@
 /* Specific floating close button for borderless pricing */
 .floating-back-btn {
     position: absolute;
-    top: 25px;
+    top: calc(env(safe-area-inset-top, 20px) + 25px);
+    /* Moved lower to avoid touch conflicts */
     left: 20px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.05);
+    z-index: 10000;
+    /* Higher z-index */
+    background: rgba(40, 40, 40, 0.8);
+    /* Darker background for visibility */
+    backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 8px 16px;
+    padding: 10px 20px;
+    /* Bigger touch target */
     display: flex;
     align-items: center;
     gap: 6px;
@@ -102,19 +107,28 @@
 .pricing-scroll-track {
     display: flex;
     flex-direction: row;
-    /* HORIZONTAL stack */
     overflow-x: auto;
-    /* HORIZONTAL scroll */
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     gap: 120px;
-    /* Large gap to push neighboring cards completely out of view */
-    padding: 120px 55px 40px;
-    /* Calculated centering for 340px cards: (450 - 340) / 2 = 55px */
+    padding: 120px 0 40px;
+    /* Removed horizontal hardcoded padding */
     margin: 0;
     flex: 1;
     box-sizing: border-box;
     scrollbar-width: none;
+    -ms-overflow-style: none;
+    justify-content: flex-start;
+    /* Alignment handled by card snap and flex */
+}
+
+/* Ensure centering on any screen size */
+.pricing-scroll-track::before,
+.pricing-scroll-track::after {
+    content: '';
+    flex: 0 0 calc(50vw - 170px);
+    /* 170px is half card width (340/2) */
+    pointer-events: none;
 }
 
 .pricing-scroll-track::-webkit-scrollbar {

@@ -1309,9 +1309,10 @@ async function updateStats() {
     }
   });
 
+  const relevantSubs = subscriptions.filter(s => isSubRelevantToMonth(s, currentDate));
   const activeCount = actuallyActiveOnes.length;
 
-  subCountEl.innerText = subscriptions.length;
+  subCountEl.innerText = relevantSubs.length;
   newCountEl.innerText = activeCount;
 
   // Sync label for clarity

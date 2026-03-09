@@ -97,16 +97,13 @@ button:active {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 4px;
+  display: none !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 10px;
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none;
+  /* IE and Edge */
 }
 
 /* Top Status Bar Styles */
