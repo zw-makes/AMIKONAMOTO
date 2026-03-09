@@ -1,7 +1,8 @@
-/**
- * History Tracker Module - Premium Edition
  * Dedicated pop-up for visual overview of subscription dots
  */
+
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 let historyDate = new Date();
 let exportContext = {
@@ -338,12 +339,43 @@ function downloadCSV(subs, fileName) {
         + rows.map(e => e.join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
+    const fileNameFull = fileName.endsWith('.csv') ? fileName : `${fileName}.csv`;
+
+    // --- CAPACITOR MOBILE DOWNLOAD ---
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        const base64Data = btoa(unescape(encodeURIComponent(csvContent.split(',')[1])));
+        nativeExport(base64Data, fileNameFull, 'text/csv');
+        return;
+    }
+
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
+    link.setAttribute("download", fileNameFull);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+async function nativeExport(base64Data, fileName, mimeType) {
+    try {
+        // 1. Save to temporary cache
+        const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache
+        });
+
+        // 2. Share the file via native iOS sheet
+        await Share.share({
+            title: fileName,
+            text: 'Here is your SubTrack export.',
+            url: result.uri,
+            dialogTitle: 'Export Report'
+        });
+    } catch (err) {
+        console.error("Native Export Error:", err);
+        alert("Failed to export: " + err.message);
+    }
 }
 
 function downloadPDF(subs, fileName, title) {
@@ -389,7 +421,15 @@ function downloadPDF(subs, fileName, title) {
     doc.setTextColor(0);
     doc.text(`Total Monthly Spend: $${total.toFixed(2)}`, 14, finalY);
 
-    doc.save(`${fileName}.pdf`);
+    const fileNameFull = `${fileName}.pdf`;
+
+    // --- CAPACITOR MOBILE DOWNLOAD ---
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        nativeExport(pdfBase64, fileNameFull, 'application/pdf');
+    } else {
+        doc.save(fileNameFull);
+    }
 }
 
 async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
@@ -439,9 +479,16 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
         });
 
         const link = document.createElement('a');
-        link.download = `${fileName}_Snapshot.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        const fileNameFull = `${fileName}_Snapshot.png`;
+        const dataUrl = canvas.toDataURL('image/png');
+
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+            nativeExport(dataUrl.split(',')[1], fileNameFull, 'image/png');
+        } else {
+            link.download = fileNameFull;
+            link.href = dataUrl;
+            link.click();
+        }
     } catch (err) {
         console.error("Snapshot failed:", err);
         alert("Premium Snapshot failed. Please use PDF or CSV.");
