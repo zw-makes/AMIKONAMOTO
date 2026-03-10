@@ -13,6 +13,26 @@ let exportContext = {
     fileName: ''
 };
 
+// --- Currency Helper ---
+async function getHistoryCurrencyContext() {
+    const settings = window.userProfile?.settings || {};
+    let targetCurrency = settings.currency || 'USD';
+    const useAuto = settings.autoCurrency !== false;
+
+    if (settings.usdTotal) {
+        targetCurrency = 'USD';
+    }
+
+    const rates = (useAuto || settings.usdTotal) ? await window.fetchExchangeRates(targetCurrency) : null;
+    const currObj = (window.CURRENCIES || []).find(c => c.code === targetCurrency) || { symbol: '$' };
+
+    return {
+        targetCurrency,
+        symbol: currObj.symbol,
+        rates
+    };
+}
+
 export function initHistory() {
     const modal = document.getElementById('history-modal');
     const closeBtn = document.getElementById('close-history');
@@ -37,16 +57,16 @@ export function initHistory() {
     }
 
     if (prevBtn) {
-        prevBtn.onclick = () => {
+        prevBtn.onclick = async () => {
             historyDate.setMonth(historyDate.getMonth() - 1);
-            renderHistoryCalendar();
+            await renderHistoryCalendar();
         };
     }
 
     if (nextBtn) {
-        nextBtn.onclick = () => {
+        nextBtn.onclick = async () => {
             historyDate.setMonth(historyDate.getMonth() + 1);
-            renderHistoryCalendar();
+            await renderHistoryCalendar();
         };
     }
 
@@ -152,7 +172,7 @@ export function toggleHistoryMode(btn) {
     }
 }
 
-function renderHistoryCalendar() {
+async function renderHistoryCalendar() {
     const grid = document.getElementById('history-grid');
     const title = document.getElementById('history-month-title');
     const summary = document.getElementById('history-summary-stats');
@@ -170,17 +190,20 @@ function renderHistoryCalendar() {
 
     const prevMonthDays = new Date(year, month, 0).getDate();
 
+    // Get currency context
+    const { targetCurrency, symbol, rates } = await getHistoryCurrencyContext();
+
     let monthTotal = 0;
     let activeSubsCount = 0;
 
     // Prev month days
     for (let i = firstDayInMonth - 1; i >= 0; i--) {
-        createHistoryCell(prevMonthDays - i, true, year, month - 1);
+        createHistoryCell(prevMonthDays - i, true, year, month - 1, targetCurrency, symbol, rates);
     }
 
     // Current month days
     for (let d = 1; d <= daysInMonth; d++) {
-        const { cost, count } = createHistoryCell(d, false, year, month);
+        const { cost, count } = createHistoryCell(d, false, year, month, targetCurrency, symbol, rates);
         monthTotal += cost;
         activeSubsCount += count;
     }
@@ -188,19 +211,19 @@ function renderHistoryCalendar() {
     // Next month filling
     const remaining = 42 - grid.children.length;
     for (let i = 1; i <= remaining; i++) {
-        createHistoryCell(i, true, year, month + 1);
+        createHistoryCell(i, true, year, month + 1, targetCurrency, symbol, rates);
     }
 
     // Update Summary Header
     if (summary) {
         summary.innerHTML = `
-            <span>TOTAL: <b>$${monthTotal.toFixed(2)}</b></span>
+            <span>TOTAL: <b>${symbol}${monthTotal.toFixed(2)}</b></span>
             <span>EVENTS: <b>${activeSubsCount}</b></span>
         `;
     }
 }
 
-function createHistoryCell(day, isOtherMonth, year, month) {
+function createHistoryCell(day, isOtherMonth, year, month, targetCurrency, symbol, rates) {
     const grid = document.getElementById('history-grid');
     const cell = document.createElement('div');
     cell.className = `history-cell ${isOtherMonth ? 'other-month' : ''}`;
@@ -232,7 +255,11 @@ function createHistoryCell(day, isOtherMonth, year, month) {
             dotsContainer.className = 'history-dots-container';
 
             daySubs.forEach(sub => {
-                dayTotalCost += sub.price;
+                let p = sub.price;
+                if (rates) {
+                    p = window.getConvertedPrice(p, sub.currency || 'USD', targetCurrency, rates);
+                }
+                dayTotalCost += p;
                 daySubsCount++;
 
                 const dot = document.createElement('div');
@@ -248,7 +275,7 @@ function createHistoryCell(day, isOtherMonth, year, month) {
                 cell.style.background = 'rgba(255, 255, 255, 0.08)';
             }
 
-            cell.onclick = () => showHistoryDayPop(day, daySubs);
+            cell.onclick = () => showHistoryDayPop(day, daySubs, targetCurrency, symbol, rates);
         }
     }
 
@@ -256,7 +283,7 @@ function createHistoryCell(day, isOtherMonth, year, month) {
     return { cost: dayTotalCost, count: daySubsCount };
 }
 
-function showHistoryDayPop(day, subs) {
+function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
     const pop = document.getElementById('history-day-pop');
     if (!pop) return;
 
@@ -280,6 +307,16 @@ function showHistoryDayPop(day, subs) {
         const domain = s.domain || (s.name.toLowerCase().replace(/\s+/g, '') + '.com');
         const isPaid = s.paid;
         const isStopped = s.stopped;
+        let p = s.price;
+        const origSymbol = s.symbol || '$';
+        const originalPriceStr = `${origSymbol}${p.toFixed(2)}`;
+        let displayPrice = originalPriceStr;
+
+        if (rates && (s.currency || 'USD') !== targetCurrency) {
+            const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
+            displayPrice = `<span style="opacity:0.6; font-size:0.8rem;">${originalPriceStr}</span> <span style="opacity:0.3; margin:0 2px;">→</span> ${symbol}${converted.toFixed(2)}`;
+        }
+
         return `
                 <div class="detail-item ${isStopped ? 'dimmed' : ''}" style="margin:0; width:100%; box-sizing:border-box;">
                     <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
@@ -294,7 +331,7 @@ function showHistoryDayPop(day, subs) {
                         </div>
                     </div>
                     <div class="detail-price" style="text-align:right;">
-                        <div style="font-weight:700; font-size:0.9rem;">$${s.price.toFixed(2)}</div>
+                        <div style="font-weight:700; font-size:0.9rem;">${displayPrice}</div>
                         <div style="font-size:0.55rem; color:var(--text-dim); opacity:0.7;">Started: ${new Date(s.startDate).toISOString().split('T')[0]}</div>
                     </div>
                 </div>
@@ -318,14 +355,22 @@ function showHistoryDayPop(day, subs) {
     }
 }
 
-function downloadCSV(subs, fileName) {
-    const header = ['Name', 'Price', 'Currency', 'Type', 'Status', 'Paid', 'Start Date', 'End Date', 'Domain'];
+async function downloadCSV(subs, fileName) {
+    const { targetCurrency, symbol, rates } = await getHistoryCurrencyContext();
+    const header = ['Name', 'Orig Price', 'Orig Curr', 'Converted Price', 'Target Curr', 'Type', 'Status', 'Paid', 'Start Date', 'End Date', 'Domain'];
     const rows = subs.map(s => {
         const { start, end } = calculateSubTimeline(s);
+        let p = s.price;
+        let convertedPrice = p;
+        if (rates) {
+            convertedPrice = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
+        }
         return [
             s.name.replace(/,/g, ''),
-            s.price.toFixed(2),
+            p.toFixed(2),
             s.currency || 'USD',
+            convertedPrice.toFixed(2),
+            targetCurrency,
             s.type,
             s.stopped ? 'STOPPED' : 'ACTIVE',
             s.paid ? 'YES' : 'NO',
@@ -335,28 +380,30 @@ function downloadCSV(subs, fileName) {
         ];
     });
 
-    let csvContent = "data:text/csv;charset=utf-8,"
-        + header.join(",") + "\n"
+    let csvContent = header.join(",") + "\n"
         + rows.map(e => e.join(",")).join("\n");
 
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
 
     // Capacitor / Mobile Support
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        const base64 = btoa(unescape(encodeURIComponent(csvContent.replace("data:text/csv;charset=utf-8,", ""))));
+        const base64 = btoa(unescape(encodeURIComponent(csvContent)));
         shareFileOnMobile(base64, fileName, 'text/csv');
         return;
     }
 
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
-function downloadPDF(subs, fileName, title) {
+async function downloadPDF(subs, fileName, title) {
+    const { targetCurrency, symbol, rates } = await getHistoryCurrencyContext();
     const { jsPDF } = window.jspdf;
     if (!jsPDF) {
         alert("PDF generator still loading. Please try again in a moment.");
@@ -369,13 +416,26 @@ function downloadPDF(subs, fileName, title) {
     doc.text(title, 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Generated on: ${new Date().toLocaleString()} | Currency: ${targetCurrency}`, 14, 30);
 
+    let total = 0;
     const tableData = subs.map(s => {
         const { start, end } = calculateSubTimeline(s);
+        let p = s.price;
+        const origSymbol = s.symbol || '$';
+        let displayPrice = `${origSymbol}${p.toFixed(2)}`;
+
+        if (rates && (s.currency || 'USD') !== targetCurrency) {
+            const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
+            total += converted;
+            displayPrice += ` -> ${symbol}${converted.toFixed(2)}`;
+        } else {
+            total += p;
+        }
+
         return [
             s.name,
-            `${s.symbol || '$'}${s.price.toFixed(2)}`,
+            displayPrice,
             s.type.toUpperCase(),
             s.stopped ? 'STOPPED' : 'ACTIVE',
             s.paid ? 'PAID' : 'UNPAID',
@@ -386,18 +446,17 @@ function downloadPDF(subs, fileName, title) {
 
     doc.autoTable({
         startY: 35,
-        head: [['Platform', 'Price', 'Plan', 'Status', 'Payment', 'Start Date', 'Renewal/End']],
+        head: [['Platform', 'Price (Orig -> Conv)', 'Plan', 'Status', 'Payment', 'Start Date', 'Renewal/End']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-        styles: { fontSize: 9 },
+        styles: { fontSize: 8 }, // Slightly smaller to fit long price strings
     });
 
-    const total = subs.reduce((acc, s) => acc + s.price, 0);
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(12);
     doc.setTextColor(0);
-    doc.text(`Total Monthly Spend: $${total.toFixed(2)}`, 14, finalY);
+    doc.text(`Total Monthly Spend: ${symbol}${total.toFixed(2)}`, 14, finalY);
 
     // Capacitor / Mobile Support
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
@@ -410,19 +469,31 @@ function downloadPDF(subs, fileName, title) {
 }
 
 async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
+    const { targetCurrency, symbol, rates } = await getHistoryCurrencyContext();
     const template = document.getElementById('premium-report-template');
     if (!template) return;
 
     // Populate Template
     document.getElementById('st-month').innerText = monthOrDayTitle.toUpperCase();
-    const total = subs.reduce((acc, s) => acc + s.price, 0);
-    document.getElementById('st-total').innerText = `$${total.toFixed(2)}`;
-    document.getElementById('st-gen-date').innerText = new Date().toLocaleDateString();
 
+    let total = 0;
     const list = document.getElementById('st-list');
     list.innerHTML = subs.map(s => {
         const domain = s.domain || (s.name.toLowerCase().replace(/\s+/g, '') + '.com');
         const { start, end } = calculateSubTimeline(s);
+        let p = s.price;
+        const origSymbol = s.symbol || '$';
+        let displayPrice = `${origSymbol}${p.toFixed(2)}`;
+
+        if (rates && (s.currency || 'USD') !== targetCurrency) {
+            const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
+            total += converted;
+            displayPrice = `<span style="opacity:0.4; font-size:0.6rem;">${displayPrice}</span> ${symbol}${converted.toFixed(2)}`;
+        } else {
+            total += p;
+            displayPrice = `${symbol}${p.toFixed(2)}`;
+        }
+
         return `
             <div class="st-item">
                 <div class="st-item-main">
@@ -439,12 +510,15 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
                     </div>
                 </div>
                 <div class="st-item-right">
-                    <span class="st-item-price">$${s.price.toFixed(2)}</span>
+                    <span class="st-item-price">${displayPrice}</span>
                     <span class="st-item-date">${start} — ${end}</span>
                 </div>
             </div>
         `;
     }).join('');
+
+    document.getElementById('st-total').innerText = `${symbol}${total.toFixed(2)}`;
+    document.getElementById('st-gen-date').innerText = new Date().toLocaleDateString();
 
     // Capture with html2canvas (wait for images)
     try {

@@ -55,6 +55,7 @@ const CURRENCIES = [
   { code: 'ARS', symbol: 'AR$', name: 'Argentine Peso' },
   { code: 'PEN', symbol: 'S/.', name: 'Peruvian Sol' },
 ];
+window.CURRENCIES = CURRENCIES;
 
 // --- Time Zones ---
 const TIMEZONES = [
@@ -130,6 +131,11 @@ Object.defineProperty(window, 'subscriptions', {
 Object.defineProperty(window, 'currentDate', {
   get: () => currentDate,
   set: (val) => { currentDate = val; }
+});
+
+Object.defineProperty(window, 'userProfile', {
+  get: () => userProfile,
+  set: (val) => { userProfile = val; }
 });
 
 let exchangeRatesCache = {}; // base -> { rates, timestamp }
@@ -406,6 +412,8 @@ function getConvertedPrice(price, fromCurrency, targetCurrency, rates) {
   const rate = rates[from] || 1;
   return price / rate;
 }
+window.fetchExchangeRates = fetchExchangeRates;
+window.getConvertedPrice = getConvertedPrice;
 
 // --- Functions ---
 
@@ -1313,7 +1321,7 @@ async function updateStats() {
   const activeCount = actuallyActiveOnes.length;
 
   subCountEl.innerText = relevantSubs.length;
-  newCountEl.innerText = activeCount;
+  newCountEl.innerText = relevantSubs.filter(s => !s.stopped).length;
 
   // Sync label for clarity
   const footerLabelEl = document.querySelector('.total-label');
