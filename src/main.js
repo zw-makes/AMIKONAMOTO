@@ -1673,37 +1673,58 @@ const showProfileModal = async () => {
   }
 
   // 3. Calculate Stats
-  const activeSubs = subscriptions.filter(s => !s.stopped);
+  const activeSubs = subscriptions.filter(s => !s.stopped && isSubRelevantToMonth(s, currentDate));
   let totalMonthlyImpact = 0;
+  let actuallyActiveOnes = [];
 
   activeSubs.forEach(s => {
-    // Average monthly impact (Yearly / 12)
-    // Use full price impact (no averaging for yearly subscriptions)
     let price = s.price;
     if (mathRates) {
       price = getConvertedPrice(price, s.currency || 'USD', targetCurrency, mathRates);
     }
-    totalMonthlyImpact += price;
+
+    let skipPrice = false;
+    const { start: startDateObj, end: endDateObj } = getSubDates(s);
+    const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    // 1. Exclude carry-overs (started in past, ends now or future, not yearly)
+    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') skipPrice = true;
+
+    // 2. Yearly plans only count in their renewal month
+    if (s.type === 'yearly') {
+      if (currentDate.getMonth() !== startDateObj.getMonth()) skipPrice = true;
+    }
+
+    if (!skipPrice) {
+      totalMonthlyImpact += price;
+      actuallyActiveOnes.push(s);
+    }
   });
+
+  const relevantCount = actuallyActiveOnes.length;
 
   // 4. Determine Symbol
   let finalSymbol = '$';
   if (mathRates) {
     const targetCurrObj = CURRENCIES.find(c => c.code === targetCurrency) || CURRENCIES[0];
     finalSymbol = targetCurrObj.symbol || '$';
-  } else if (activeSubs.length > 0) {
-    finalSymbol = activeSubs[0].symbol || '$';
+  } else if (actuallyActiveOnes.length > 0) {
+    finalSymbol = actuallyActiveOnes[0].symbol || '$';
   }
+
+  const currentMonthName = currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
 
   // 5. Update UI
   statsContainer.innerHTML = `
      <div style="flex: 1; text-align: center;">
-        <span style="display: block; font-size: 1.1rem; font-weight: 700;">${activeSubs.length}</span>
+        <span style="display: block; font-size: 1.1rem; font-weight: 700;">${relevantCount}</span>
         <span style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Active</span>
+        <span style="font-size: 0.5rem; color: var(--text-dim); opacity: 0.6; display: block; margin-top: 2px;">${currentMonthName}</span>
      </div>
      <div style="flex: 1; text-align: center; border-left: 1px solid var(--border-color);">
         <span style="display: block; font-size: 1.1rem; font-weight: 700;">${finalSymbol}${totalMonthlyImpact.toFixed(2)}</span>
         <span style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Per Month</span>
+        <span style="font-size: 0.5rem; color: var(--text-dim); opacity: 0.6; display: block; margin-top: 2px;">${currentMonthName}</span>
      </div>
   `;
 
