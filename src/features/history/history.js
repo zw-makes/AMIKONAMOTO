@@ -305,7 +305,7 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
         <div style="max-height: 250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
             ${subs.map(s => {
         const domain = s.domain || (s.name.toLowerCase().replace(/\s+/g, '') + '.com');
-        const isPaid = s.paid;
+        const isPaid = window.isSubPaid(s, historyDate);
         const isStopped = s.stopped;
         let p = s.price;
         const origSymbol = s.symbol || '$';
@@ -373,7 +373,7 @@ async function downloadCSV(subs, fileName) {
             targetCurrency,
             s.type,
             s.stopped ? 'STOPPED' : 'ACTIVE',
-            s.paid ? 'YES' : 'NO',
+            window.isSubPaid(s, historyDate) ? 'YES' : 'NO',
             start,
             end,
             s.domain || ''
@@ -438,7 +438,7 @@ async function downloadPDF(subs, fileName, title) {
             displayPrice,
             s.type.toUpperCase(),
             s.stopped ? 'STOPPED' : 'ACTIVE',
-            s.paid ? 'PAID' : 'UNPAID',
+            window.isSubPaid(s, historyDate) ? 'PAID' : 'UNPAID',
             start,
             end
         ];
@@ -505,7 +505,7 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
                         <div class="st-tags">
                             <span class="st-tag">${s.type.toUpperCase()}</span>
                             <span class="st-tag ${s.stopped ? 'st-stopped' : 'st-active'}">${s.stopped ? 'STOPPED' : 'ACTIVE'}</span>
-                            <span class="st-tag ${s.paid ? 'st-paid' : 'st-unpaid'}">${s.paid ? 'PAID' : 'UNPAID'}</span>
+                            <span class="st-tag ${window.isSubPaid(s, historyDate) ? 'st-paid' : 'st-unpaid'}">${window.isSubPaid(s, historyDate) ? 'PAID' : 'UNPAID'}</span>
                         </div>
                     </div>
                 </div>

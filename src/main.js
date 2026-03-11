@@ -203,6 +203,24 @@ const prefCurrencyHidden = document.getElementById('settings-pref-currency');
 let isSignUp = false;
 let userProfile = null; // { name, age, gender }
 
+window.isSubPaid = function (sub, date) {
+  const profile = window.userProfile;
+  const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+
+  // If we have history for this specific sub and month, use it
+  if (profile?.settings?.paid_history?.[sub.id]) {
+    return profile.settings.paid_history[sub.id].includes(monthKey);
+  }
+
+  // Fallback for non-recurring subs: use the boolean flag
+  if (sub.recurring !== 'recurring') {
+    return sub.paid;
+  }
+
+  // For recurring subs, if not in history for this month, it's unpaid
+  return false;
+};
+
 const monthDisplay = document.getElementById('current-month');
 const calendarGrid = document.getElementById('calendar-grid');
 const subCountEl = document.getElementById('sub-count');
@@ -719,8 +737,9 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
 
         // Create icon (only show first 3 to prevent overflow)
         if (index < 3) {
+          const isPaidOnThisMonth = window.isSubPaid(sub, currentDate);
           const icon = document.createElement('div');
-          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''} ${sub.paid ? 'paid-icon' : ''}`;
+          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''} ${isPaidOnThisMonth ? 'paid-icon' : ''}`;
 
           // Smart brand mapping to ensure legit logos always work
           const brandMap = {
@@ -892,10 +911,11 @@ async function showTooltip(e, subs) {
       symbol = targetSymbol;
       displayPrice = `${originalPriceStr} <span style="opacity: 0.6; margin: 0 4px;">→</span> ${symbol}${price.toFixed(2)}`;
     }
+    const isPaidOnThisMonth = window.isSubPaid(s, currentDate);
     return `
       <div class="tooltip-item ${s.stopped ? 'dimmed' : ''}">
         <div style="display: flex; align-items: center; gap: 4px;">
-          ${s.paid ? '<span style="color:var(--accent-green); font-size: 0.7rem; font-weight: 800;">✓</span>' : ''}
+          ${isPaidOnThisMonth ? '<span style="color:var(--accent-green); font-size: 0.7rem; font-weight: 800;">✓</span>' : ''}
           <span>${s.name}</span>
         </div>
         <span class="tooltip-price">${displayPrice}</span>
@@ -1037,7 +1057,7 @@ window.showDayDetails = async function (day, subs) {
       let p = s.price;
       if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
       if (!s.stopped) sum += p;
-      if (!s.paid) allPaid = false;
+      if (!window.isSubPaid(s, currentDate)) allPaid = false;
     });
 
     if (footTotal) {
@@ -1139,24 +1159,54 @@ window.stopSubscription = function (id, e) {
   }
 };
 
-window.togglePaidStatus = function (id, e) {
+window.togglePaidStatus = async function (id, e) {
   if (e) e.stopPropagation();
+  if (!userProfile) return;
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
-    sub.paid = !sub.paid;
+    const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}`;
+    
+    // Update local settings history
+    if (!userProfile.settings) userProfile.settings = {};
+    if (!userProfile.settings.paid_history) userProfile.settings.paid_history = {};
+    if (!userProfile.settings.paid_history[id]) userProfile.settings.paid_history[id] = [];
+    
+    const history = userProfile.settings.paid_history[id];
+    const index = history.indexOf(monthKey);
+    let newState = false;
+    
+    if (index > -1) {
+      history.splice(index, 1);
+      newState = false;
+    } else {
+      history.push(monthKey);
+      newState = true;
+    }
+    
+    // Fallback sync for non-recurring
+    if (sub.recurring !== 'recurring') {
+      sub.paid = newState;
+    }
 
     if (window.addNotification) {
       window.addNotification({
-        title: sub.paid ? "Payment Confirmed" : "Payment Unsettled",
-        text: sub.paid
-          ? `You marked ${sub.name} as paid. Good job!`
-          : `You unmarked ${sub.name} as paid.`,
-        type: sub.paid ? "success" : "info",
+        title: newState ? "Payment Confirmed" : "Payment Unsettled",
+        text: newState
+          ? `You marked ${sub.name} as paid for ${currentDate.toLocaleString('default', { month: 'long' })}. Good job!`
+          : `You unmarked ${sub.name} as paid for ${currentDate.toLocaleString('default', { month: 'long' })}.`,
+        type: newState ? "success" : "info",
         domain: sub.domain
       });
     }
 
-    saveToSupabase(sub);
+    // Save profile settings to persist paid history
+    await supabase.from('profiles').update({ settings: userProfile.settings }).eq('id', currentUser.id);
+    
+    // Background sync for subscription object if changed (non-recurring)
+    if (sub.recurring !== 'recurring') {
+      saveToSupabase(sub);
+    }
+    
     renderCalendar();
     updateStats();
     if (!document.getElementById('stats-modal').classList.contains('hidden')) {
@@ -3018,7 +3068,7 @@ function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {
 
 function getSwipeTemplate(s) {
   const isStopped = s.stopped;
-  const isPaid = s.paid;
+  const isPaid = window.isSubPaid(s, currentDate);
   const domain = getDomain(s);
   return `
     <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
