@@ -650,14 +650,48 @@ function getDomain(s) {
     'prime': 'amazon.com', 'youtube': 'youtube.com', 'apple': 'apple.com',
     'disney': 'disneyplus.com', 'hulu': 'hulu.com', 'adobe': 'adobe.com',
     'figma': 'figma.com', 'slack': 'slack.com', 'google': 'google.com',
-    'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so'
+    'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so',
+    'twitter': 'twitter.com', 'x': 'x.com', 'meta': 'meta.com', 'facebook': 'facebook.com',
+    'instagram': 'instagram.com', 'tiktok': 'tiktok.com', 'github': 'github.com',
+    'chatgpt': 'openai.com', 'openai': 'openai.com', 'cursor': 'cursor.sh'
   };
+  
   let nameLower = s.name.toLowerCase().trim();
-  let domain = s.domain || brandMap[nameLower] || nameLower.replace(/\s+/g, '') + '.com';
-  if (domain.startsWith('http')) {
-    try { domain = new URL(domain).hostname; } catch (e) { }
+  let domain = s.domain;
+
+  if (!domain) {
+    if (brandMap[nameLower]) {
+      domain = brandMap[nameLower];
+    } else {
+      // Check if the user typed a URL or domain in the Name field
+      let testInput = nameLower;
+      if (!testInput.startsWith('http')) {
+        testInput = 'https://' + testInput;
+      }
+      try {
+        let parsed = new URL(testInput);
+        if (parsed.hostname.includes('.')) {
+          domain = parsed.hostname;
+        } else {
+          domain = nameLower.replace(/[^a-z0-9]/g, '') + '.com';
+        }
+      } catch (e) {
+        domain = nameLower.replace(/[^a-z0-9]/g, '') + '.com';
+      }
+    }
+  } else {
+    // If s.domain was explicitly provided
+    if (domain.startsWith('http')) {
+      try { domain = new URL(domain).hostname; } catch (e) { }
+    }
+    domain = domain.trim().toLowerCase().replace(/^(https?:\/\/)?/, '').split('/')[0];
   }
-  return domain;
+
+  // Final cleanup for better logo hit rate
+  if (domain && domain.startsWith('www.')) {
+    domain = domain.substring(4);
+  }
+  return domain || 'example.com';
 }
 
 function createCell(day, isOtherMonth, isToday, fullDate) {
