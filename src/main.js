@@ -312,6 +312,21 @@ function renderPlatformList(filter = '') {
     app.name.toLowerCase().includes(filter.toLowerCase())
   );
 
+  // Dynamically allow any user text or link to immediately resolve into an app
+  if (filter.trim()) {
+    const computedDomain = getDomain({ name: filter.trim(), domain: '' });
+    const isDuplicate = filtered.some(app => 
+        app.domain === computedDomain || app.name.toLowerCase() === filter.trim().toLowerCase()
+    );
+    
+    if (!isDuplicate) {
+      filtered.push({
+        name: filter.trim(),
+        domain: computedDomain
+      });
+    }
+  }
+
   filtered.forEach(app => {
     const li = document.createElement('li');
     li.innerHTML = `
@@ -372,7 +387,6 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
       domain = new URL(val.startsWith('http') ? val : 'https://' + val).hostname;
     } catch (err) { /* keep as-is */ }
 
-    // Save the clean domain into the hidden field so it gets stored on save
     document.getElementById('sub-domain').value = domain;
     updatePlatformIcon(domain);
 
@@ -382,14 +396,24 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
     updatePlatformIcon(val);
 
   } else {
-    // Plain text name — look for a match in popularApps
+    // Look up via brand map or popularApps, or fallback using getDomain's internal logic replica
     const match = popularApps.find(app => app.name.toLowerCase() === val.toLowerCase());
     if (match) {
       document.getElementById('sub-domain').value = match.domain;
       updatePlatformIcon(match.domain);
     } else {
-      document.getElementById('sub-domain').value = '';
-      updatePlatformIcon(null);
+      // Create a dummy object to run through our robust getDomain function
+      const dummySub = { name: val, domain: '' };
+      const computedDomain = getDomain(dummySub);
+      
+      // If we got 'example.com' from empty string, clear it. Otherwise use the computed domain.
+      if (!val) {
+        document.getElementById('sub-domain').value = '';
+        updatePlatformIcon(null);
+      } else {
+        document.getElementById('sub-domain').value = computedDomain;
+        updatePlatformIcon(computedDomain);
+      }
     }
   }
 });
