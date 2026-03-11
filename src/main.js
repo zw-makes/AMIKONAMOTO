@@ -207,9 +207,18 @@ window.isSubPaid = function (sub, date) {
   const profile = window.userProfile;
   const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
 
-  // If we have history for this specific sub and month, use it
+  // If we have history for this specific sub
   if (profile?.settings?.paid_history?.[sub.id]) {
-    return profile.settings.paid_history[sub.id].includes(monthKey);
+    const history = profile.settings.paid_history[sub.id];
+    
+    // For trials and yearly plans, paying ONCE means it's paid for its entire duration
+    const isMultiMonthTrial = sub.type === 'trial' && parseInt(sub.trialMonths) > 0;
+    if (sub.type === 'yearly' || isMultiMonthTrial) {
+      if (history.length > 0) return true; // Paid in ANY month means paid globally
+    }
+    
+    // For regular monthly plans, check specific month
+    return history.includes(monthKey);
   }
 
   // Fallback for non-recurring subs: use the boolean flag
@@ -682,7 +691,8 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   if (!isOtherMonth) {
     const daySubs = subscriptions.filter(s => {
       const start = new Date(s.startDate);
-      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
+      const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+      if (s.type === 'monthly' || (s.type === 'trial' && !isMultiMonthTrial) || s.type === 'one-time') {
         if (s.date !== day) return false;
         if (s.type === 'monthly' && s.recurring === 'recurring') {
           const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
@@ -695,12 +705,13 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
         const calendarDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         return start.getMonth() === calendarDate.getMonth() && start.getFullYear() === calendarDate.getFullYear();
       }
-      if (s.type === 'yearly') {
+      if (s.type === 'yearly' || isMultiMonthTrial) {
         if (s.date !== day) return false;
         // Visible every month within the 12-month frequency window
         const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
         const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
-        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+        const durationMonths = s.type === 'yearly' ? 12 : parseInt(s.trialMonths);
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + durationMonths;
       }
       return false;
     });
@@ -837,7 +848,8 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
     const daySubs = subscriptions.filter(s => {
       const start = new Date(s.startDate);
       // For monthly/trial/one-time, check if it matches the day and we are in the correct month view
-      if (s.type === 'monthly' || s.type === 'trial' || s.type === 'one-time') {
+      const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+      if (s.type === 'monthly' || (s.type === 'trial' && !isMultiMonthTrial) || s.type === 'one-time') {
         if (s.date !== day) return false;
         if (s.type === 'monthly' && s.recurring === 'recurring') {
           const viewTime = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime();
@@ -852,11 +864,12 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
       }
 
       // For yearly, show every month within the 12-month frequency window
-      if (s.type === 'yearly') {
+      if (s.type === 'yearly' || isMultiMonthTrial) {
         if (s.date !== day) return false;
         const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
         const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
-        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+        const durationMonths = s.type === 'yearly' ? 12 : parseInt(s.trialMonths);
+        return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + durationMonths;
       }
 
       return false;
@@ -1012,11 +1025,13 @@ window.showDayDetails = async function (day, subs) {
     const { start, end } = getSubDates(s);
     let isStart = false;
     if (s.date === day) {
+      const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
       if (s.type === 'monthly' && s.recurring === 'recurring') isStart = true;
-      else if (s.type === 'yearly') {
+      else if (s.type === 'yearly' || isMultiMonthTrial) {
         const currentTotalMonths = currentDate.getFullYear() * 12 + currentDate.getMonth();
         const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
-        if (currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12) isStart = true;
+        const durationMonths = s.type === 'yearly' ? 12 : parseInt(s.trialMonths);
+        if (currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + durationMonths) isStart = true;
       } else {
         if (start.getMonth() === currentDate.getMonth() && start.getFullYear() === currentDate.getFullYear()) isStart = true;
       }
@@ -1172,15 +1187,30 @@ window.togglePaidStatus = async function (id, e) {
     if (!userProfile.settings.paid_history[id]) userProfile.settings.paid_history[id] = [];
     
     const history = userProfile.settings.paid_history[id];
-    const index = history.indexOf(monthKey);
     let newState = false;
     
-    if (index > -1) {
-      history.splice(index, 1);
-      newState = false;
+    // For trials and yearly plans, we toggle the entire history
+    const isMultiMonthTrial = sub.type === 'trial' && parseInt(sub.trialMonths) > 0;
+    if (sub.type === 'yearly' || isMultiMonthTrial) {
+      if (history.length > 0) {
+        // Was paid, now unpaid globally
+        userProfile.settings.paid_history[id] = [];
+        newState = false;
+      } else {
+        // Was unpaid, now paid globally (just push current month as marker)
+        userProfile.settings.paid_history[id] = [monthKey];
+        newState = true;
+      }
     } else {
-      history.push(monthKey);
-      newState = true;
+      // Normal monthly toggle
+      const index = history.indexOf(monthKey);
+      if (index > -1) {
+        history.splice(index, 1);
+        newState = false;
+      } else {
+        history.push(monthKey);
+        newState = true;
+      }
     }
     
     // Fallback sync for non-recurring
@@ -1353,12 +1383,18 @@ async function updateStats() {
     const { start: startDateObj, end: endDateObj } = getSubDates(s);
     const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    // 1. Exclude carry-overs (started in past, ends now or future, not yearly)
-    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') skipPrice = true;
+    const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+    // 1. Exclude carry-overs (started in past, ends now or future, not yearly or multi-month trial)
+    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly' && !isMultiMonthTrial) skipPrice = true;
 
     // 2. Yearly plans only count in their renewal month
     if (s.type === 'yearly') {
       if (currentDate.getMonth() !== startDateObj.getMonth()) skipPrice = true;
+    }
+
+    // 3. Multi-month trials never count in grand total
+    if (isMultiMonthTrial) {
+      skipPrice = true;
     }
 
     if (!skipPrice) {
@@ -1687,12 +1723,18 @@ const showProfileModal = async () => {
     const { start: startDateObj, end: endDateObj } = getSubDates(s);
     const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    // 1. Exclude carry-overs (started in past, ends now or future, not yearly)
-    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') skipPrice = true;
+    const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+    // 1. Exclude carry-overs (started in past, ends now or future, not yearly or multi-month trial)
+    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly' && !isMultiMonthTrial) skipPrice = true;
 
     // 2. Yearly plans only count in their renewal month
     if (s.type === 'yearly') {
       if (currentDate.getMonth() !== startDateObj.getMonth()) skipPrice = true;
+    }
+
+    // 3. Multi-month trials never count in grand total
+    if (isMultiMonthTrial) {
+      skipPrice = true;
     }
 
     if (!skipPrice) {
@@ -2344,8 +2386,10 @@ function isSubRelevantToMonth(sub, monthDate) {
   if (start > viewEnd) return false;
   if (end && end < viewStart) return false;
 
-  // 2. Yearly: Always relevant once started
+  const isMultiMonthTrial = sub.type === 'trial' && parseInt(sub.trialMonths) > 0;
+  // 2. Yearly or Multi-month trial: Always relevant once started (until end)
   if (sub.type === 'yearly') return true;
+  if (isMultiMonthTrial) return true;
 
   if (end && end < viewStart) return false;
 
@@ -2514,15 +2558,21 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     let isCarryOver = false;
 
+    const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
     if (s.type === 'yearly') {
       if (currentDate.getMonth() !== start.getMonth()) {
         skipImpact = true;
         isCarryOver = true;
       }
+    } else if (isMultiMonthTrial) {
+      if (currentDate.getMonth() !== start.getMonth() || currentDate.getFullYear() !== start.getFullYear()) {
+        isCarryOver = true;
+      }
+      skipImpact = true; // Never count in grand total
     }
 
     // Carry-over detection: It's a carry-over if it started in the past (already filtered to end in current month)
-    if (end && start < viewStart && s.type !== 'yearly') {
+    if (end && start < viewStart && s.type !== 'yearly' && !isMultiMonthTrial) {
       skipImpact = true;
       isCarryOver = true;
     }
@@ -2560,13 +2610,16 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       const { start: startDateObj, end: endDateObj } = getSubDates(s);
       const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
+      const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
       if (s.type === 'yearly') {
         if (currentDate.getMonth() !== startDateObj.getMonth()) {
           skip = true;
         }
+      } else if (isMultiMonthTrial) {
+        skip = true;
       }
 
-      if (endDateObj && startDateObj < viewStart && s.type !== 'yearly') {
+      if (endDateObj && startDateObj < viewStart && s.type !== 'yearly' && !isMultiMonthTrial) {
         skip = true;
       }
 
@@ -2590,13 +2643,16 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       const { start: startDateObj, end: endDateObj } = getSubDates(s);
       const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
+      const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
       if (s.type === 'yearly') {
         if (currentDate.getMonth() !== startDateObj.getMonth()) {
           skip = true;
         }
+      } else if (isMultiMonthTrial) {
+        skip = true;
       }
 
-      if (endDateObj && startDateObj < viewStart && s.type !== 'yearly') {
+      if (endDateObj && startDateObj < viewStart && s.type !== 'yearly' && !isMultiMonthTrial) {
         skip = true;
       }
 
@@ -3119,7 +3175,7 @@ function getSwipeTemplate(s) {
           </div>
         </div>
       </div>
-      <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : 'carry-over-path') : ''}" data-id="${s.id}">
+      <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : (s.type === 'trial' ? 'carry-over-path-red' : 'carry-over-path')) : ''}" data-id="${s.id}">
         <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
           <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
         </div>
