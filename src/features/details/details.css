@@ -1,0 +1,319 @@
+/* Subscription Details Page-Like Styles */
+.detail-view-modal {
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg-color); /* Match app theme background */
+}
+
+.detail-view-content {
+  width: 100%;
+  max-width: 450px; /* Match pricing page reference */
+  height: 100%;
+  max-height: 100vh;
+  background: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: relative;
+  overflow-y: auto;
+  animation: pageSlideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  box-sizing: border-box;
+}
+
+/* New: Card Switch Animation */
+.card-content-animate {
+    animation: cardReflow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardReflow {
+    0% {
+        opacity: 0;
+        transform: translateX(10px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes pageSlideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Header styled as an iOS Navigation Bar (Borderless & Floating) */
+.detail-view-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top, 20px) + 20px) 24px 10px;
+  background: transparent; /* No background for the header itself */
+  z-index: 100;
+  border-bottom: none; /* Removed separator line */
+}
+
+/* Matching Pricing Page Back Button exactly */
+.header-back-btn {
+  background: rgba(40, 40, 40, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.header-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Premium Edit Button (Pill Style) */
+.header-edit-btn {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.7rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.header-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.header-edit-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.header-action-btn:active {
+  transform: scale(0.98);
+}
+
+.detail-main-content {
+  padding: 80px 24px 60px; /* Space for floating logo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  position: relative;
+}
+
+/* Ambient Glow Background (Like Pricing Page) */
+.detail-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  filter: blur(60px);
+  z-index: -1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* The Hero Card Container (Pricing Card Vibe) */
+.detail-premium-card {
+  width: 340px; /* Fixed width like pricing cards */
+  height: 470px; /* Fixed height like pricing cards */
+  background: rgba(25, 25, 25, 0.4);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Very subtle, soft border */
+  border-radius: 34px;
+  padding: 40px 30px;
+  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left aligned content like pricing */
+  overflow: hidden; /* For background text */
+  isolation: isolate;
+  animation: cardPopIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardPopIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Massive Background Text (Watermark Style) */
+.detail-bg-text {
+  position: absolute;
+  top: 10px; /* Moved down to avoid clipping */
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 100px; /* Slightly smaller for better fit */
+  font-weight: 1000; /* Extra thick */
+  letter-spacing: -2px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.detail-logo-container {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.08); /* Slightly more visible */
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  overflow: hidden; /* Ensure anything inside stays circular */
+}
+
+.detail-logo-container img {
+  width: 100%; /* Fill the container */
+  height: 100%;
+  object-fit: contain; /* Maintain ratio */
+  border-radius: 50%; /* Force the image ITSELF to be a circle */
+  background: white; /* Optional: adds a clean background if the logo is transparent */
+}
+
+.detail-sub-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.detail-sub-domain {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-top: 4px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.detail-card-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.detail-info-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.info-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.info-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.info-value {
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-value.price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+/* Pagination Dots (Like Pricing Page) */
+.detail-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    z-index: 10;
+}
+
+.detail-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+
+.detail-dot.active {
+    background: #ffffff;
+    width: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.status-active {
+    background: rgba(80, 250, 123, 0.1);
+    color: #50fa7b;
+    border: 1px solid rgba(80, 250, 123, 0.2);
+}
+
+.status-stopped {
+    background: rgba(255, 85, 85, 0.1);
+    color: #ff5555;
+    border: 1px solid rgba(255, 85, 85, 0.2);
+}

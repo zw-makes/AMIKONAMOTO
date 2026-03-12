@@ -6,6 +6,7 @@ import { initNotifications, clearReminders, loadNotifications } from './features
 import { initPricing } from './features/pricing/pricing.js';
 import { initBottomBar } from './features/bottombar/bottombar.js';
 import { initGlass } from './features/glass/glass.js';
+import { showSubscriptionDetails } from './features/details/details.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -840,6 +841,20 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
           img.style.objectFit = 'contain';
           img.style.pointerEvents = 'none';
 
+          // Circular Logo Container for Calendar
+          icon.style.borderRadius = '50%';
+          icon.style.cursor = 'pointer';
+          icon.style.overflow = 'hidden';
+          icon.onclick = (e) => {
+            e.stopPropagation();
+            // Find all subs for this specific day to enable dots
+            const daySubs = subscriptions.filter(s => {
+              const d = new Date(s.date);
+              return d.getUTCDate() === day && d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
+            });
+            showSubscriptionDetails(sub, daySubs);
+          };
+
           // Fallback if logo fails (Show a sleek white cross)
           img.onerror = () => {
             icon.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -1190,6 +1205,62 @@ window.deleteSubscription = function (id, e) {
   } else {
     dayDetailModal.classList.add('hidden');
   }
+};
+
+window.editSubscription = function (id) {
+  const sub = subscriptions.find(s => s.id === id);
+  if (!sub) return;
+
+  // Fill the add-modal with sub data
+  document.getElementById('sub-name').value = sub.name;
+  document.getElementById('sub-price').value = sub.price;
+  document.getElementById('sub-date').value = sub.date;
+  document.getElementById('sub-domain').value = sub.domain;
+  document.getElementById('sub-currency').value = sub.currency || 'USD';
+  document.getElementById('sub-currency-symbol').value = sub.symbol || '$';
+  document.getElementById('currency-symbol').textContent = sub.symbol || '$';
+  document.getElementById('currency-code').textContent = sub.currency || 'USD';
+
+  // Platform icon
+  updatePlatformIcon(sub.domain);
+
+  // Freq
+  document.getElementById('sub-type').value = sub.type;
+  document.querySelectorAll('.freq-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === sub.type);
+  });
+
+  // Handle specific frequency sections
+  const monthlySec = document.getElementById('monthly-options-section');
+  const trialSec = document.getElementById('trial-duration-section');
+  monthlySec.classList.add('hidden');
+  trialSec.classList.add('hidden');
+
+  if (sub.type === 'monthly') {
+    monthlySec.classList.remove('hidden');
+    document.getElementById('sub-recurring-val').value = sub.recurring;
+    document.querySelectorAll('.recur-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === sub.recurring);
+    });
+  } else if (sub.type === 'trial') {
+    trialSec.classList.remove('remove'); // Typo fix from existing code if any, or just ensuring visible
+    trialSec.classList.remove('hidden');
+    document.getElementById('trial-days-val').value = sub.trialDays || '';
+    document.getElementById('trial-months-val').value = sub.trialMonths || '';
+    document.getElementById('trial-days-selected').innerText = sub.trialDays ? `${sub.trialDays} Days` : 'Days';
+    document.getElementById('trial-months-selected').innerText = sub.trialMonths ? `${sub.trialMonths} Month` : 'Months';
+  }
+
+  // Set as editing (temp property for the form submit)
+  window.editingSubId = id;
+  
+  // Show modal
+  const addModal = document.getElementById('add-modal');
+  addModal.querySelector('h2').innerText = 'Edit Subscription';
+  addModal.classList.remove('hidden');
+  
+  // Close the detail views if open
+  document.getElementById('day-detail-modal').classList.add('hidden');
 };
 
 window.stopSubscription = function (id, e) {
@@ -3190,6 +3261,16 @@ function showToast(message, type = 'success') {
   }, 2500);
 }
 
+window.showSubDetail = function(id, e) {
+  if (e) e.stopPropagation();
+  const sub = subscriptions.find(s => s.id === id);
+  if (sub) {
+    // Find all subs for the same day as this sub
+    const daySubs = subscriptions.filter(s => s.date === sub.date);
+    showSubscriptionDetails(sub, daySubs);
+  }
+};
+
 function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {
   let itemPrice = s.price;
   const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)}`;
@@ -3234,8 +3315,8 @@ function getSwipeTemplate(s) {
         </div>
       </div>
       <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : (s.type === 'trial' ? 'carry-over-path-red' : 'carry-over-path')) : ''}" data-id="${s.id}">
-        <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
-          <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
+        <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="cursor: pointer; border-radius: 50%;" onclick="window.showSubDetail(${s.id}, event)">
+          <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
         </div>
         <div class="detail-info">
           <span class="detail-name">${s.name}</span>
