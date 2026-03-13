@@ -347,22 +347,22 @@ function selectPlatform(name, domain) {
   document.getElementById('platform-dropdown').classList.add('hidden');
 }
 
-function updatePlatformIcon(domainOrUrl) {
+window.updatePlatformIcon = function(domainOrUrl) {
   const preview = document.getElementById('selected-platform-icon');
   if (!domainOrUrl) {
     preview.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>`;
     return;
   }
-
+ 
   let domain = domainOrUrl;
   if (domain.startsWith('http')) {
     try {
       domain = new URL(domain).hostname;
     } catch (e) { }
   }
-
+ 
   preview.innerHTML = `<img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">`;
-}
+};
 
 document.getElementById('platform-trigger').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -1612,6 +1612,9 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
   // Hide extra sections
   document.getElementById('trial-duration-section')?.classList.add('hidden');
   document.getElementById('monthly-options-section')?.classList.add('hidden');
+
+  // Reset notes counter
+  updateNotesCounter();
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
@@ -1696,6 +1699,31 @@ document.getElementById('trial-months-trigger').addEventListener('click', (e) =>
     });
   });
 });
+
+// --- Notes Character Counter Logic ---
+const subNotesInput = document.getElementById('sub-notes');
+const notesProgressRing = document.getElementById('notes-progress-ring');
+const ringCircumference = 2 * Math.PI * 8; // r=8
+
+window.updateNotesCounter = function() {
+  const length = subNotesInput.value.length;
+  const maxLength = 80;
+  
+  // Update ring
+  const offset = ringCircumference - (length / maxLength) * ringCircumference;
+  notesProgressRing.style.strokeDashoffset = offset;
+  
+  // Update color based on length
+  if (length >= maxLength) {
+    notesProgressRing.style.stroke = 'var(--accent-red)';
+  } else if (length >= maxLength * 0.8) {
+    notesProgressRing.style.stroke = 'var(--accent-orange)';
+  } else {
+    notesProgressRing.style.stroke = 'var(--accent-green)';
+  }
+};
+
+subNotesInput.addEventListener('input', updateNotesCounter);
 
 subForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -1817,6 +1845,7 @@ subForm.addEventListener('submit', (e) => {
   window.editingSubId = null; // Important: Clear edit mode
   addModal.querySelector('h2').innerText = 'Add Subscription';
   document.getElementById('sub-notes').value = '';
+  updateNotesCounter();
   selectCurrency('USD', '$');
   updatePlatformIcon(null);
   document.getElementById('sub-domain').value = '';
@@ -3322,6 +3351,58 @@ window.showSubDetail = function(id, e) {
     const daySubs = subscriptions.filter(s => s.date === sub.date);
     showSubscriptionDetails(sub, daySubs, new Date(currentDate.getFullYear(), currentDate.getMonth(), sub.date));
   }
+};
+
+window.editSubscription = function(id, e) {
+  if (e) e.stopPropagation();
+  const sub = subscriptions.find(s => s.id === id);
+  if (!sub) return;
+
+  window.editingSubId = sub.id;
+  addModal.querySelector('h2').innerText = 'Edit Subscription';
+  
+  // Fill form
+  document.getElementById('sub-name').value = sub.name;
+  document.getElementById('sub-price').value = sub.price;
+  document.getElementById('sub-date').value = sub.date;
+  document.getElementById('sub-domain').value = sub.domain || '';
+  document.getElementById('sub-type').value = sub.type;
+  document.getElementById('sub-notes').value = sub.notes || '';
+  
+  updatePlatformIcon(sub.domain);
+  selectCurrency(sub.currency || 'USD', sub.symbol || '$');
+  
+  // Update freq buttons
+  document.querySelectorAll('.freq-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === sub.type);
+  });
+  
+  // Show/hide sections based on type
+  const trialSection = document.getElementById('trial-duration-section');
+  const monthlySection = document.getElementById('monthly-options-section');
+  
+  trialSection.classList.add('hidden');
+  monthlySection.classList.add('hidden');
+  
+  if (sub.type === 'trial') {
+    trialSection.classList.remove('hidden');
+    document.getElementById('trial-days-val').value = sub.trialDays || '';
+    document.getElementById('trial-months-val').value = sub.trialMonths || '';
+    document.getElementById('trial-days-selected').innerText = sub.trialDays ? `${sub.trialDays} Days` : 'Days';
+    document.getElementById('trial-months-selected').innerText = sub.trialMonths ? `${sub.trialMonths} Month${sub.trialMonths > 1 ? 's' : ''}` : 'Months';
+  } else if (sub.type === 'monthly') {
+    monthlySection.classList.remove('hidden');
+    document.getElementById('sub-recurring-val').value = sub.recurring || '';
+    document.querySelectorAll('.recur-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === sub.recurring);
+    });
+  }
+  
+  updateNotesCounter();
+  addModal.classList.remove('hidden');
+  
+  // Close the detail modal if it's open
+  dayDetailModal.classList.add('hidden');
 };
 
 function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {

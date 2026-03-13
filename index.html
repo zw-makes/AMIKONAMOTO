@@ -249,142 +249,159 @@
             </svg>
           </button>
         </div>
-        <form id="sub-form" style="display: flex; flex-direction: column; overflow: hidden; max-height: calc(90vh - 100px);">
-          <div class="form-scroll-area" style="overflow-y: auto; padding-right: 4px; padding-bottom: 20px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
-          <div class="form-group">
-            <label>Platform Name</label>
-            <div class="platform-row">
-              <!-- Custom Platform Picker -->
-              <div class="platform-picker" id="platform-picker">
-                <button type="button" class="platform-trigger" id="platform-trigger">
-                  <div id="selected-platform-icon" class="platform-icon-preview">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect width="18" height="18" x="3" y="3" rx="2" />
-                      <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+        <form id="sub-form"
+          style="display: flex; flex-direction: column; overflow: hidden; max-height: calc(90vh - 100px);">
+          <div class="form-scroll-area"
+            style="overflow-y: auto; padding-right: 4px; padding-bottom: 20px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+            <div class="form-group">
+              <label>Platform Name</label>
+              <div class="platform-row">
+                <!-- Custom Platform Picker -->
+                <div class="platform-picker" id="platform-picker">
+                  <button type="button" class="platform-trigger" id="platform-trigger">
+                    <div id="selected-platform-icon" class="platform-icon-preview">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect width="18" height="18" x="3" y="3" rx="2" />
+                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+                      </svg>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div class="platform-dropdown hidden" id="platform-dropdown">
+                    <input type="text" id="platform-search" placeholder="Search apps..." autocomplete="off">
+                    <ul id="platform-list"></ul>
+                  </div>
+                </div>
+                <input type="text" id="sub-name" placeholder="Name or website link" required>
+                <input type="hidden" id="sub-domain" value="">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Price</label>
+              <div class="price-row">
+                <!-- Custom Currency Picker -->
+                <div class="currency-picker" id="currency-picker">
+                  <button type="button" class="currency-trigger" id="currency-trigger">
+                    <span id="currency-symbol">$</span>
+                    <span id="currency-code">USD</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div class="currency-dropdown hidden" id="currency-dropdown">
+                    <input type="text" id="currency-search" placeholder="Search..." autocomplete="off">
+                    <ul id="currency-list"></ul>
+                  </div>
+                </div>
+                <input type="number" id="sub-price" step="0.01" placeholder="9.99" required>
+                <input type="hidden" id="sub-currency" value="USD">
+                <input type="hidden" id="sub-currency-symbol" value="$">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="sub-date">Subscription Bought Day</label>
+              <input type="number" id="sub-date" min="1" max="31" placeholder="15" required>
+            </div>
+            <div class="form-group">
+              <label>Frequency</label>
+              <div class="freq-selector" style="margin-bottom: 5px;">
+                <button type="button" class="freq-btn" data-value="monthly">Monthly</button>
+                <button type="button" class="freq-btn" data-value="yearly">Yearly</button>
+                <button type="button" class="freq-btn" data-value="trial">Trial</button>
+                <button type="button" class="freq-btn active" data-value="one-time">One time</button>
+              </div>
+              <input type="hidden" id="sub-type" value="one-time">
+            </div>
+
+            <!-- Monthly Options Section (Hidden by default) -->
+            <div id="monthly-options-section" class="form-group hidden"
+              style="margin-top: 15px; animation: slideDown 0.3s ease;">
+              <label>Monthly Selection</label>
+              <div class="freq-selector" id="monthly-recurring-selector">
+                <button type="button" class="recur-btn" data-value="recurring">Recurring</button>
+                <button type="button" class="recur-btn" data-value="non-recurring">Non-recurring</button>
+              </div>
+              <input type="hidden" id="sub-recurring-val" value="">
+              <p id="monthly-error" class="hidden"
+                style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
+                Please select a monthly option!
+              </p>
+            </div>
+
+            <!-- Trial Duration Section (Hidden by default) -->
+            <div id="trial-duration-section" class="form-group hidden"
+              style="margin-top: 15px; animation: slideDown 0.3s ease;">
+              <label>Trial Duration (Pick one)</label>
+              <div style="display: flex; gap: 10px;">
+                <!-- Custom Days Picker -->
+                <div class="custom-dropdown dropdown-up" id="trial-days-picker" style="flex: 1;">
+                  <button type="button" class="dropdown-trigger" id="trial-days-trigger">
+                    <span id="trial-days-selected">Days</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div class="dropdown-content hidden" id="trial-days-dropdown">
+                    <ul id="trial-days-list">
+                      <li data-value="7">7 Days</li>
+                      <li data-value="14">14 Days</li>
+                      <li data-value="30">30 Days</li>
+                    </ul>
+                  </div>
+                  <input type="hidden" id="trial-days-val" value="">
+                </div>
+
+                <!-- Custom Months Picker -->
+                <div class="custom-dropdown dropdown-up" id="trial-months-picker" style="flex: 1;">
+                  <button type="button" class="dropdown-trigger" id="trial-months-trigger">
+                    <span id="trial-months-selected">Months</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div class="dropdown-content hidden" id="trial-months-dropdown">
+                    <ul id="trial-months-list">
+                      <li data-value="1">1 Month</li>
+                      <li data-value="3">3 Months</li>
+                      <li data-value="6">6 Months</li>
+                      <li data-value="12">12 Months</li>
+                    </ul>
+                  </div>
+                  <input type="hidden" id="trial-months-val" value="">
+                </div>
+              </div>
+              <p id="trial-error" class="hidden"
+                style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
+                Please select the trial frequency duration!
+              </p>
+            </div>
+
+
+            <!-- Notes Section -->
+            <div class="form-group" style="margin-top: 10px; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label for="sub-notes" style="margin-bottom: 0;">Notes <span
+                    style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
+                <div class="notes-counter-container" style="display: flex; align-items: center; gap: 8px;">
+                  <div class="progress-ring-container" style="position: relative; width: 20px; height: 20px;">
+                    <svg width="20" height="20" viewBox="0 0 20 20">
+                      <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" />
+                      <circle id="notes-progress-ring" cx="10" cy="10" r="8" fill="none" stroke="var(--accent-green)"
+                        stroke-width="2" stroke-dasharray="50.26" stroke-dashoffset="50.26" stroke-linecap="round"
+                        style="transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease; transform: rotate(-90deg); transform-origin: 50% 50%;" />
                     </svg>
                   </div>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                <div class="platform-dropdown hidden" id="platform-dropdown">
-                  <input type="text" id="platform-search" placeholder="Search apps..." autocomplete="off">
-                  <ul id="platform-list"></ul>
                 </div>
               </div>
-              <input type="text" id="sub-name" placeholder="Name or website link" required>
-              <input type="hidden" id="sub-domain" value="">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Price</label>
-            <div class="price-row">
-              <!-- Custom Currency Picker -->
-              <div class="currency-picker" id="currency-picker">
-                <button type="button" class="currency-trigger" id="currency-trigger">
-                  <span id="currency-symbol">$</span>
-                  <span id="currency-code">USD</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                <div class="currency-dropdown hidden" id="currency-dropdown">
-                  <input type="text" id="currency-search" placeholder="Search..." autocomplete="off">
-                  <ul id="currency-list"></ul>
-                </div>
-              </div>
-              <input type="number" id="sub-price" step="0.01" placeholder="9.99" required>
-              <input type="hidden" id="sub-currency" value="USD">
-              <input type="hidden" id="sub-currency-symbol" value="$">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="sub-date">Subscription Bought Day</label>
-            <input type="number" id="sub-date" min="1" max="31" placeholder="15" required>
-          </div>
-          <div class="form-group">
-            <label>Frequency</label>
-            <div class="freq-selector" style="margin-bottom: 5px;">
-              <button type="button" class="freq-btn" data-value="monthly">Monthly</button>
-              <button type="button" class="freq-btn" data-value="yearly">Yearly</button>
-              <button type="button" class="freq-btn" data-value="trial">Trial</button>
-              <button type="button" class="freq-btn active" data-value="one-time">One time</button>
-            </div>
-            <input type="hidden" id="sub-type" value="one-time">
-          </div>
-
-          <!-- Monthly Options Section (Hidden by default) -->
-          <div id="monthly-options-section" class="form-group hidden"
-            style="margin-top: 15px; animation: slideDown 0.3s ease;">
-            <label>Monthly Selection</label>
-            <div class="freq-selector" id="monthly-recurring-selector">
-              <button type="button" class="recur-btn" data-value="recurring">Recurring</button>
-              <button type="button" class="recur-btn" data-value="non-recurring">Non-recurring</button>
-            </div>
-            <input type="hidden" id="sub-recurring-val" value="">
-            <p id="monthly-error" class="hidden"
-              style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
-              Please select a monthly option!
-            </p>
-          </div>
-
-          <!-- Trial Duration Section (Hidden by default) -->
-          <div id="trial-duration-section" class="form-group hidden"
-            style="margin-top: 15px; animation: slideDown 0.3s ease;">
-            <label>Trial Duration (Pick one)</label>
-            <div style="display: flex; gap: 10px;">
-              <!-- Custom Days Picker -->
-              <div class="custom-dropdown dropdown-up" id="trial-days-picker" style="flex: 1;">
-                <button type="button" class="dropdown-trigger" id="trial-days-trigger">
-                  <span id="trial-days-selected">Days</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                <div class="dropdown-content hidden" id="trial-days-dropdown">
-                  <ul id="trial-days-list">
-                    <li data-value="7">7 Days</li>
-                    <li data-value="14">14 Days</li>
-                    <li data-value="30">30 Days</li>
-                  </ul>
-                </div>
-                <input type="hidden" id="trial-days-val" value="">
-              </div>
-
-              <!-- Custom Months Picker -->
-              <div class="custom-dropdown dropdown-up" id="trial-months-picker" style="flex: 1;">
-                <button type="button" class="dropdown-trigger" id="trial-months-trigger">
-                  <span id="trial-months-selected">Months</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-                <div class="dropdown-content hidden" id="trial-months-dropdown">
-                  <ul id="trial-months-list">
-                    <li data-value="1">1 Month</li>
-                    <li data-value="3">3 Months</li>
-                    <li data-value="6">6 Months</li>
-                    <li data-value="12">12 Months</li>
-                  </ul>
-                </div>
-                <input type="hidden" id="trial-months-val" value="">
-              </div>
-            </div>
-            <p id="trial-error" class="hidden"
-              style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
-              Please select the trial frequency duration!
-            </p>
-          </div>
-
-
-          <!-- Notes Section -->
-          <div class="form-group" style="margin-top: 10px;">
-            <label for="sub-notes">Notes <span style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
-            <textarea
-              id="sub-notes"
-              placeholder="e.g. Family plan, shared with 3 people..."
-              rows="3"
-              style="
+              <textarea id="sub-notes" placeholder="e.g. Family plan, shared with 3 people..." rows="3" maxlength="80"
+                style="
                 width: 100%;
                 background: var(--surface-bg);
                 border: 1px solid var(--border-color);
@@ -397,13 +414,12 @@
                 line-height: 1.5;
                 transition: border-color 0.2s ease;
                 outline: none;
-              "
-              onfocus="this.style.borderColor='rgba(255,255,255,0.25)'"
-              onblur="this.style.borderColor='var(--border-color)'"
-            ></textarea>
-          </div>
+              " onfocus="this.style.borderColor='rgba(255,255,255,0.25)'"
+                onblur="this.style.borderColor='var(--border-color)'"></textarea>
+            </div>
           </div> <!-- End form-scroll-area -->
-          <div style="flex-shrink: 0; padding-top: 10px; background: var(--bg-color); /* Match modal bg to prevent transparent overlap */">
+          <div
+            style="flex-shrink: 0; padding-top: 10px; background: var(--bg-color); /* Match modal bg to prevent transparent overlap */">
             <button type="submit" class="submit-btn" style="margin-top: 5px;">Save Subscription</button>
           </div>
         </form>

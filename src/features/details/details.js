@@ -44,6 +44,13 @@ function initModal() {
                 <div class="detail-dots" id="detail-dots"></div>
             </div>
         </div>
+
+        <!-- Full Note Popup -->
+        <div id="full-note-modal" class="full-note-modal">
+            <div class="full-note-content">
+                <div class="full-note-text" id="full-note-text-area"></div>
+            </div>
+        </div>
     `;
 
     document.getElementById('app').appendChild(modal);
@@ -60,6 +67,14 @@ function initModal() {
     // Close on overlay click
     modal.onclick = (e) => {
         if (e.target.id === modalId) hideSubscriptionDetails();
+    };
+
+    // Full Note Modal Close logic
+    const noteModal = document.getElementById('full-note-modal');
+    noteModal.onclick = (e) => {
+        if (e.target.id === 'full-note-modal') {
+            noteModal.classList.remove('show');
+        }
     };
 
     // Sync Dots with Scroll
@@ -147,6 +162,13 @@ function createCardHTML(s, viewDate = new Date()) {
     return `
         <div class="detail-premium-card" data-sub-id="${s.id}">
             <div class="detail-bg-text">${(s.name || 'INFO').toUpperCase()}</div>
+            
+            ${s.notes ? `
+            <div class="detail-pinned-note" onclick="window.showFullNote(event)" style="cursor: pointer;">
+                <div class="note-text-content">${s.notes}</div>
+            </div>
+            ` : ''}
+
             <div class="detail-logo-container">
                 <img src="https://icon.horse/icon/${domain}" alt="${s.name}" onerror="this.src='https://icon.horse/icon/example.com'">
             </div>
@@ -188,12 +210,6 @@ function createCardHTML(s, viewDate = new Date()) {
                     <span class="info-value">${s.currency || 'USD'}</span>
                 </div>
             </div>
-            ${s.notes ? `
-            <div class="detail-notes-section">
-                <div class="detail-notes-label">📝 Notes</div>
-                <p class="detail-notes-text">${s.notes}</p>
-            </div>
-            ` : ''}
         </div>
     `;
 }
@@ -286,6 +302,18 @@ export function hideSubscriptionDetails() {
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.add('hidden');
 }
+
+window.showFullNote = function(e) {
+    if (e) e.stopPropagation();
+    const sub = currentSub;
+    if (!sub || !sub.notes) return;
+
+    const noteModal = document.getElementById('full-note-modal');
+    const noteTextArea = document.getElementById('full-note-text-area');
+    
+    noteTextArea.innerText = sub.notes;
+    noteModal.classList.add('show');
+};
 
 function handleEditClick() {
     if (!currentSub) return;
