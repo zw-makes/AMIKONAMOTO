@@ -562,6 +562,7 @@ async function saveToSupabase(sub) {
       trialMonths: sub.trialMonths,
       recurring: sub.recurring,
       startDate: sub.startDate,
+      notes: sub.notes || null,
       user_id: currentUser.id
     };
 
@@ -847,12 +848,7 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
           icon.style.overflow = 'hidden';
           icon.onclick = (e) => {
             e.stopPropagation();
-            // Find all subs for this specific day to enable dots
-            const daySubs = subscriptions.filter(s => {
-              const d = new Date(s.date);
-              return d.getUTCDate() === day && d.getUTCMonth() === currentMonth && d.getUTCFullYear() === currentYear;
-            });
-            showSubscriptionDetails(sub, daySubs);
+            showSubscriptionDetails(sub, daySubs, new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
           };
 
           // Fallback if logo fails (Show a sleek white cross)
@@ -1230,6 +1226,9 @@ window.editSubscription = function (id) {
     btn.classList.toggle('active', btn.dataset.value === sub.type);
   });
 
+  // Notes
+  document.getElementById('sub-notes').value = sub.notes || '';
+
   // Handle specific frequency sections
   const monthlySec = document.getElementById('monthly-options-section');
   const trialSec = document.getElementById('trial-duration-section');
@@ -1391,12 +1390,14 @@ function attachSwipeEvents() {
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
-    const thresh = 40;
-    const maxTranslateX = 120; // More generous reveal
+    let hasStartedSwipe = false;
+    const threshold = 15;
+    const maxTranslateX = 120;
 
     const onStart = (e) => {
       startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       isDragging = true;
+      hasStartedSwipe = false; // Reset swipe detection
       item.style.transition = 'none';
 
       window.addEventListener('mousemove', onMove);
@@ -1410,38 +1411,44 @@ function attachSwipeEvents() {
       currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       const walk = currentX - startX;
 
+      // STRICT GATE: Do not do anything until we cross the threshold
+      if (!hasStartedSwipe) {
+        if (Math.abs(walk) > threshold) {
+          hasStartedSwipe = true;
+        } else {
+          return; // Still just a potential tap
+        }
+      }
+
+      // If we are here, it's a real swipe
       const wrapper = item.parentElement;
       const del = wrapper.querySelector('.delete');
       const stp = wrapper.querySelector('.stop');
       const frq = wrapper.querySelector('.freq');
 
-      // Max swipe distances
       const maxRight = 105;
       const maxLeft = 105;
+      const translate = Math.max(-maxLeft, Math.min(maxRight, walk > 0 ? walk - threshold : walk + threshold));
 
-      const translate = Math.max(-maxLeft, Math.min(maxRight, walk));
-
-      // Show left side buttons (Stop & Cancel) when swiping right
       if (translate > 0) {
         if (del) del.style.opacity = Math.min(translate / 60, 1);
         if (stp) stp.style.opacity = Math.min(translate / 60, 1);
         if (frq) frq.style.opacity = 0;
       } else {
-        // Show right side button (Freq & Paid) when swiping left
         if (frq) frq.style.opacity = Math.min(-translate / 60, 1);
-        if (wrapper.querySelector('.paid')) wrapper.querySelector('.paid').style.opacity = Math.min(-translate / 60, 1);
+        const paidBtn = wrapper.querySelector('.paid');
+        if (paidBtn) paidBtn.style.opacity = Math.min(-translate / 60, 1);
         if (del) del.style.opacity = 0;
         if (stp) stp.style.opacity = 0;
       }
 
       item.style.transform = `translateX(${translate}px)`;
-
-      if (Math.abs(walk) > 10 && e.cancelable) {
-        e.preventDefault();
-      }
+      
+      // Prevent scrolling once we've decided it's a swipe
+      if (e.cancelable) e.preventDefault();
     };
 
-    const onEnd = () => {
+    const onEnd = (e) => {
       if (!isDragging) return;
       isDragging = false;
 
@@ -1450,22 +1457,28 @@ function attachSwipeEvents() {
       window.removeEventListener('touchmove', onMove);
       window.removeEventListener('touchend', onEnd);
 
+      if (!hasStartedSwipe) {
+        // It was just a tap, the click listener on the logo will fire naturally
+        item.style.transform = 'translateX(0)';
+        return;
+      }
+
       const walk = currentX - startX;
       item.style.transition = 'transform 0.5s cubic-bezier(0.19, 1, 0.22, 1)';
       const wrapper = item.parentElement;
 
-      if (walk > thresh + 10) {
+      if (walk > 50) {
         item.style.transform = `translateX(${maxTranslateX}px)`;
-      } else if (walk < -(thresh + 10)) {
+      } else if (walk < -50) {
         item.style.transform = `translateX(${-maxTranslateX}px)`;
       } else {
         item.style.transform = `translateX(0)`;
-        wrapper.querySelector('.delete').style.opacity = 0;
-        wrapper.querySelector('.stop').style.opacity = 0;
+        if (wrapper.querySelector('.delete')) wrapper.querySelector('.delete').style.opacity = 0;
+        if (wrapper.querySelector('.stop')) wrapper.querySelector('.stop').style.opacity = 0;
       }
     };
 
-    item.addEventListener('touchstart', onStart);
+    item.addEventListener('touchstart', onStart, { passive: true });
     item.addEventListener('mousedown', onStart);
   });
 }
@@ -1707,33 +1720,69 @@ subForm.addEventListener('submit', (e) => {
     }
   }
 
-  const newSub = {
-    // Add a random integer offset to prevent double-click millisecond collisions
-    id: Date.now() + Math.floor(Math.random() * 10000),
-    name: document.getElementById('sub-name').value,
-    price: parseFloat(document.getElementById('sub-price').value),
-    date: parseInt(document.getElementById('sub-date').value),
-    type: type,
-    domain: document.getElementById('sub-domain').value,
-    currency: document.getElementById('sub-currency').value,
-    symbol: document.getElementById('sub-currency-symbol').value,
-    color: type === 'trial' ? '--accent-red' : (type === 'one-time' ? '--accent-purple' : '--accent-blue'),
-    trialDays: type === 'trial' ? document.getElementById('trial-days-val').value : null,
-    trialMonths: type === 'trial' ? document.getElementById('trial-months-val').value : null,
-    recurring: type === 'monthly' ? document.getElementById('sub-recurring-val').value : null,
-    startDate: new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(document.getElementById('sub-date').value)).toISOString(),
-    paid: false
-  };
+  let subObj;
+  const subName = document.getElementById('sub-name').value;
+  const subPrice = parseFloat(document.getElementById('sub-price').value);
+  const subDate = parseInt(document.getElementById('sub-date').value);
+  const subDomain = document.getElementById('sub-domain').value;
+  const subCurrency = document.getElementById('sub-currency').value;
+  const subSymbol = document.getElementById('sub-currency-symbol').value;
+  const trialDays = type === 'trial' ? document.getElementById('trial-days-val').value : null;
+  const trialMonths = type === 'trial' ? document.getElementById('trial-months-val').value : null;
+  const recurring = type === 'monthly' ? document.getElementById('sub-recurring-val').value : null;
+  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), subDate).toISOString();
 
-  subscriptions.push(newSub);
+  const subNotes = document.getElementById('sub-notes').value.trim();
+
+  if (window.editingSubId) {
+    subObj = subscriptions.find(s => s.id === window.editingSubId);
+    if (subObj) {
+      subObj.name = subName;
+      subObj.price = subPrice;
+      subObj.date = subDate;
+      subObj.type = type;
+      subObj.domain = subDomain;
+      subObj.currency = subCurrency;
+      subObj.symbol = subSymbol;
+      subObj.trialDays = trialDays;
+      subObj.trialMonths = trialMonths;
+      subObj.recurring = recurring;
+      subObj.startDate = startDate;
+      subObj.notes = subNotes;
+      // Keep existing properties like color, stopped, paid
+    }
+  }
+
+  if (!subObj) {
+    subObj = {
+      id: Date.now() + Math.floor(Math.random() * 10000),
+      name: subName,
+      price: subPrice,
+      date: subDate,
+      type: type,
+      domain: subDomain,
+      currency: subCurrency,
+      symbol: subSymbol,
+      color: type === 'trial' ? '--accent-red' : (type === 'one-time' ? '--accent-purple' : '--accent-blue'),
+      trialDays: trialDays,
+      trialMonths: trialMonths,
+      recurring: recurring,
+      startDate: startDate,
+      notes: subNotes,
+      paid: false
+    };
+    subscriptions.push(subObj);
+  }
+
+  const isEdit = !!window.editingSubId;
 
   // Notify user
   if (window.addNotification) {
     window.addNotification({
-      title: "Subscription Added",
-      text: `${newSub.name} has been added to your calendar.`,
+      title: isEdit ? "Subscription Updated" : "Subscription Added",
+      text: `${subObj.name} has been ${isEdit ? 'updated' : 'added to your calendar'}.`,
       type: "success",
-      domain: newSub.domain
+      domain: subObj.domain
     });
   }
 
@@ -1752,10 +1801,10 @@ subForm.addEventListener('submit', (e) => {
 
 
   // Background sync and ID replacement
-  saveToSupabase(newSub).then(savedSub => {
-    if (savedSub && savedSub.id) {
+  saveToSupabase(subObj).then(savedSub => {
+    if (!isEdit && savedSub && savedSub.id) {
       // Find the temporary sub we just pushed and update its ID to the real DB ID
-      const index = subscriptions.findIndex(s => s.id === newSub.id);
+      const index = subscriptions.findIndex(s => s.id === subObj.id);
       if (index !== -1) {
         subscriptions[index].id = savedSub.id;
         localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
@@ -1764,6 +1813,9 @@ subForm.addEventListener('submit', (e) => {
   });
 
   // Reset form and currency
+  window.editingSubId = null; // Important: Clear edit mode
+  addModal.querySelector('h2').innerText = 'Add Subscription';
+  document.getElementById('sub-notes').value = '';
   selectCurrency('USD', '$');
   updatePlatformIcon(null);
   document.getElementById('sub-domain').value = '';
@@ -3267,7 +3319,7 @@ window.showSubDetail = function(id, e) {
   if (sub) {
     // Find all subs for the same day as this sub
     const daySubs = subscriptions.filter(s => s.date === sub.date);
-    showSubscriptionDetails(sub, daySubs);
+    showSubscriptionDetails(sub, daySubs, new Date(currentDate.getFullYear(), currentDate.getMonth(), sub.date));
   }
 };
 

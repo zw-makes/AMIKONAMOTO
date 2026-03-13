@@ -2,9 +2,10 @@ import './details.css';
 
 let currentSub = null;
 const modalId = 'subscription-details-modal';
+let currentDaySubs = []; // Track all subs for swiping
 
 /**
- * Initializes the detail view modal in the DOM if it doesn't exist
+ * Initializes the modal HTML if it doesn't exist
  */
 function initModal() {
     if (document.getElementById(modalId)) return;
@@ -12,6 +13,8 @@ function initModal() {
     const modal = document.createElement('div');
     modal.id = modalId;
     modal.className = 'modal-overlay detail-view-modal hidden';
+    
+    // Using a more semantic structure with glassmorphism
     modal.innerHTML = `
         <div class="detail-view-content" id="detail-view-content">
             <!-- Header -->
@@ -31,45 +34,10 @@ function initModal() {
                 </button>
             </div>
 
-            <!-- Main Content -->
+            <!-- Main Content with Scroll Track -->
             <div class="detail-main-content">
-                <div class="detail-ambient-glow"></div>
-                
-                <div class="detail-premium-card">
-                    <div class="detail-bg-text">INFO</div>
-                    <div class="detail-logo-container" id="detail-logo-container">
-                        <!-- Logo injected here -->
-                    </div>
-                    
-                    <h2 class="detail-sub-name" id="detail-name">Netflix</h2>
-                    <p class="detail-sub-domain" id="detail-domain">netflix.com</p>
-
-                    <div class="detail-card-divider"></div>
-
-                    <div class="detail-info-grid">
-                        <div class="info-card">
-                            <span class="info-label">Price</span>
-                            <span class="info-value price" id="detail-price">$15.99</span>
-                        </div>
-                        <div class="info-card">
-                            <span class="info-label">Date</span>
-                            <span class="info-value" id="detail-date">15th</span>
-                        </div>
-                        <div class="info-card">
-                            <span class="info-label">Frequency</span>
-                            <span class="info-value" id="detail-freq">Monthly</span>
-                        </div>
-                        <div class="info-card">
-                            <span class="info-label">Status</span>
-                            <div id="detail-status-container">
-                                <span id="detail-status" class="status-badge status-active">Active</span>
-                            </div>
-                        </div>
-                        <div class="info-card">
-                            <span class="info-label">Currency</span>
-                            <span class="info-value" id="detail-currency">USD</span>
-                        </div>
-                    </div>
+                <div class="detail-scroll-track" id="detail-scroll-track">
+                    <!-- Cards injected here -->
                 </div>
 
                 <!-- Pagination Dots -->
@@ -81,13 +49,185 @@ function initModal() {
     document.getElementById('app').appendChild(modal);
 
     // Event Listeners
-    document.getElementById('sub-detail-back').addEventListener('click', hideSubscriptionDetails);
-    document.getElementById('sub-detail-edit').addEventListener('click', handleEditClick);
-    
+    document.getElementById('sub-detail-back').onclick = hideSubscriptionDetails;
+    document.getElementById('sub-detail-edit').onclick = () => {
+        if (currentSub && window.editSubscription) {
+            window.editSubscription(currentSub.id);
+            hideSubscriptionDetails();
+        }
+    };
+
     // Close on overlay click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) hideSubscriptionDetails();
+    modal.onclick = (e) => {
+        if (e.target.id === modalId) hideSubscriptionDetails();
+    };
+
+    // Sync Dots with Scroll
+    const track = document.getElementById('detail-scroll-track');
+    track.addEventListener('scroll', () => {
+        const index = Math.round(track.scrollLeft / 360); // 340 width + 20 margin
+        updateActiveDot(index);
+        
+        // Update currentSub globally so Edit button works for the visible card
+        if (currentDaySubs[index]) {
+            currentSub = currentDaySubs[index];
+        }
+    }, { passive: true });
+}
+
+function updateActiveDot(index) {
+    const dots = document.querySelectorAll('.detail-dot');
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
     });
+}
+
+function createCardHTML(s, viewDate = new Date()) {
+    const domain = s.domain || 'example.com';
+    const price = `${s.symbol || '$'}${s.price.toFixed(2)}`;
+    const statusClass = s.stopped ? 'status-stopped' : 'status-active';
+    const statusText = s.stopped ? 'Stopped' : 'Active';
+
+    // Real world today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Calendar context date
+    const calendarDate = new Date(viewDate);
+    calendarDate.setHours(0, 0, 0, 0);
+
+    // Subscription start date
+    const startDate = new Date(s.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const purchaseDate = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    // Calculate Days Logic (Relative to Real Today)
+    const diffTimeStart = startDate.getTime() - today.getTime();
+    const diffDaysFromToday = Math.ceil(diffTimeStart / (1000 * 60 * 60 * 24));
+    
+    // Contextual Status (Relative to Calendar View)
+    let contextStatusLabel = "Active For";
+    let contextStatusValue = "";
+    
+    if (calendarDate > today) {
+        // Looking at a future month/date
+        contextStatusLabel = "Status (Future)";
+        if (s.stopped) {
+            contextStatusValue = "Stopped (No Billing)";
+        } else {
+            contextStatusValue = `Scheduled for ${calendarDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        }
+    } else if (calendarDate.getTime() === today.getTime()) {
+        // Looking at today
+        if (diffDaysFromToday > 0) {
+            contextStatusLabel = "Starts";
+            contextStatusValue = `In ${diffDaysFromToday} Day${diffDaysFromToday !== 1 ? 's' : ''}`;
+        } else if (diffDaysFromToday === 0) {
+            contextStatusLabel = "Status";
+            contextStatusValue = "Starts Today";
+        } else {
+            const pastDays = Math.abs(diffDaysFromToday);
+            contextStatusLabel = "Active For";
+            contextStatusValue = `${pastDays} Day${pastDays !== 1 ? 's' : ''}`;
+        }
+    } else {
+        // Looking at the past
+        contextStatusLabel = "Occurred";
+        contextStatusValue = calendarDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Calculate Billing/End Date
+    const { end } = getSubCalculatedDates(s);
+    const billingDate = end ? end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+    // Currency Exchange (if applicable)
+    const exchangeInfo = s.displayPrice && s.displayPrice.includes('→') ? s.displayPrice : null;
+
+    return `
+        <div class="detail-premium-card" data-sub-id="${s.id}">
+            <div class="detail-bg-text">${(s.name || 'INFO').toUpperCase()}</div>
+            <div class="detail-logo-container">
+                <img src="https://icon.horse/icon/${domain}" alt="${s.name}" onerror="this.src='https://icon.horse/icon/example.com'">
+            </div>
+            
+            <h2 class="detail-sub-name">${s.name}</h2>
+            <!-- Domain Removed as requested -->
+
+            <div class="detail-card-divider"></div>
+
+            <div class="detail-info-grid">
+                <div class="info-card">
+                    <span class="info-label">Price</span>
+                    <span class="info-value price">${price}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">Purchase Date</span>
+                    <span class="info-value">${purchaseDate}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">${s.type === 'monthly' && s.recurring === 'recurring' ? 'Next Billing' : 'End Date'}</span>
+                    <span class="info-value">${billingDate}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">Frequency</span>
+                    <span class="info-value">${s.type.charAt(0).toUpperCase() + s.type.slice(1)}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">Current Status</span>
+                    <div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">${contextStatusLabel}</span>
+                    <span class="info-value">${contextStatusValue}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">Currency</span>
+                    <span class="info-value">${s.currency || 'USD'}</span>
+                </div>
+            </div>
+            ${s.notes ? `
+            <div class="detail-notes-section">
+                <div class="detail-notes-label">📝 Notes</div>
+                <p class="detail-notes-text">${s.notes}</p>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+/**
+ * Replicates main.js getSubDates for local calculation
+ */
+function getSubCalculatedDates(sub) {
+    const start = new Date(sub.startDate);
+    let end = null;
+
+    if (sub.type === 'trial' || (sub.type === 'monthly' && sub.recurring !== 'recurring') || sub.type === 'one-time') {
+        end = new Date(start);
+        if (sub.type === 'trial') {
+            const tDays = parseInt(sub.trialDays) || 0;
+            const tMonths = parseInt(sub.trialMonths) || 0;
+            end.setMonth(end.getMonth() + tMonths);
+            end.setDate(end.getDate() + tDays);
+        } else {
+            end.setMonth(end.getMonth() + 1);
+        }
+    } else if (sub.type === 'yearly') {
+        end = new Date(start);
+        end.setFullYear(end.getFullYear() + 1);
+    } else if (sub.type === 'monthly' && sub.recurring === 'recurring') {
+        // Next billing date is same day next month
+        end = new Date();
+        end.setDate(start.getDate());
+        if (end < new Date()) {
+            end.setMonth(end.getMonth() + 1);
+        }
+    }
+
+    return { start, end };
 }
 
 /**
@@ -95,54 +235,30 @@ function initModal() {
  * @param {Object} sub - The active subscription object
  * @param {Array} daySubs - All subscriptions for the same day
  */
-export function showSubscriptionDetails(sub, daySubs = []) {
+export function showSubscriptionDetails(sub, daySubs = [], viewDate = new Date()) {
     if (!sub) return;
     currentSub = sub;
+    currentDaySubs = daySubs;
     initModal();
 
     const modal = document.getElementById(modalId);
+    const track = document.getElementById('detail-scroll-track');
     
-    // Update data
-    document.getElementById('detail-name').innerText = sub.name;
-    document.getElementById('detail-domain').innerText = sub.domain || 'No domain';
-    document.getElementById('detail-price').innerText = `${sub.symbol || '$'}${sub.price.toFixed(2)}`;
-    document.getElementById('detail-date').innerText = `${sub.date}${getDaySuffix(sub.date)}`;
-    document.getElementById('detail-freq').innerText = sub.type.charAt(0).toUpperCase() + sub.type.slice(1);
-    document.getElementById('detail-currency').innerText = sub.currency || 'USD';
-
-    // Background Text (Large impact)
-    const bgText = modal.querySelector('.detail-bg-text');
-    if (bgText) {
-        bgText.innerText = (sub.name || 'INFO').toUpperCase();
-    }
-
-    // Status
-    const statusEl = document.getElementById('detail-status');
-    if (sub.stopped) {
-        statusEl.innerText = 'Stopped';
-        statusEl.className = 'status-badge status-stopped';
-    } else {
-        statusEl.innerText = 'Active';
-        statusEl.className = 'status-badge status-active';
-    }
-
-    // Logo
-    const logoContainer = document.getElementById('detail-logo-container');
-    const domain = sub.domain || 'example.com';
-    logoContainer.innerHTML = `<img src="https://icon.horse/icon/${domain}" alt="${sub.name}" onerror="this.src='https://icon.horse/icon/example.com'">`;
-
-    // Trigger Animation on the card
-    const card = modal.querySelector('.detail-premium-card');
-    if (card) {
-        card.classList.remove('card-content-animate');
-        void card.offsetWidth; // Trigger reflow to restart animation
-        card.classList.add('card-content-animate');
-    }
+    // Render all cards with the calendar context
+    track.innerHTML = daySubs.map(s => createCardHTML(s, viewDate)).join('');
 
     // Render Dots
     renderDots(sub, daySubs);
 
     modal.classList.remove('hidden');
+
+    // Scroll to the active sub card
+    const activeIndex = daySubs.findIndex(s => s.id === sub.id);
+    if (activeIndex !== -1) {
+        setTimeout(() => {
+            track.scrollLeft = activeIndex * 360; 
+        }, 10);
+    }
 }
 
 function renderDots(activeSub, daySubs) {

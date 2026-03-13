@@ -117,34 +117,49 @@
 }
 
 .detail-main-content {
-  padding: 80px 24px 60px; /* Space for floating logo */
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
   position: relative;
+  overflow: hidden;
 }
 
-/* Ambient Glow Background (Like Pricing Page) */
-.detail-ambient-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  filter: blur(60px);
-  z-index: -1;
-  opacity: 0.5;
-  pointer-events: none;
+/* Horizontal Scroll Track (Like Pricing Page) */
+.detail-scroll-track {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: auto; /* For manual grabbing feel */
+    padding: 80px 0 60px; /* Space for logo and dots */
+}
+
+.detail-scroll-track::-webkit-scrollbar {
+    display: none;
+}
+
+/* Centering pseudo-elements match pricing layout */
+.detail-scroll-track::before,
+.detail-scroll-track::after {
+    content: '';
+    flex: 0 0 calc(50% - 170px); /* 170px is half card width (340/2) */
+    pointer-events: none;
 }
 
 /* The Hero Card Container (Pricing Card Vibe) */
 .detail-premium-card {
-  width: 340px; /* Fixed width like pricing cards */
-  height: 470px; /* Fixed height like pricing cards */
+  width: 340px; 
+  height: 480px; 
+  flex-shrink: 0; /* Important for scroll track */
+  scroll-snap-align: center;
+  margin: 0 10px; /* Gap between cards */
   background: rgba(25, 25, 25, 0.4);
   backdrop-filter: blur(40px) saturate(150%);
   -webkit-backdrop-filter: blur(40px) saturate(150%);
@@ -219,14 +234,7 @@
   letter-spacing: -0.01em;
 }
 
-.detail-sub-domain {
-  font-size: 0.85rem;
-  color: var(--text-primary);
-  font-weight: 600;
-  margin-top: 4px;
-  margin-bottom: 20px;
-  opacity: 0.8;
-}
+/* Domain Removed */
 
 .detail-card-divider {
   width: 100%;
@@ -239,8 +247,9 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   flex: 1;
+  padding-bottom: 20px;
 }
 
 .info-card {
@@ -316,4 +325,30 @@
     background: rgba(255, 85, 85, 0.1);
     color: #ff5555;
     border: 1px solid rgba(255, 85, 85, 0.2);
+}
+
+/* Notes Section */
+.detail-notes-section {
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.detail-notes-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+}
+
+.detail-notes-text {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+    font-weight: 400;
+    font-style: italic;
+    word-break: break-word;
 }

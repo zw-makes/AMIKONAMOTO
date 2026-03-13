@@ -657,7 +657,17 @@ button:active {
   border-bottom: none;
   box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.8);
   animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 90vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+
+.modal-content::-webkit-scrollbar {
+  display: none;
+}
+
 
 @keyframes slide-up {
   from {
