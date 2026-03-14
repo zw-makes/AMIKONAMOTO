@@ -1,4 +1,5 @@
 // Triggering iOS Build - March 13
+import { LocalNotifications } from '@capacitor/local-notifications';
 import './style.css';
 import './features/bottombar/bottombar.css';
 import { supabase } from './supabase.js';
@@ -3623,21 +3624,95 @@ function updateReminders() {
 }
 
 
+// --- Native Notification Bridge (Integrated) ---
+async function setupNativeBridge() {
+  console.log('[NativeBridge] Initializing...');
+  try {
+    const permission = await LocalNotifications.checkPermissions();
+    if (permission.display !== 'granted') {
+      await LocalNotifications.requestPermissions();
+    }
+  } catch (e) { console.warn('[NativeBridge] Permissions skip:', e); }
+
+  const originalAddNotif = window.addNotification;
+  window.addNotification = async function (notif) {
+    if (originalAddNotif) await originalAddNotif(notif);
+    if (notif.type !== 'warning') return;
+
+    const parts = notif.key ? notif.key.split('-') : [];
+    if (parts.length >= 4) {
+      const dateStr = parts.slice(-3).join('-');
+      const scheduleDate = new Date(dateStr);
+      
+      let preferredHour = 9;
+      const profileStr = localStorage.getItem(`profile_${window.currentUser?.id}`);
+      if (profileStr) {
+        try {
+          const profile = JSON.parse(profileStr);
+          if (profile?.settings?.notificationTime !== undefined) {
+            preferredHour = parseInt(profile.settings.notificationTime);
+          }
+        } catch (e) { }
+      }
+      scheduleDate.setHours(preferredHour, 0, 0, 0);
+      if (scheduleDate.getTime() <= Date.now()) return;
+
+      try {
+        const id = Math.floor(Math.random() * 1000000);
+        await LocalNotifications.schedule({
+          notifications: [{
+            title: notif.title,
+            body: notif.text,
+            id: id,
+            schedule: { at: scheduleDate },
+            sound: 'default'
+          }]
+        });
+      } catch (e) { console.error('[NativeBridge] Schedule error:', e); }
+    }
+  };
+  window.addNotification.__isBridge = true;
+}
+
+// Test Notification logic (Integrated)
+window.testNativeNotification = async function () {
+  const btn = document.getElementById('test-notif-btn');
+  if (btn) {
+    btn.style.transform = 'scale(0.95)';
+    btn.style.background = 'rgba(0,255,136,0.2)';
+    setTimeout(() => {
+      btn.style.transform = '';
+      btn.style.background = '';
+    }, 200);
+  }
+
+  if (window.showToast) window.showToast('Native Alert: Setting up... 🔔');
+
+  try {
+    const testDate = new Date(Date.now() + 15000); // 15 seconds
+    await LocalNotifications.schedule({
+      notifications: [{
+        title: "SubTrack Test 🚀",
+        body: "This is a real native alert! It works when the app is closed.",
+        id: 888,
+        schedule: { at: testDate },
+        sound: 'default'
+      }]
+    });
+    alert("SUCCESS! Alert set for 15 seconds from now.\n\n1. CLOSE the app now.\n2. LOCK your screen.\n3. Wait 15 seconds!");
+  } catch (e) {
+    alert("NATIVE ERROR: " + e.message);
+  }
+};
+
 // --- Feature Init ---
 initNotifications();
 initPricing();
 initBottomBar();
 initGlass();
+setupNativeBridge();
 
-// Test Notification Btn
+// Test Notification Btn Listener
 document.getElementById('test-notif-btn')?.addEventListener('click', () => {
-  console.log('Test button clicked');
-  if (window.showToast) window.showToast('Checking bridge... 🔗');
-  
-  if (window.testNativeNotification) {
-    window.testNativeNotification();
-  } else {
-    console.error('testNativeNotification not found on window');
-    alert("Native bridge not found. \n\n1. Ensure you pushed the code to GitHub. \n2. Re-download the .ipa. \n3. This only works on a real iPhone!");
-  }
+  window.testNativeNotification();
 });
