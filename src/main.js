@@ -3292,6 +3292,7 @@ function updateProfileUI() {
 accountSettingsBtn.addEventListener('click', () => window.showAccountSettings());
 document.getElementById('test-native-notif-btn')?.addEventListener('click', () => {
     NativeNotifications.sendTestNotification();
+    showToast('Scheduling test notification... 🔔');
 });
 closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
 
@@ -3576,6 +3577,34 @@ function getSubDates(sub) {
   return { start, end };
 }
 
+/**
+ * Converts a target calendar date + user preferred time + user preferred timezone
+ * into the correct absolute Date object for scheduling a native notification.
+ */
+function getNotifScheduledDate(targetDate, prefH, prefM, timezoneStr) {
+  // Parse the preferred timezone offset, e.g. "UTC+05:30" → +330 minutes
+  const tzMatch = (timezoneStr || 'UTC+00:00').match(/UTC([+-])(\d{2}):(\d{2})/);
+  let prefTzOffsetMinutes = 0;
+  if (tzMatch) {
+    const sign = tzMatch[1] === '+' ? 1 : -1;
+    prefTzOffsetMinutes = sign * (parseInt(tzMatch[2]) * 60 + parseInt(tzMatch[3]));
+  }
+
+  // Extract the calendar date from the target (using local device time is fine for day accuracy)
+  const d = new Date(targetDate);
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const day = d.getDate();
+
+  // The user wants notification at prefH:prefM in their preferred timezone.
+  // Convert preferred local time → UTC:  UTC = preferred_time - preferred_tz_offset
+  const preferredMinutesFromMidnight = parseInt(prefH) * 60 + parseInt(prefM);
+  const utcMinutesFromMidnight = preferredMinutesFromMidnight - prefTzOffsetMinutes;
+
+  // Build the final UTC Date and return it (JS will handle display conversion)
+  return new Date(Date.UTC(year, month, day) + utcMinutesFromMidnight * 60 * 1000);
+}
+
 function updateReminders() {
   if (!window.addNotification) return;
 
@@ -3589,6 +3618,7 @@ function updateReminders() {
   today.setHours(0, 0, 0, 0);
 
   const [prefH, prefM] = (settings.notificationTime || '09:00').split(':');
+  const userTimezone = settings.timezone || 'UTC+00:00'; // FIX: use preferred timezone for scheduling
   const nativeReminders = [];
 
   subscriptions.forEach(s => {
@@ -3597,78 +3627,110 @@ function updateReminders() {
     const { start: origStart, end: origEnd } = getSubDates(s);
     if (!origStart) return;
 
-    const checkTarget = (targetDate, label) => {
+    const checkTarget = (targetDate, label, type) => {
       if (!targetDate) return;
       const diffMs = targetDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-      // 1. In-App Notification (Current View)
+      // 1. In-App Notification (Recent View)
       if (diffDays >= 0 && diffDays <= 7 && !sessionStorage.getItem('notifs_cleared')) {
         const dateKey = targetDate.toISOString().split('T')[0];
         window.addNotification({
           key: `remind-${label.toLowerCase()}-${s.id}-${dateKey}`,
-          title: diffDays === 0 ? `Due ${label}` : `${label} Soon`,
+          title: diffDays === 0 ? `⚠️ ${label} TODAY` : `🔔 ${label} SOON`,
           text: diffDays === 0
-            ? `${s.name} ${label.toLowerCase()} today! ⚠️`
-            : `${s.name} ${label.toLowerCase()} in ${diffDays} day${diffDays > 1 ? 's' : ''}.`,
+            ? `Your ${s.name} ${type} ${label.toLowerCase()} today!`
+            : `${s.name} ${type} ${label.toLowerCase()} in ${diffDays} day${diffDays > 1 ? 's' : ''}.`,
           type: "warning",
           domain: s.domain
         });
       }
 
       // 2. Native Notification (Future Scheduling)
-      // Only schedule if it's in the future (today or later)
-      if (diffDays >= 0 && diffDays <= 30) { // Schedule up to a month in advance
-        const scheduledDate = new Date(targetDate);
-        scheduledDate.setHours(parseInt(prefH), parseInt(prefM), 0, 0);
+      // Only schedule if it's today or in the next 30 days
+      if (diffDays >= 0 && diffDays <= 30) {
+        // FIX: Use timezone-aware scheduling instead of raw setHours()
+        let scheduledDate = getNotifScheduledDate(targetDate, prefH, prefM, userTimezone);
 
-        // If scheduled time for TODAY has already passed, skip today's alert
-        if (diffDays === 0 && scheduledDate < new Date()) return;
+        // FIX: If the preferred time for today has already passed, fire in 3 minutes
+        // instead of silently skipping the notification entirely
+        if (scheduledDate < new Date()) {
+          scheduledDate = new Date(Date.now() + 3 * 60 * 1000);
+        }
 
         nativeReminders.push({
           id: Math.floor(Math.random() * 1000000),
-          title: diffDays === 0 ? `⚠️ ${s.name} ${label} Today` : `🔔 ${s.name} ${label} Soon`,
-          body: diffDays === 0 
-            ? `Your ${s.name} subscription ${label.toLowerCase()} today. Don't forget!`
-            : `${s.name} ${label.toLowerCase()} in ${diffDays} days.`,
+          title: diffDays === 0 ? `⚠️ ${s.name} ${label}` : `🔔 ${s.name} ${label} Soon`,
+          body: diffDays === 0
+            ? `Your ${s.name} ${type} ${label.toLowerCase()} today. Don't forget!`
+            : `${s.name} ${type} ${label.toLowerCase()} in ${diffDays} days.`,
           date: scheduledDate
         });
       }
     };
 
     const billingDay = origStart.getDate();
-    const billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
-
-    if (s.type === 'monthly' && s.recurring === 'recurring') {
-      checkTarget(billingDate, "Payment");
-      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
-      checkTarget(nextMonth, "Payment");
+    
+    if (s.type === 'trial' && origEnd) {
+      checkTarget(origEnd, "Trial Ending", "subscription");
+    } else if (s.type === 'monthly') {
+      if (s.recurring === 'recurring') {
+        // Renewal logic
+        const billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+        // If it's already past this month's billing day, target next month
+        if (billingDate < today) {
+            billingDate.setMonth(billingDate.getMonth() + 1);
+        }
+        checkTarget(billingDate, "Renewal", "monthly plan");
+      } else if (origEnd) {
+        // Non-recurring ends
+        checkTarget(origEnd, "Ends", "subscription");
+      }
     } else if (s.type === 'yearly') {
       const yearlyRenewal = new Date(today.getFullYear(), origStart.getMonth(), billingDay);
-      checkTarget(yearlyRenewal, "Renewal");
-    } else {
-      checkTarget(origStart, "Payment");
-      checkTarget(origEnd, "Ends");
+      if (yearlyRenewal < today) {
+          yearlyRenewal.setFullYear(yearlyRenewal.getFullYear() + 1);
+      }
+      checkTarget(yearlyRenewal, "Renewal", "yearly plan");
+    } else if (s.type === 'one-time' && origEnd) {
+      checkTarget(origEnd, "Ends", "one-time plan");
     }
 
-    // Unpaid reminder logic
+    // Unpaid reminder logic (as requested)
+    // Only remind for unpaid recurring subs that are due soon or just passed
     const isPaid = window.isSubPaid(s, today);
-    if (!isPaid && !s.stopped) {
-       // If it's unpaid and due this month, remind them
+    if (!isPaid && !s.stopped && s.recurring === 'recurring') {
        const dueDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
-       if (dueDate >= today) {
-         nativeReminders.push({
-           id: Math.floor(Math.random() * 1000000),
-           title: `📌 Unpaid: ${s.name}`,
-           body: `You haven't marked ${s.name} as paid for this month yet.`,
-           date: new Date(dueDate.setHours(parseInt(prefH), parseInt(prefM), 0, 0))
-         });
+       // If due date is today or yesterday (missed it)
+       const diff = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+       
+       if (diff >= 0 && diff <= 3) { // Remind for up to 3 days after it was due
+          // FIX: Use timezone-aware scheduling + 2-hour buffer for unpaid reminders
+          let unpaidDate = getNotifScheduledDate(today, prefH, prefM, userTimezone);
+          unpaidDate = new Date(unpaidDate.getTime() + 2 * 60 * 60 * 1000); // +2 hours
+          // If that time has already passed today, fire in 5 minutes instead
+          if (unpaidDate < new Date()) {
+            unpaidDate = new Date(Date.now() + 5 * 60 * 1000);
+          }
+          nativeReminders.push({
+            id: Math.floor(Math.random() * 1000000),
+            title: `📌 Unpaid Reminder: ${s.name}`,
+            body: `You haven't marked your ${s.name} billing as paid yet.`,
+            date: unpaidDate
+          });
        }
     }
   });
 
-  // Bulk schedule native notifications
-  NativeNotifications.scheduleReminders(nativeReminders);
+  // Bulk schedule native notifications + show confirmation to the user
+  if (nativeReminders.length > 0) {
+    NativeNotifications.scheduleReminders(nativeReminders).then(() => {
+      showToast(`🔔 ${nativeReminders.length} notification${nativeReminders.length > 1 ? 's' : ''} scheduled!`);
+      console.log(`[Notif] Successfully scheduled ${nativeReminders.length} native notification(s)`);
+    });
+  } else {
+    console.log('[Notif] No upcoming events in next 30 days — nothing to schedule.');
+  }
 }
 
 
