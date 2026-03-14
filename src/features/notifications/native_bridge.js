@@ -58,6 +58,7 @@ async function initNativeBridge() {
             await scheduleNativeAlert(notif, scheduleDate);
         }
     };
+    window.addNotification.__isBridge = true;
 }
 
 async function scheduleNativeAlert(notif, date) {
@@ -85,12 +86,25 @@ async function scheduleNativeAlert(notif, date) {
     }
 }
 
-// Global helper to test notifications
+// Global helper to test notifications (Defined immediately)
 window.testNativeNotification = async function () {
     console.log('[NativeBridge] Test notification button clicked');
-    if (window.showToast) window.showToast('Scheduling test... ⏳');
+    
+    // Immediate visual feedback inside the app
+    if (window.showToast) {
+        window.showToast('Native Bridge: Processing... 🔔');
+    }
 
     try {
+        // 1. Request/Verify Permissions immediately
+        const permission = await LocalNotifications.checkPermissions();
+        if (permission.display !== 'granted') {
+            const req = await LocalNotifications.requestPermissions();
+            if (req.display !== 'granted') {
+                throw new Error('iOS Notification Permissions Denied');
+            }
+        }
+
         const testDate = new Date(Date.now() + 30000); // 30 seconds from now
         await LocalNotifications.schedule({
             notifications: [
@@ -104,22 +118,20 @@ window.testNativeNotification = async function () {
             ]
         });
 
-        const msg = "Success! Notification set for 30 seconds from now.\n\nIMPORTANT: Do NOT turn off your phone. Just close the app and wait.";
-        console.log('[NativeBridge] ' + msg);
+        const msg = "Success! Native alert scheduled for 30 seconds from now.\n\nNow: \n1. Close the app (swipe it away)\n2. Lock your screen\n3. Wait 30 seconds!";
         alert(msg);
     } catch (e) {
         console.error('[NativeBridge] Test failed:', e);
-        const errorMsg = "Native test failed. Are you sure you are on a real iPhone?";
+        const errorMsg = "Native system failed: " + e.message;
         if (window.showToast) window.showToast(errorMsg, 'error');
-        alert(errorMsg + "\n\nError: " + e.message);
+        alert(errorMsg + "\n\nThis usually means you are not running the actual installed app on an iPhone.");
     }
 };
 
-// Auto-init if window exists
+// Auto-init for wrapping original notification
 if (typeof window !== 'undefined') {
-    // Wait for main.js to define addNotification if it hasn't yet
     const checkInterval = setInterval(() => {
-        if (window.addNotification) {
+        if (window.addNotification && !window.addNotification.__isBridge) {
             clearInterval(checkInterval);
             initNativeBridge();
         }
