@@ -140,6 +140,11 @@ Object.defineProperty(window, 'userProfile', {
   set: (val) => { userProfile = val; }
 });
 
+Object.defineProperty(window, 'currentUser', {
+  get: () => currentUser,
+  set: (val) => { currentUser = val; }
+});
+
 let exchangeRatesCache = {}; // base -> { rates, timestamp }
 const DEFAULT_SUBS = [
   { name: 'Netflix', price: 15.99, date: 2, type: 'monthly', color: '--accent-pink', currency: 'USD', symbol: '$' },
@@ -195,12 +200,19 @@ const timezoneList = document.getElementById('timezone-list');
 const timezoneSearch = document.getElementById('timezone-search');
 const timezoneHiddenInput = document.getElementById('settings-timezone');
 
-const settingsCurrencyPicker = document.getElementById('settings-currency-picker');
-const settingsCurrencyTrigger = document.getElementById('settings-currency-trigger');
 const settingsCurrencyDropdown = document.getElementById('settings-currency-dropdown');
-const settingsCurrencySelected = document.getElementById('settings-currency-selected');
 const settingsCurrencyList = document.getElementById('settings-currency-list');
+const settingsCurrencyTrigger = document.getElementById('settings-currency-trigger');
+const settingsCurrencySelected = document.getElementById('settings-currency-selected');
 const prefCurrencyHidden = document.getElementById('settings-pref-currency');
+
+// Notification Time Selectors
+const notifTimePicker = document.getElementById('notif-time-picker');
+const notifTimeTrigger = document.getElementById('notif-time-trigger');
+const notifTimeDropdown = document.getElementById('notif-time-dropdown');
+const notifTimeSelected = document.getElementById('notif-time-selected');
+const notifTimeList = document.getElementById('notif-time-list');
+const notifTimeHiddenInput = document.getElementById('settings-notif-time');
 
 let isSignUp = false;
 let userProfile = null; // { name, age, gender }
@@ -2988,9 +3000,51 @@ window.showAppSettings = function () {
   const curr = CURRENCIES.find(c => c.code === prefCurrency) || CURRENCIES[0];
   settingsCurrencySelected.innerText = `${curr.code} (${curr.symbol})`;
 
+  const notifTime = settings.notificationTime || 9;
+  notifTimeHiddenInput.value = notifTime;
+  notifTimeSelected.innerText = formatHour(notifTime);
+
   appSettingsModal.classList.remove('hidden');
   profileModal.classList.add('hidden');
 };
+
+function formatHour(h) {
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour.toString().padStart(2, '0')}:00 ${ampm}`;
+}
+
+function renderNotifTimeList() {
+  const selected = parseInt(notifTimeHiddenInput.value);
+  let html = '';
+  for (let h = 0; h < 24; h++) {
+    html += `
+      <li data-value="${h}" class="${h === selected ? 'selected' : ''}">
+        <span>${formatHour(h)}</span>
+      </li>
+    `;
+  }
+  notifTimeList.innerHTML = html;
+
+  notifTimeList.querySelectorAll('li').forEach(li => {
+    li.addEventListener('click', () => {
+      notifTimeHiddenInput.value = li.dataset.value;
+      notifTimeSelected.innerText = li.innerText;
+      notifTimeDropdown.classList.add('hidden');
+    });
+  });
+}
+
+notifTimeTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  notifTimeDropdown.classList.toggle('hidden');
+  timezoneDropdown.classList.add('hidden');
+  settingsCurrencyDropdown.classList.add('hidden');
+  if (!notifTimeDropdown.classList.contains('hidden')) {
+    renderNotifTimeList();
+  }
+});
 
 // Custom Time Zone Picker logic
 function renderTimezoneList(filter = '') {
@@ -3089,7 +3143,8 @@ saveAppSettingsBtn.addEventListener('click', async () => {
     autoCurrency: autoCurrencyToggle.checked,
     usdTotal: usdTotalToggle.checked,
     timezone: timezoneHiddenInput.value,
-    currency: prefCurrencyHidden.value
+    currency: prefCurrencyHidden.value,
+    notificationTime: parseInt(notifTimeHiddenInput.value)
   };
 
   try {
@@ -3148,6 +3203,9 @@ document.addEventListener('click', (e) => {
   }
   if (!timezonePicker.contains(e.target)) {
     timezoneDropdown.classList.add('hidden');
+  }
+  if (!notifTimePicker.contains(e.target)) {
+    notifTimeDropdown.classList.add('hidden');
   }
 });
 
@@ -3570,3 +3628,12 @@ initNotifications();
 initPricing();
 initBottomBar();
 initGlass();
+
+// Test Notification Btn
+document.getElementById('test-notif-btn')?.addEventListener('click', () => {
+  if (window.testNativeNotification) {
+    window.testNativeNotification();
+  } else {
+    alert("Native bridge not found. This feature only works inside the exported iOS app!");
+  }
+});

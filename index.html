@@ -685,6 +685,10 @@
             <!-- Stats injected via JS -->
           </div>
           <div class="profile-actions" style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+            <button id="test-notif-btn" class="glass-btn"
+              style="width: 100%; padding: 12px; text-align: left; background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.15); color: var(--accent-green);">
+              <span style="margin-right: 8px;">🔔</span> Test Notification
+            </button>
             <button id="account-settings-btn" class="glass-btn"
               style="width: 100%; padding: 12px; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);">Account
               Settings</button>
@@ -709,7 +713,7 @@
 
     <!-- App Settings Modal -->
     <div id="app-settings-modal" class="modal-overlay hidden">
-      <div class="modal-content glass" style="max-width: 400px; padding: 25px;">
+      <div class="modal-content glass" style="max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
         <div class="modal-header">
           <h2>App Settings</h2>
           <button id="close-app-settings" class="nav-arrow"
@@ -721,72 +725,94 @@
           </button>
         </div>
 
-        <div class="settings-content" style="display: flex; flex-direction: column; gap: 20px; padding: 20px 0;">
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Notifications</label>
-            <label class="switch">
-              <input type="checkbox" id="notif-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Dark Mode</label>
-            <label class="switch">
-              <input type="checkbox" id="theme-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Automatic Exchange Rates</label>
-            <label class="switch">
-              <input type="checkbox" id="auto-currency-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Grand Total in Dollars ($)</label>
-            <label class="switch">
-              <input type="checkbox" id="usd-total-toggle">
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group">
-            <label>Time Zone</label>
-            <div class="custom-dropdown dropdown-up" id="timezone-picker">
-              <button type="button" class="dropdown-trigger" id="timezone-trigger">
-                <span id="timezone-selected">UTC+00:00 (GMT)</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div class="dropdown-content hidden" id="timezone-dropdown">
-                <input type="text" id="timezone-search" placeholder="Search time zones..." autocomplete="off"
-                  style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
-                <ul id="timezone-list" style="max-height: 200px; overflow-y: auto;">
-                  <!-- Injected via JS -->
-                </ul>
+        <div class="settings-scroll-area" style="overflow-y: auto; max-height: 60vh; padding-right: 5px; margin-top: 10px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
+          <div class="settings-content" style="display: flex; flex-direction: column; gap: 20px; padding: 20px 0;">
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Notifications</label>
+              <label class="switch">
+                <input type="checkbox" id="notif-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Dark Mode</label>
+              <label class="switch">
+                <input type="checkbox" id="theme-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Automatic Exchange Rates</label>
+              <label class="switch">
+                <input type="checkbox" id="auto-currency-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Grand Total in Dollars ($)</label>
+              <label class="switch">
+                <input type="checkbox" id="usd-total-toggle">
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Time Zone</label>
+              <div class="custom-dropdown dropdown-up" id="timezone-picker">
+                <button type="button" class="dropdown-trigger" id="timezone-trigger">
+                  <span id="timezone-selected">UTC+00:00 (GMT)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="timezone-dropdown">
+                  <input type="text" id="timezone-search" placeholder="Search time zones..." autocomplete="off"
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
+                  <ul id="timezone-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-timezone" value="UTC+00:00">
               </div>
-              <input type="hidden" id="settings-timezone" value="UTC+00:00">
+            </div>
+            <div class="form-group">
+              <label>Preferred Currency</label>
+              <div class="custom-dropdown dropdown-up" id="settings-currency-picker">
+                <button type="button" class="dropdown-trigger" id="settings-currency-trigger">
+                  <span id="settings-currency-selected">USD ($)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="settings-currency-dropdown">
+                  <ul id="settings-currency-list">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-pref-currency" value="USD">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Notification Time</label>
+              <div class="custom-dropdown dropdown-up" id="notif-time-picker">
+                <button type="button" class="dropdown-trigger" id="notif-time-trigger">
+                  <span id="notif-time-selected">09:00 AM</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="notif-time-dropdown">
+                  <ul id="notif-time-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-notif-time" value="9">
+              </div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Preferred Currency</label>
-            <div class="custom-dropdown dropdown-up" id="settings-currency-picker">
-              <button type="button" class="dropdown-trigger" id="settings-currency-trigger">
-                <span id="settings-currency-selected">USD ($)</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div class="dropdown-content hidden" id="settings-currency-dropdown">
-                <ul id="settings-currency-list">
-                  <!-- Injected via JS -->
-                </ul>
-              </div>
-              <input type="hidden" id="settings-pref-currency" value="USD">
-            </div>
-          </div>
-          <button id="save-app-settings" class="submit-btn" style="margin-top: 10px;">Save Settings</button>
+        </div>
+        <div style="flex-shrink: 0; padding-top: 20px; border-top: 1px solid var(--border-color);">
+          <button id="save-app-settings" class="submit-btn">Save Settings</button>
         </div>
       </div>
     </div>
@@ -1030,6 +1056,7 @@
       </div>
     </div>
   </div>
+  <script type="module" src="/src/features/notifications/native_bridge.js"></script>
   <script type="module" src="/src/main.js"></script>
 </body>
 
