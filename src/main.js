@@ -10,6 +10,7 @@ import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
+
 // --- World Currencies ---
 const CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
@@ -3142,6 +3143,45 @@ saveAppSettingsBtn.addEventListener('click', async () => {
   }
 });
 
+// --- Native Local Notifications Test ---
+const testNotifBtn = document.getElementById('send-test-notif');
+if (testNotifBtn) {
+  testNotifBtn.addEventListener('click', async () => {
+    try {
+      console.log('[Native Notif] Requesting permissions...');
+      const perm = await LocalNotifications.requestPermissions();
+      
+      if (perm.display === 'granted') {
+        console.log('[Native Notif] Permission granted. Scheduling test...');
+        
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: "SubTrack Native Test",
+              body: "Yo! If you see this, native iOS notifications are working! 🚀",
+              id: 1,
+              schedule: { at: new Date(Date.now() + 2000) }, // 2 seconds delay
+              sound: null,
+              attachments: null,
+              actionTypeId: "",
+              extra: null
+            }
+          ]
+        });
+        
+        showToast('Test notification scheduled for 2s! Lock your screen. 🔔');
+      } else {
+        showToast('Notification permission denied by user.', 'error');
+      }
+    } catch (err) {
+      console.error('[Native Notif] Error:', err);
+      // Fallback for browser if not running in Capacitor
+      showToast('Native notifications only work on iOS/Android devices.', 'info');
+    }
+  });
+}
+
+
 // Close app settings currency and timezone dropdowns on outside click
 document.addEventListener('click', (e) => {
   if (!settingsCurrencyPicker.contains(e.target)) {
@@ -3564,55 +3604,6 @@ function updateReminders() {
     }
   });
 }
-
-
-// --- Mobile Notification Test logic ---
-document.getElementById('test-notif-btn')?.addEventListener('click', async () => {
-  const btn = document.getElementById('test-notif-btn');
-  const originalText = btn.innerText;
-
-  try {
-    btn.innerText = 'Checking Permissions...';
-    btn.disabled = true;
-
-    // 1. Request/Check Permissions
-    const perm = await LocalNotifications.checkPermissions();
-    if (perm.display !== 'granted') {
-      const request = await LocalNotifications.requestPermissions();
-      if (request.display !== 'granted') {
-        showToast('Notification permission denied by system. ❌', 'error');
-        return;
-      }
-    }
-
-    // 2. Schedule a test notification
-    btn.innerText = 'Sending Notification...';
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: 999,
-          title: "SubTrack Live Test! 🚀",
-          body: "This is a real iOS notification sent from your code. It works!",
-          schedule: { at: new Date(Date.now() + 2000) }, // 2 seconds from now
-          sound: 'default',
-          attachments: [],
-          actionTypeId: "",
-          extra: null
-        }
-      ]
-    });
-
-    showToast('Sent! Check your lock screen in 2 seconds. 🔔');
-  } catch (err) {
-    console.error('[Notification Test Error]', err);
-    showToast('Test failed: ' + err.message, 'error');
-  } finally {
-    setTimeout(() => {
-      btn.innerText = originalText;
-      btn.disabled = false;
-    }, 2000);
-  }
-});
 
 
 // --- Feature Init ---
