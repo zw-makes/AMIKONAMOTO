@@ -86,19 +86,33 @@ async function scheduleNativeAlert(notif, date) {
 }
 
 // Global helper to test notifications
-window.testNativeNotification = async function() {
-    const testDate = new Date(Date.now() + 30000); // 30 seconds from now
-    await LocalNotifications.schedule({
-        notifications: [
-            {
-                title: "SubTrack Test 🚀",
-                body: "This is a real native notification! It works even if you close the app.",
-                id: 999,
-                schedule: { at: testDate }
-            }
-        ]
-    });
-    alert("Test notification scheduled for 30 seconds from now. CLOSE the app now!");
+window.testNativeNotification = async function () {
+    console.log('[NativeBridge] Test notification button clicked');
+    if (window.showToast) window.showToast('Scheduling test... ⏳');
+
+    try {
+        const testDate = new Date(Date.now() + 30000); // 30 seconds from now
+        await LocalNotifications.schedule({
+            notifications: [
+                {
+                    title: "SubTrack Test 🚀",
+                    body: "This is a real native notification! It works even if you close the app.",
+                    id: 999123,
+                    schedule: { at: testDate },
+                    sound: 'default'
+                }
+            ]
+        });
+
+        const msg = "Success! Notification set for 30 seconds from now.\n\nIMPORTANT: Do NOT turn off your phone. Just close the app and wait.";
+        console.log('[NativeBridge] ' + msg);
+        alert(msg);
+    } catch (e) {
+        console.error('[NativeBridge] Test failed:', e);
+        const errorMsg = "Native test failed. Are you sure you are on a real iPhone?";
+        if (window.showToast) window.showToast(errorMsg, 'error');
+        alert(errorMsg + "\n\nError: " + e.message);
+    }
 };
 
 // Auto-init if window exists

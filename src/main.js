@@ -3631,9 +3631,13 @@ initGlass();
 
 // Test Notification Btn
 document.getElementById('test-notif-btn')?.addEventListener('click', () => {
+  console.log('Test button clicked');
+  if (window.showToast) window.showToast('Checking bridge... 🔗');
+  
   if (window.testNativeNotification) {
     window.testNativeNotification();
   } else {
-    alert("Native bridge not found. This feature only works inside the exported iOS app!");
+    console.error('testNativeNotification not found on window');
+    alert("Native bridge not found. \n\n1. Ensure you pushed the code to GitHub. \n2. Re-download the .ipa. \n3. This only works on a real iPhone!");
   }
 });
