@@ -1,0 +1,226 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// dailyReminder.js
+// Smart Daily Reminder Notifications — AMIKONAMOTO
+//
+// Schedules 30 days of context-aware daily notifications at the user's
+// preferred time and timezone. Messages are generated from real subscription
+// data so each alert is actually useful, not generic.
+//
+// ID range: 900000–900029 (reserved, won't collide with sub reminders)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+const DAILY_REMINDER_BASE_ID = 900000;
+const DAYS_TO_SCHEDULE = 30;
+
+// ─── Timezone-aware date builder ─────────────────────────────────────────────
+/**
+ * Returns the correct UTC Date for "prefH:prefM in the user's preferred timezone"
+ * on the day that is `dayOffset` days from today.
+ */
+function getScheduledDate(dayOffset, prefH, prefM, timezoneStr) {
+  const tzMatch = (timezoneStr || 'UTC+00:00').match(/UTC([+-])(\d{2}):(\d{2})/);
+  let tzOffsetMinutes = 0;
+  if (tzMatch) {
+    const sign = tzMatch[1] === '+' ? 1 : -1;
+    tzOffsetMinutes = sign * (parseInt(tzMatch[2]) * 60 + parseInt(tzMatch[3]));
+  }
+
+  const target = new Date();
+  target.setDate(target.getDate() + dayOffset);
+
+  const year = target.getFullYear();
+  const month = target.getMonth();
+  const day = target.getDate();
+
+  // Convert preferred local time → UTC
+  // UTC = preferred_time - preferred_tz_offset
+  const preferredMinutes = parseInt(prefH) * 60 + parseInt(prefM);
+  const utcMinutes = preferredMinutes - tzOffsetMinutes;
+
+  return new Date(Date.UTC(year, month, day) + utcMinutes * 60 * 1000);
+}
+
+// ─── Subscription helpers ─────────────────────────────────────────────────────
+/**
+ * Returns subscriptions that renew on a specific date.
+ */
+function getSubsRenewingOn(subscriptions, targetDate) {
+  const day = targetDate.getDate();
+  const month = targetDate.getMonth();
+  const year = targetDate.getFullYear();
+
+  return subscriptions.filter(s => {
+    if (s.stopped || !s.date || s.date !== day) return false;
+
+    const start = new Date(s.startDate);
+
+    if (s.type === 'monthly' && s.recurring === 'recurring') {
+      const startMonthTime = new Date(start.getFullYear(), start.getMonth(), 1).getTime();
+      const targetMonthTime = new Date(year, month, 1).getTime();
+      return startMonthTime <= targetMonthTime;
+    }
+
+    if (s.type === 'yearly') {
+      const currentTotalMonths = year * 12 + month;
+      const startTotalMonths = start.getFullYear() * 12 + start.getMonth();
+      return currentTotalMonths >= startTotalMonths && currentTotalMonths < startTotalMonths + 12;
+    }
+
+    return false;
+  });
+}
+
+// ─── Smart message builder ────────────────────────────────────────────────────
+/**
+ * Builds a context-aware notification title + body for a given day offset.
+ * Priority: renewals today > renewals soon > all-clear (rotated messages)
+ */
+function buildMessage(subscriptions, dayOffset) {
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + dayOffset);
+
+  const active = subscriptions.filter(s => !s.stopped);
+  const activeCnt = active.length;
+  const subWord = activeCnt !== 1 ? 'subscriptions' : 'subscription';
+
+  // ── Priority 1: Renewing TODAY ──────────────────────────────────────────
+  const renewingToday = getSubsRenewingOn(subscriptions, targetDate);
+
+  if (renewingToday.length === 1) {
+    return {
+      title: `⚠️ ${renewingToday[0].name} Renews Today`,
+      body: `Your ${renewingToday[0].name} is due today. Tap to mark it as paid.`
+    };
+  }
+  if (renewingToday.length > 1) {
+    return {
+      title: `⚠️ ${renewingToday.length} Subscriptions Renew Today`,
+      body: `${renewingToday.map(s => s.name).join(', ')} are all due today!`
+    };
+  }
+
+  // ── Priority 2: Renewing in 1–3 days ───────────────────────────────────
+  for (let d = 1; d <= 3; d++) {
+    const futureDate = new Date(targetDate);
+    futureDate.setDate(futureDate.getDate() + d);
+    const upcoming = getSubsRenewingOn(subscriptions, futureDate);
+    if (upcoming.length > 0) {
+      const dayStr = d === 1 ? 'tomorrow' : `in ${d} days`;
+      return {
+        title: `🔔 ${upcoming[0].name} Renews ${d === 1 ? 'Tomorrow' : `in ${d} Days`}`,
+        body: `Stay ahead — ${upcoming[0].name} renews ${dayStr}. ${activeCnt} ${subWord} tracked.`
+      };
+    }
+  }
+
+  // ── Priority 3: All clear — rotate professional messages ────────────────
+  const allClear = [
+    {
+      title: '📊 Subscription Overview',
+      body: `${activeCnt} active ${subWord} tracked. No renewals today — you're all clear!`
+    },
+    {
+      title: '💳 AMIKONAMOTO Daily',
+      body: `Managing ${activeCnt} ${subWord} like a pro. Open to review your calendar.`
+    },
+    {
+      title: '📱 All Clear Today',
+      body: `No subscription events today. ${activeCnt} ${subWord} being monitored for you.`
+    },
+    {
+      title: '✅ You\'re on Track',
+      body: `${activeCnt} ${subWord} in your tracker — no action needed today!`
+    },
+    {
+      title: '💡 Stay Organized',
+      body: `AMIKONAMOTO is watching ${activeCnt} ${subWord} for you. Tap to check in.`
+    },
+    {
+      title: '🗓️ Daily Check-in',
+      body: `Quiet day ahead. Your ${activeCnt} ${subWord} are all under control.`
+    },
+    {
+      title: '🔍 Subscription Snapshot',
+      body: `${activeCnt} active ${subWord}. No dues today — enjoy the break!`
+    }
+  ];
+
+  return allClear[dayOffset % allClear.length];
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+/**
+ * Schedules 30 days of smart daily reminder notifications.
+ * Safe to call multiple times — always cancels + reschedules cleanly.
+ *
+ * @param {Array}  subscriptions - Current subscriptions array from the app
+ * @param {Object} settings      - User's app settings (notificationTime, timezone)
+ * @returns {Promise<number>}    - Number of notifications successfully scheduled
+ */
+export async function scheduleDailyReminders(subscriptions, settings) {
+  try {
+    // ── Guard: check permissions ──────────────────────────────────────────
+    const status = await LocalNotifications.requestPermissions();
+    if (status.display !== 'granted') {
+      console.log('[DailyReminder] Permission not granted — skipping daily reminders.');
+      return 0;
+    }
+
+    // ── Guard: no subscriptions = no smart context ────────────────────────
+    if (!subscriptions || subscriptions.length === 0) {
+      console.log('[DailyReminder] No subscriptions yet — skipping daily reminders.');
+      return 0;
+    }
+
+    const [prefH, prefM] = (settings?.notificationTime || '09:00').split(':');
+    const timezone = settings?.timezone || 'UTC+00:00';
+    const now = new Date();
+    const notifications = [];
+
+    // ── Build 30 days of notifications ───────────────────────────────────
+    for (let dayOffset = 0; dayOffset < DAYS_TO_SCHEDULE; dayOffset++) {
+      const scheduledDate = getScheduledDate(dayOffset, prefH, prefM, timezone);
+
+      // Skip if this time slot has already passed
+      if (scheduledDate <= now) continue;
+
+      const { title, body } = buildMessage(subscriptions, dayOffset);
+
+      notifications.push({
+        id: DAILY_REMINDER_BASE_ID + dayOffset,
+        title,
+        body,
+        schedule: { at: scheduledDate },
+        sound: null,
+      });
+    }
+
+    if (notifications.length === 0) {
+      console.log('[DailyReminder] All time slots for today already passed — nothing scheduled.');
+      return 0;
+    }
+
+    // ── Cancel previous daily reminders to avoid duplicates ──────────────
+    try {
+      await LocalNotifications.cancel({
+        notifications: Array.from({ length: DAYS_TO_SCHEDULE }, (_, i) => ({
+          id: DAILY_REMINDER_BASE_ID + i
+        }))
+      });
+    } catch (cancelErr) {
+      // Non-fatal — proceed anyway
+      console.warn('[DailyReminder] Could not cancel old daily reminders:', cancelErr);
+    }
+
+    // ── Schedule all at once ──────────────────────────────────────────────
+    await LocalNotifications.schedule({ notifications });
+    console.log(`[DailyReminder] ✅ Scheduled ${notifications.length} smart daily reminder(s)`);
+    return notifications.length;
+
+  } catch (e) {
+    console.error('[DailyReminder] Failed to schedule daily reminders:', e);
+    return 0;
+  }
+}

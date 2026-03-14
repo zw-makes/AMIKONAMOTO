@@ -9,6 +9,7 @@ import { initBottomBar } from './features/bottombar/bottombar.js';
 import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
 import { NativeNotifications } from './features/notifications/nativeNotifications.js';
+import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -3731,6 +3732,13 @@ function updateReminders() {
   } else {
     console.log('[Notif] No upcoming events in next 30 days — nothing to schedule.');
   }
+
+  // ── Stage 1: Smart daily reminders (separate module, zero risk to existing logic) ──
+  scheduleDailyReminders(subscriptions, settings).then(count => {
+    if (count > 0) {
+      console.log(`[DailyReminder] ${count} daily reminder(s) queued alongside subscription alerts.`);
+    }
+  });
 }
 
 
