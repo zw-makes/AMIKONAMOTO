@@ -8,6 +8,7 @@ import { initPricing } from './features/pricing/pricing.js';
 import { initBottomBar } from './features/bottombar/bottombar.js';
 import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -3563,6 +3564,55 @@ function updateReminders() {
     }
   });
 }
+
+
+// --- Mobile Notification Test logic ---
+document.getElementById('test-notif-btn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('test-notif-btn');
+  const originalText = btn.innerText;
+
+  try {
+    btn.innerText = 'Checking Permissions...';
+    btn.disabled = true;
+
+    // 1. Request/Check Permissions
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== 'granted') {
+      const request = await LocalNotifications.requestPermissions();
+      if (request.display !== 'granted') {
+        showToast('Notification permission denied by system. ❌', 'error');
+        return;
+      }
+    }
+
+    // 2. Schedule a test notification
+    btn.innerText = 'Sending Notification...';
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 999,
+          title: "SubTrack Live Test! 🚀",
+          body: "This is a real iOS notification sent from your code. It works!",
+          schedule: { at: new Date(Date.now() + 2000) }, // 2 seconds from now
+          sound: 'default',
+          attachments: [],
+          actionTypeId: "",
+          extra: null
+        }
+      ]
+    });
+
+    showToast('Sent! Check your lock screen in 2 seconds. 🔔');
+  } catch (err) {
+    console.error('[Notification Test Error]', err);
+    showToast('Test failed: ' + err.message, 'error');
+  } finally {
+    setTimeout(() => {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    }, 2000);
+  }
+});
 
 
 // --- Feature Init ---
