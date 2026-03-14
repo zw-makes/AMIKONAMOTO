@@ -1,4 +1,4 @@
-// Triggering iOS Build - March 13
+// Triggering iOS Build - Version 1.0.4 - March 14
 import { LocalNotifications } from '@capacitor/local-notifications';
 import './style.css';
 import './features/bottombar/bottombar.css';
@@ -3676,32 +3676,35 @@ async function setupNativeBridge() {
 
 // Test Notification logic (Integrated)
 window.testNativeNotification = async function () {
+  console.log('[NativeBridge] Test button triggered');
+  
+  // 1. Visual haptic feedback
   const btn = document.getElementById('test-notif-btn');
   if (btn) {
-    btn.style.transform = 'scale(0.95)';
-    btn.style.background = 'rgba(0,255,136,0.2)';
-    setTimeout(() => {
-      btn.style.transform = '';
-      btn.style.background = '';
-    }, 200);
+    btn.style.opacity = '0.5';
+    setTimeout(() => btn.style.opacity = '1', 100);
   }
 
-  if (window.showToast) window.showToast('Native Alert: Setting up... 🔔');
+  // 2. Immediate feedback alert (even if native fails later)
+  // This tells us the code is actually running!
+  alert("CODE VERSION 1.0.4 IS RUNNING!\n\nSetting up native alert for 15 seconds...");
 
   try {
-    const testDate = new Date(Date.now() + 15000); // 15 seconds
+    const testDate = new Date(Date.now() + 15000); 
     await LocalNotifications.schedule({
       notifications: [{
         title: "SubTrack Test 🚀",
-        body: "This is a real native alert! It works when the app is closed.",
-        id: 888,
+        body: "Real-life test worked! You can close the app now.",
+        id: 777777,
         schedule: { at: testDate },
         sound: 'default'
       }]
     });
-    alert("SUCCESS! Alert set for 15 seconds from now.\n\n1. CLOSE the app now.\n2. LOCK your screen.\n3. Wait 15 seconds!");
+    
+    alert("SYSTEM READY! \n\n1. Swipe the app AWAY now.\n2. Wait 15 seconds for the banner.");
   } catch (e) {
-    alert("NATIVE ERROR: " + e.message);
+    console.error('[NativeBridge] Build Error:', e);
+    alert("IOS SYSTEM REJECTED THE NOTIFICATION:\n" + e.message);
   }
 };
 
@@ -3710,9 +3713,18 @@ initNotifications();
 initPricing();
 initBottomBar();
 initGlass();
-setupNativeBridge();
 
-// Test Notification Btn Listener
-document.getElementById('test-notif-btn')?.addEventListener('click', () => {
-  window.testNativeNotification();
+// Wrap bridge setup in window.onload to ensure everything is ready
+window.addEventListener('DOMContentLoaded', () => {
+  setupNativeBridge();
+  
+  const testBtn = document.getElementById('test-notif-btn');
+  if (testBtn) {
+    console.log('[NativeBridge] Found test button, attaching listener');
+    testBtn.onclick = function() {
+      window.testNativeNotification();
+    };
+  } else {
+    console.error('[NativeBridge] Test button NOT FOUND in DOM');
+  }
 });
