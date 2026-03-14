@@ -3005,12 +3005,31 @@ window.showAppSettings = function () {
   profileModal.classList.add('hidden');
 };
 
+function formatTimeLabel(val) {
+    if (!val) return '09:00 AM';
+    const [h, m] = val.split(':');
+    let hours = parseInt(h);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${m} ${ampm}`;
+}
+
 function renderNotifTimeList(filter = '') {
   const selectedValue = notifTimeHidden.value;
-  const filtered = NOTIF_TIMES.filter(t => t.label.toLowerCase().includes(filter.toLowerCase()));
+  const times = [];
+  for (let i = 0; i < 24; i++) {
+    for (let m of ['00', '30']) {
+      const h = i.toString().padStart(2, '0');
+      const val = `${h}:${m}`;
+      const label = formatTimeLabel(val);
+      if (label.toLowerCase().includes(filter.toLowerCase())) {
+        times.push({ val, label });
+      }
+    }
+  }
 
-  notifTimeList.innerHTML = filtered.map(t => `
-    <li data-value="${t.value}" class="${t.value === selectedValue ? 'selected' : ''}">
+  notifTimeList.innerHTML = times.map(t => `
+    <li data-value="${t.val}" class="${t.val === selectedValue ? 'selected' : ''}">
       <span>${t.label}</span>
     </li>
   `).join('');
