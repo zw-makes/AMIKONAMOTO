@@ -8,8 +8,7 @@ import { initPricing } from './features/pricing/pricing.js';
 import { initBottomBar } from './features/bottombar/bottombar.js';
 import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
-import { LocalNotifications } from '@capacitor/local-notifications';
-
+import { NativeNotifications } from './features/notifications/nativeNotifications.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -3143,45 +3142,6 @@ saveAppSettingsBtn.addEventListener('click', async () => {
   }
 });
 
-// --- Native Local Notifications Test ---
-const testNotifBtn = document.getElementById('send-test-notif');
-if (testNotifBtn) {
-  testNotifBtn.addEventListener('click', async () => {
-    try {
-      console.log('[Native Notif] Requesting permissions...');
-      const perm = await LocalNotifications.requestPermissions();
-      
-      if (perm.display === 'granted') {
-        console.log('[Native Notif] Permission granted. Scheduling test...');
-        
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              title: "SubTrack Native Test",
-              body: "Yo! If you see this, native iOS notifications are working! 🚀",
-              id: 1,
-              schedule: { at: new Date(Date.now() + 2000) }, // 2 seconds delay
-              sound: null,
-              attachments: null,
-              actionTypeId: "",
-              extra: null
-            }
-          ]
-        });
-        
-        showToast('Test notification scheduled for 2s! Lock your screen. 🔔');
-      } else {
-        showToast('Notification permission denied by user.', 'error');
-      }
-    } catch (err) {
-      console.error('[Native Notif] Error:', err);
-      // Fallback for browser if not running in Capacitor
-      showToast('Native notifications only work on iOS/Android devices.', 'info');
-    }
-  });
-}
-
-
 // Close app settings currency and timezone dropdowns on outside click
 document.addEventListener('click', (e) => {
   if (!settingsCurrencyPicker.contains(e.target)) {
@@ -3257,6 +3217,9 @@ function updateProfileUI() {
 }
 
 accountSettingsBtn.addEventListener('click', () => window.showAccountSettings());
+document.getElementById('test-native-notif-btn')?.addEventListener('click', () => {
+    NativeNotifications.sendTestNotification();
+});
 closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
 
 appSettingsBtn.addEventListener('click', () => window.showAppSettings());
