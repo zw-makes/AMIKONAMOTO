@@ -790,6 +790,25 @@
               <input type="hidden" id="settings-pref-currency" value="USD">
             </div>
           </div>
+          <div class="form-group">
+            <label>Preferred Notification Time</label>
+            <div class="custom-dropdown dropdown-up" id="notif-time-picker">
+              <button type="button" class="dropdown-trigger" id="notif-time-trigger">
+                <span id="notif-time-selected">09:00 AM</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <div class="dropdown-content hidden" id="notif-time-dropdown">
+                <input type="text" id="notif-time-search" placeholder="Search time (e.g. 1 PM)..." autocomplete="off"
+                  style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
+                <ul id="notif-time-list" style="max-height: 200px; overflow-y: auto;">
+                  <!-- Injected via JS -->
+                </ul>
+              </div>
+              <input type="hidden" id="settings-notif-time" value="09:00">
+            </div>
+          </div>
           <button id="save-app-settings" class="submit-btn" style="margin-top: 10px;">Save Settings</button>
         </div>
       </div>

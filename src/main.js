@@ -203,6 +203,14 @@ const settingsCurrencySelected = document.getElementById('settings-currency-sele
 const settingsCurrencyList = document.getElementById('settings-currency-list');
 const prefCurrencyHidden = document.getElementById('settings-pref-currency');
 
+const notifTimePicker = document.getElementById('notif-time-picker');
+const notifTimeTrigger = document.getElementById('notif-time-trigger');
+const notifTimeDropdown = document.getElementById('notif-time-dropdown');
+const notifTimeSelected = document.getElementById('notif-time-selected');
+const notifTimeList = document.getElementById('notif-time-list');
+const notifTimeSearch = document.getElementById('notif-time-search');
+const notifTimeHidden = document.getElementById('settings-notif-time');
+
 let isSignUp = false;
 let userProfile = null; // { name, age, gender }
 
@@ -2989,9 +2997,48 @@ window.showAppSettings = function () {
   const curr = CURRENCIES.find(c => c.code === prefCurrency) || CURRENCIES[0];
   settingsCurrencySelected.innerText = `${curr.code} (${curr.symbol})`;
 
+  const prefNoifTime = settings.notificationTime || '09:00';
+  notifTimeHidden.value = prefNoifTime;
+  notifTimeSelected.innerText = formatTimeLabel(prefNoifTime);
+
   appSettingsModal.classList.remove('hidden');
   profileModal.classList.add('hidden');
 };
+
+function renderNotifTimeList(filter = '') {
+  const selectedValue = notifTimeHidden.value;
+  const filtered = NOTIF_TIMES.filter(t => t.label.toLowerCase().includes(filter.toLowerCase()));
+
+  notifTimeList.innerHTML = filtered.map(t => `
+    <li data-value="${t.value}" class="${t.value === selectedValue ? 'selected' : ''}">
+      <span>${t.label}</span>
+    </li>
+  `).join('');
+
+  notifTimeList.querySelectorAll('li').forEach(li => {
+    li.addEventListener('click', () => {
+      notifTimeHidden.value = li.dataset.value;
+      notifTimeSelected.innerText = li.innerText;
+      notifTimeDropdown.classList.add('hidden');
+    });
+  });
+}
+
+notifTimeTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  notifTimeDropdown.classList.toggle('hidden');
+  timezoneDropdown.classList.add('hidden');
+  settingsCurrencyDropdown.classList.add('hidden');
+  if (!notifTimeDropdown.classList.contains('hidden')) {
+    renderNotifTimeList();
+    notifTimeSearch.value = '';
+    notifTimeSearch.focus();
+  }
+});
+
+notifTimeSearch.addEventListener('input', (e) => {
+  renderNotifTimeList(e.target.value);
+});
 
 // Custom Time Zone Picker logic
 function renderTimezoneList(filter = '') {
@@ -3090,7 +3137,8 @@ saveAppSettingsBtn.addEventListener('click', async () => {
     autoCurrency: autoCurrencyToggle.checked,
     usdTotal: usdTotalToggle.checked,
     timezone: timezoneHiddenInput.value,
-    currency: prefCurrencyHidden.value
+    currency: prefCurrencyHidden.value,
+    notificationTime: notifTimeHidden.value
   };
 
   try {
@@ -3149,6 +3197,12 @@ document.addEventListener('click', (e) => {
   }
   if (!timezonePicker.contains(e.target)) {
     timezoneDropdown.classList.add('hidden');
+  }
+  if (!notifTimePicker.contains(e.target)) {
+    notifTimeDropdown.classList.add('hidden');
+  }
+  if (!genderPicker.contains(e.target)) {
+    genderDropdown.classList.add('hidden');
   }
 });
 
@@ -3506,31 +3560,32 @@ function getSubDates(sub) {
 function updateReminders() {
   if (!window.addNotification) return;
 
-  // Check if user turned off notifications in settings
-  if (userProfile && userProfile.settings && userProfile.settings.notifications === false) return;
-
-  // If they just cleared it, don't spam them again until next reload
-  if (sessionStorage.getItem('notifs_cleared')) return;
+  const settings = userProfile?.settings || {};
+  if (settings.notifications === false) {
+    NativeNotifications.cancelAll();
+    return;
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const [prefH, prefM] = (settings.notificationTime || '09:00').split(':');
+  const nativeReminders = [];
+
   subscriptions.forEach(s => {
     if (s.stopped) return;
 
-    // Get original dates to extract the "day" and "month"
     const { start: origStart, end: origEnd } = getSubDates(s);
     if (!origStart) return;
 
-    // Helper for interval checking
     const checkTarget = (targetDate, label) => {
       if (!targetDate) return;
       const diffMs = targetDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-      // ONLY notify if it's today or within the next 7 days
-      if (diffDays >= 0 && diffDays <= 7) {
-        const dateKey = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      // 1. In-App Notification (Current View)
+      if (diffDays >= 0 && diffDays <= 7 && !sessionStorage.getItem('notifs_cleared')) {
+        const dateKey = targetDate.toISOString().split('T')[0];
         window.addNotification({
           key: `remind-${label.toLowerCase()}-${s.id}-${dateKey}`,
           title: diffDays === 0 ? `Due ${label}` : `${label} Soon`,
@@ -3541,31 +3596,60 @@ function updateReminders() {
           domain: s.domain
         });
       }
+
+      // 2. Native Notification (Future Scheduling)
+      // Only schedule if it's in the future (today or later)
+      if (diffDays >= 0 && diffDays <= 30) { // Schedule up to a month in advance
+        const scheduledDate = new Date(targetDate);
+        scheduledDate.setHours(parseInt(prefH), parseInt(prefM), 0, 0);
+
+        // If scheduled time for TODAY has already passed, skip today's alert
+        if (diffDays === 0 && scheduledDate < new Date()) return;
+
+        nativeReminders.push({
+          id: Math.floor(Math.random() * 1000000),
+          title: diffDays === 0 ? `⚠️ ${s.name} ${label} Today` : `🔔 ${s.name} ${label} Soon`,
+          body: diffDays === 0 
+            ? `Your ${s.name} subscription ${label.toLowerCase()} today. Don't forget!`
+            : `${s.name} ${label.toLowerCase()} in ${diffDays} days.`,
+          date: scheduledDate
+        });
+      }
     };
 
-    // Calculate billing date for current month/year
     const billingDay = origStart.getDate();
-    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+    const billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
 
     if (s.type === 'monthly' && s.recurring === 'recurring') {
-      // Check current month billing
       checkTarget(billingDate, "Payment");
-      // Also check next month's billing (if today is late in the month)
-      const nextMonthBilling = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
-      checkTarget(nextMonthBilling, "Payment");
-
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, billingDay);
+      checkTarget(nextMonth, "Payment");
     } else if (s.type === 'yearly') {
       const yearlyRenewal = new Date(today.getFullYear(), origStart.getMonth(), billingDay);
       checkTarget(yearlyRenewal, "Renewal");
-      const nextYearRenewal = new Date(today.getFullYear() + 1, origStart.getMonth(), billingDay);
-      checkTarget(nextYearRenewal, "Renewal");
-
     } else {
-      // Trials and One-time
       checkTarget(origStart, "Payment");
       checkTarget(origEnd, "Ends");
     }
+
+    // Unpaid reminder logic
+    const isPaid = window.isSubPaid(s, today);
+    if (!isPaid && !s.stopped) {
+       // If it's unpaid and due this month, remind them
+       const dueDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+       if (dueDate >= today) {
+         nativeReminders.push({
+           id: Math.floor(Math.random() * 1000000),
+           title: `📌 Unpaid: ${s.name}`,
+           body: `You haven't marked ${s.name} as paid for this month yet.`,
+           date: new Date(dueDate.setHours(parseInt(prefH), parseInt(prefM), 0, 0))
+         });
+       }
+    }
   });
+
+  // Bulk schedule native notifications
+  NativeNotifications.scheduleReminders(nativeReminders);
 }
 
 
