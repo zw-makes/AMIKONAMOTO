@@ -38,7 +38,7 @@ export const NativeNotifications = {
                         title: "🚀 Test Notification",
                         body: "If you see this, the iOS Bridge is working perfectly! SubTrack is ready for native alerts.",
                         id: 1,
-                        schedule: { at: new Date(Date.now() + 1000) }, // 1 second delay
+                        schedule: { at: new Date(Date.now() + 7000) }, // 7 second delay
                         sound: null,
                         attachments: null,
                         actionTypeId: "",
