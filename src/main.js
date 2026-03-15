@@ -10,6 +10,7 @@ import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
 import { NativeNotifications } from './features/notifications/nativeNotifications.js';
 import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
+import { queueOperation } from './features/sync/syncQueue.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -594,6 +595,8 @@ async function saveToSupabase(sub) {
     return data;
   } catch (err) {
     console.error('[Supabase] Error saving to Supabase:', err.message);
+    // Queue for retry when back online
+    queueOperation('upsert_sub', subToSave);
     return null;
   }
 }
@@ -607,6 +610,8 @@ async function removeFromSupabase(id) {
   } catch (err) {
     console.error('Error removing from Supabase:', err.message);
     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+    // Queue for retry when back online
+    queueOperation('delete_sub', { id });
   }
 }
 
@@ -3747,3 +3752,9 @@ initNotifications();
 initPricing();
 initBottomBar();
 initGlass();
+
+// Stage 2: Reload subscriptions after offline queue flushes to cloud
+window.addEventListener('syncqueue:flushed', (e) => {
+  console.log(`[App] Sync queue flushed ${e.detail.synced} item(s) — refreshing data...`);
+  loadSubscriptions();
+});
