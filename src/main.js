@@ -556,6 +556,10 @@ async function loadSubscriptions() {
 
 async function saveToSupabase(sub) {
   if (!currentUser) return null;
+  
+  // IMMEDIATELY cache the local change to make it offline-first
+  localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+
   try {
     // Only send columns that exist in the database to avoid 400 "Bad Request" errors
     const subToSave = {
@@ -3166,53 +3170,39 @@ saveAppSettingsBtn.addEventListener('click', async () => {
     notificationTime: notifTimeHidden.value
   };
 
-  try {
-    saveAppSettingsBtn.innerText = 'Saving...';
-    saveAppSettingsBtn.disabled = true;
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ settings: newSettings })
-      .eq('id', currentUser.id);
-
-    if (error) throw error;
-
-    // Local update
+    // Apply local changes immediately
     userProfile.settings = newSettings;
     safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
-
-    // Apply theme immediately
     applyTheme(newSettings.theme === 'dark');
-
-    // Update time immediately
     updateTime();
-
-    // Refresh totals with new settings
     updateStats();
-
-    // Refresh notifications immediately to reflect toggle
     loadNotifications();
-
-    // Show success toast
     showToast('App settings saved successfully! ⚙️');
-
     appSettingsModal.classList.add('hidden');
 
-  } catch (err) {
-    console.error('[Error] Failed to save app settings:', err);
-    const errMsg = err.message || err.details || JSON.stringify(err);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ settings: newSettings })
+        .eq('id', currentUser.id);
 
-    if (errMsg.includes('column "settings" of relation "profiles" does not exist') ||
-      errMsg.includes('404') ||
-      errMsg.includes('Could not find')) {
-      alert(`Database update needed! 🚀\n\nPlease add a JSONB column named "settings" to your "profiles" table in Supabase.\n\nSQL to run: \nALTER TABLE profiles ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}':: jsonb; `);
-    } else {
-      showToast(`Error: ${errMsg} `, 'error');
+      if (error) throw error;
+    } catch (err) {
+      console.error('[Error] Failed to save app settings to cloud:', err);
+      const errMsg = err.message || err.details || JSON.stringify(err);
+
+      if (errMsg.includes('column "settings" of relation "profiles" does not exist') ||
+        errMsg.includes('404') ||
+        errMsg.includes('Could not find')) {
+        alert(`Database update needed! 🚀\n\nPlease add a JSONB column named "settings" to your "profiles" table in Supabase.\n\nSQL to run: \nALTER TABLE profiles ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}':: jsonb; `);
+      } else {
+        // Assume network error, queue it
+        queueOperation('update_app_settings', { settings: newSettings });
+      }
+    } finally {
+      saveAppSettingsBtn.innerText = 'Save Settings';
+      saveAppSettingsBtn.disabled = false;
     }
-  } finally {
-    saveAppSettingsBtn.innerText = 'Save Settings';
-    saveAppSettingsBtn.disabled = false;
-  }
 });
 
 // Close app settings currency and timezone dropdowns on outside click
@@ -3376,6 +3366,20 @@ settingsForm.addEventListener('submit', async (e) => {
   const updatedDob = document.getElementById('settings-dob').value;
 
   try {
+    // Apply local changes immediately
+    userProfile.name = updatedName;
+    userProfile.gender = updatedGender;
+    userProfile.dob = updatedDob;
+
+    localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+
+    // Update main profile name display
+    const infoH4 = document.querySelector('.profile-info h4');
+    if (infoH4) infoH4.innerText = updatedName.toUpperCase();
+
+    showToast('Settings saved successfully! 🎉');
+
+    // Then attempt cloud sync
     const { error } = await supabase
       .from('profiles')
       .upsert({
@@ -3387,21 +3391,15 @@ settingsForm.addEventListener('submit', async (e) => {
       });
 
     if (error) throw error;
-
-    userProfile.name = updatedName;
-    userProfile.gender = updatedGender;
-    userProfile.dob = updatedDob;
-
-    localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
-
-    // Update main profile name display
-    document.querySelector('.profile-info h4').innerText = updatedName.toUpperCase();
-
-    // settingsModal.classList.add('hidden'); // Removed alert, let user see it saved
-    showToast('Settings saved successfully! 🎉');
   } catch (err) {
-    console.error('Error saving settings:', err.message);
-    showToast('Failed to save settings. Please try again.', 'error');
+    console.error('Error saving settings to cloud:', err.message);
+    // Network assumed failed -> queue operation
+    queueOperation('upsert_profile', {
+        name: updatedName,
+        gender: updatedGender,
+        dob: updatedDob,
+        avatar_url: userProfile.avatar_url
+    });
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerText = 'Save Settings';

@@ -79,6 +79,18 @@ async function flushQueue() {
           .delete()
           .eq('id', item.data.id);
         if (error) throw error;
+        
+      } else if (item.action === 'upsert_profile') {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ ...item.data, id: user.id });
+        if (error) throw error;
+      } else if (item.action === 'update_app_settings') {
+        const { error } = await supabase
+          .from('profiles')
+          .update(item.data)
+          .eq('id', user.id);
+        if (error) throw error;
       }
 
       console.log(`[SyncQueue] ✅ "${item.action}" synced to cloud`);
