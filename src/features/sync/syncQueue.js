@@ -163,3 +163,8 @@ window.addEventListener('offline', () => {
 
 // Show badge immediately on load if there are leftovers from a previous session
 updateBadge();
+
+// If the app starts up and we already have internet, flush immediately
+if (navigator.onLine) {
+  setTimeout(() => flushQueue(), 2000); // Small delay to let Supabase auth settle
+}
