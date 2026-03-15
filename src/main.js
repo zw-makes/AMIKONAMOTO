@@ -10,7 +10,7 @@ import { initGlass } from './features/glass/glass.js';
 import { showSubscriptionDetails } from './features/details/details.js';
 import { NativeNotifications } from './features/notifications/nativeNotifications.js';
 import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
-import { queueOperation } from './features/sync/syncQueue.js';
+import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -518,6 +518,14 @@ async function loadSubscriptions() {
   const footTotal = document.getElementById('total-amount');
   if (footTotal) footTotal.innerText = 'Loading...';
 
+  if (!navigator.onLine) {
+    console.log('[Offline] Loading subscriptions instantly from cache.');
+    subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+    renderCalendar();
+    updateStats();
+    return;
+  }
+
   try {
     const { data, error } = await supabase
       .from('subscriptions')
@@ -540,7 +548,19 @@ async function loadSubscriptions() {
       }
     }
 
-    // Always sync local cache with the exact DB state
+    // Merge any pending offline operations before rendering or caching
+    const q = getQueue();
+    q.forEach(item => {
+      if (item.action === 'upsert_sub' && item.data) {
+        const idx = subscriptions.findIndex(s => s.id === item.data.id);
+        if (idx !== -1) subscriptions[idx] = { ...subscriptions[idx], ...item.data };
+        else subscriptions.push(item.data);
+      } else if (item.action === 'delete_sub' && item.data) {
+        subscriptions = subscriptions.filter(s => s.id !== item.data.id);
+      }
+    });
+
+    // Always sync local cache with the exact DB state (plus pending changes)
     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
 
     // Auto-generate reminders only on fresh loads
@@ -2370,6 +2390,24 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
     // 2. Background task to load profile
     const loadProfile = async () => {
+      // Offline-first load check
+      if (!navigator.onLine) {
+        console.log('[Offline] Using cached profile.');
+        const saved = localStorage.getItem(`profile_${currentUser.id}`);
+        if (saved) userProfile = JSON.parse(saved);
+        
+        if (userProfile?.settings?.theme) applyTheme(userProfile.settings.theme === 'dark');
+        if (userProfile?.settings?.starred_dates) {
+          localStorage.setItem('starred_dates', JSON.stringify(userProfile.settings.starred_dates));
+          renderCalendar();
+        }
+        updateStats();
+        updateTime();
+        updateProfileUI();
+        showWelcomeScreen();
+        return;
+      }
+
       try {
         console.log('[Auth] Fetching profile from Supabase...');
         // Safety timeout for profile fetch (5 seconds)

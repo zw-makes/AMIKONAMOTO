@@ -13,7 +13,7 @@ const QUEUE_KEY = 'amiko_sync_queue';
 
 // ── Queue helpers ─────────────────────────────────────────────────────────────
 
-function getQueue() {
+export function getQueue() {
   try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
   catch { return []; }
 }
