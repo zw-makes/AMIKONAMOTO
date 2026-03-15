@@ -41,7 +41,9 @@ export function queueOperation(action, data) {
 
   saveQueue(deduped);
   console.log(`[SyncQueue] Queued "${action}" — ${deduped.length} total pending`);
-  updateBadge();
+  
+  // Inform UI that the queue has changed
+  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: deduped.length } }));
 }
 
 // ── Public: how many operations are waiting ───────────────────────────────────
@@ -61,6 +63,9 @@ async function flushQueue() {
     console.log('[SyncQueue] No active user — skipping flush.');
     return;
   }
+
+  // Trigger syncing animation UI
+  window.dispatchEvent(new CustomEvent('syncqueue:syncing'));
 
   console.log(`[SyncQueue] Online — flushing ${q.length} pending operation(s)...`);
   const failed = [];
@@ -102,50 +107,15 @@ async function flushQueue() {
   }
 
   saveQueue(failed);
-  updateBadge();
+
+  // Update UI with remaining (if any) or clear the pending count
+  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: failed.length } }));
 
   const synced = q.length - failed.length;
   if (synced > 0) {
     console.log(`[SyncQueue] ${synced} operation(s) synced ✅`);
     // Tell the main app to refresh so UI matches the cloud
     window.dispatchEvent(new CustomEvent('syncqueue:flushed', { detail: { synced } }));
-  }
-}
-
-// ── Offline indicator badge ───────────────────────────────────────────────────
-
-function updateBadge() {
-  const count = getPendingCount();
-  let badge = document.getElementById('offline-sync-badge');
-
-  if (!badge) {
-    badge = document.createElement('div');
-    badge.id = 'offline-sync-badge';
-    badge.style.cssText = `
-      position: fixed;
-      bottom: 76px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 160, 0, 0.95);
-      color: #000;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      padding: 5px 14px;
-      border-radius: 20px;
-      z-index: 9999;
-      display: none;
-      pointer-events: none;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    `;
-    document.body.appendChild(badge);
-  }
-
-  if (count > 0) {
-    badge.innerText = `⚡ ${count} change${count > 1 ? 's' : ''} pending sync`;
-    badge.style.display = 'block';
-  } else {
-    badge.style.display = 'none';
   }
 }
 
@@ -158,11 +128,13 @@ window.addEventListener('online', () => {
 
 window.addEventListener('offline', () => {
   console.log('[SyncQueue] Device offline — writes will be queued locally.');
-  updateBadge();
+  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: getPendingCount() } }));
 });
 
-// Show badge immediately on load if there are leftovers from a previous session
-updateBadge();
+// Trigger initial state broadcast
+setTimeout(() => {
+  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: getPendingCount() } }));
+}, 500);
 
 // If the app starts up and we already have internet, flush immediately
 if (navigator.onLine) {
