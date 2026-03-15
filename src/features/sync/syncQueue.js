@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => SyncUI.init());
 window.addEventListener('online', () => {
   console.log('[SyncQueue] Device back online — flushing queue...');
   SyncUI.updateNetworkState(true);
-  SyncUI.showStatus(`🌐 Online`, 'success', 2000);
+  SyncUI.showStatus(`🌐 Online`, 'success', 10000);
   flushQueue();
 });
 

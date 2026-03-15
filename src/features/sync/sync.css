@@ -27,43 +27,61 @@
   position: relative;
 }
 
-#current-time, .sync-status-text {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.05em;
-  opacity: 0.9;
-  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+#app .status-terminal #current-time {
+  font-family: 'Roboto Mono', monospace !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: 0.1em !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  white-space: nowrap !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease !important;
+  z-index: 1 !important;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-.sync-status-text {
-  color: var(--accent-green);
-  text-transform: uppercase;
-  transform: translateY(20px);
-  opacity: 0;
+#app .status-terminal .sync-status-text {
+  font-family: 'Roboto Mono', monospace !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  white-space: nowrap !important;
+  color: var(--accent-green) !important;
+  text-transform: uppercase !important;
+  transform: translateY(20px) !important;
+  opacity: 0 !important;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease !important;
+  z-index: 2 !important;
 }
 
-.sync-status-text.syncing {
-  color: var(--accent-orange);
+#app .status-terminal .sync-status-text.syncing {
+  color: var(--accent-orange) !important;
 }
 
-/* Terminal Transitions */
-.status-terminal.show-status #current-time {
-  transform: translateY(-20px);
-  opacity: 0;
+#app .status-terminal.show-status #current-time {
+  transform: translateY(-20px) !important;
+  opacity: 0 !important;
 }
 
-.status-terminal.show-status #sync-status-text {
-  transform: translateY(0);
-  opacity: 1;
+#app .status-terminal.show-status #sync-status-text {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
 }
 
 .offline-tag {

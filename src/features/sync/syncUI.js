@@ -22,6 +22,9 @@ export const SyncUI = {
             closeBtn.addEventListener('click', () => this.hideOfflineModal());
         }
 
+        // Expose to window so other modules can use the status terminal
+        window.showAppStatus = (text, type, duration) => this.showStatus(text, type, duration);
+
         // Check initial state
         this.updateNetworkState(navigator.onLine);
     },
@@ -35,7 +38,10 @@ export const SyncUI = {
         clearTimeout(this.statusTimeout);
         
         this.statusText.innerText = text;
-        this.statusText.className = `sync-status-text ${type}`;
+        // Reset classes and add new ones
+        this.statusText.className = 'sync-status-text';
+        if (type) this.statusText.classList.add(type);
+        
         this.terminal.classList.add('show-status');
 
         this.statusTimeout = setTimeout(() => {
@@ -46,6 +52,11 @@ export const SyncUI = {
     updateNetworkState(isOnline) {
         if (this.offlineTag) {
             if (isOnline) {
+                // Keep the offline tag visible for a bit after coming back online
+                // but the user asked for "online tag visible for 10 secs"
+                // Actually they said "whne online it should fade into the online text and should be visible for just 2 secs"
+                // But in the new request they said "make that online tag visible for 10 secs"
+                // Let's go with 10 seconds for the "Online" status message in the terminal.
                 this.offlineTag.classList.add('hidden');
             } else {
                 this.offlineTag.classList.remove('hidden');

@@ -3767,7 +3767,11 @@ function updateReminders() {
   // Bulk schedule native notifications + show confirmation to the user
   if (nativeReminders.length > 0) {
     NativeNotifications.scheduleReminders(nativeReminders).then(() => {
-      showToast(`🔔 ${nativeReminders.length} notification${nativeReminders.length > 1 ? 's' : ''} scheduled!`);
+      if (window.showAppStatus) {
+        window.showAppStatus(`🔔 ${nativeReminders.length} SCHEDULED`, 'success', 5000);
+      } else {
+        showToast(`🔔 ${nativeReminders.length} notification${nativeReminders.length > 1 ? 's' : ''} scheduled!`);
+      }
       console.log(`[Notif] Successfully scheduled ${nativeReminders.length} native notification(s)`);
     });
   } else {
