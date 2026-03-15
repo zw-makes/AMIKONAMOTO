@@ -42,7 +42,7 @@ export function queueOperation(action, data) {
 
   saveQueue(deduped);
   console.log(`[SyncQueue] Queued "${action}" — ${deduped.length} total pending`);
-  SyncUI.showStatus(`${deduped.length} change${deduped.length > 1 ? 's' : ''} queued`, 'syncing');
+  SyncUI.showStatus(`${deduped.length} CHANGE${deduped.length > 1 ? 'S' : ''} QUEUED`, 'syncing');
 }
 
 // ── Public: how many operations are waiting ───────────────────────────────────
@@ -65,7 +65,7 @@ async function flushQueue() {
 
   console.log(`[SyncQueue] Online — flushing ${q.length} pending operation(s)...`);
   // Use a very long duration so it stays while we loop
-  SyncUI.showStatus(`Syncing ${q.length} change${q.length > 1 ? 's' : ''}...`, 'syncing', 60000); 
+  SyncUI.showStatus(`SYNCING ${q.length} CHANGE${q.length > 1 ? 's' : ''}`, 'syncing', 60000); 
   const failed = [];
 
   for (const item of q) {
@@ -110,14 +110,14 @@ async function flushQueue() {
   if (synced > 0) {
     console.log(`[SyncQueue] ${synced} operation(s) synced ✅`);
     if (failed.length > 0) {
-        SyncUI.showStatus(`⚠️ ${synced} Synced, ${failed.length} Failed`, 'syncing', 5000);
+        SyncUI.showStatus(`${synced} SYNCED, ${failed.length} FAILED`, 'syncing', 5000);
     } else {
-        SyncUI.showStatus(`✅ ${synced} Synced`, 'success', 5000);
+        SyncUI.showStatus(`${synced} CHANGES SYNCED`, 'success', 5000);
     }
     // Tell the main app to refresh so UI matches the cloud
     window.dispatchEvent(new CustomEvent('syncqueue:flushed', { detail: { synced } }));
   } else if (failed.length > 0) {
-    SyncUI.showStatus(`❌ Sync Failed (${failed.length})`, 'syncing', 5000);
+    SyncUI.showStatus(`SYNC FAILED (${failed.length})`, 'syncing', 5000);
   }
 }
 
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => SyncUI.init());
 window.addEventListener('online', () => {
   console.log('[SyncQueue] Device back online — flushing queue...');
   SyncUI.updateNetworkState(true);
-  SyncUI.showStatus(`🌐 Online`, 'success', 10000);
+  SyncUI.showStatus(`ONLINE`, 'success', 10000);
   flushQueue();
 });
 

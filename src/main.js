@@ -3768,7 +3768,7 @@ function updateReminders() {
   if (nativeReminders.length > 0) {
     NativeNotifications.scheduleReminders(nativeReminders).then(() => {
       if (window.showAppStatus) {
-        window.showAppStatus(`🔔 ${nativeReminders.length} SCHEDULED`, 'success', 5000);
+        window.showAppStatus(`${nativeReminders.length} REMINDERS SCHEDULED`, 'success', 5000);
       } else {
         showToast(`🔔 ${nativeReminders.length} notification${nativeReminders.length > 1 ? 's' : ''} scheduled!`);
       }

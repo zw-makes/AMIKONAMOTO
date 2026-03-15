@@ -1,7 +1,8 @@
 /* src/features/sync/sync.css */
 
 .status-left {
-  flex: 1;
+  flex: 2; /* Give more space for long status messages */
+  min-width: 0;
 }
 
 .status-center {
@@ -52,26 +53,28 @@
 
 #app .status-terminal .sync-status-text {
   font-family: 'Roboto Mono', monospace !important;
-  font-size: 0.85rem !important;
-  font-weight: 700 !important;
+  font-size: 0.7rem !important; /* Smaller to fit "REMINDERS SCHEDULED" */
+  font-weight: 800 !important;
   height: 20px !important;
   display: flex !important;
   align-items: center !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  width: 100% !important;
+  width: auto !important;
   white-space: nowrap !important;
-  color: var(--accent-green) !important;
+  color: var(--text-secondary) !important; /* Match offline tag color */
   text-transform: uppercase !important;
   transform: translateY(20px) !important;
   opacity: 0 !important;
   transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease !important;
   z-index: 2 !important;
+  letter-spacing: 0.05em !important;
 }
 
-#app .status-terminal .sync-status-text.syncing {
-  color: var(--accent-orange) !important;
+#app .status-terminal .sync-status-text.syncing,
+#app .status-terminal .sync-status-text.success {
+  color: var(--text-secondary) !important; /* Force all to match tag theme */
 }
 
 #app .status-terminal.show-status #current-time {
