@@ -1,0 +1,109 @@
+/* src/features/sync/sync.css */
+
+.status-left {
+  flex: 1;
+}
+
+.status-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.status-right {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.status-terminal {
+  display: flex;
+  flex-direction: column;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+#current-time, .sync-status-text {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.sync-status-text {
+  color: var(--accent-green);
+  text-transform: uppercase;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.sync-status-text.syncing {
+  color: var(--accent-orange);
+}
+
+/* Terminal Transitions */
+.status-terminal.show-status #current-time {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+.status-terminal.show-status #sync-status-text {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.offline-tag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: syncFadeIn 0.3s ease forwards;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.offline-tag:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.offline-tag:active {
+  transform: scale(0.95);
+}
+
+@keyframes syncFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sync Anim */
+@keyframes syncPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.sync-status-text.syncing {
+  animation: syncPulse 1.5s infinite ease-in-out;
+}

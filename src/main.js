@@ -11,7 +11,6 @@ import { showSubscriptionDetails } from './features/details/details.js';
 import { NativeNotifications } from './features/notifications/nativeNotifications.js';
 import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
 import { queueOperation, getQueue } from './features/sync/syncQueue.js';
-import { initSyncUI } from './features/sync/syncUI.js';
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -503,18 +502,12 @@ function updateTime() {
       now = new Date(utc + offsetMs);
     }
   }
+
   const timeStr = now.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
   });
-
-  // PROTECT SYNC UI: Don't overwrite if sync feedback or animations are active
-  if (timeEl.classList.contains('sync-time-override') || 
-      timeEl.querySelector('.sync-loader-text')) {
-    return;
-  }
-
   timeEl.innerText = timeStr;
 }
 
@@ -3801,6 +3794,3 @@ window.addEventListener('syncqueue:flushed', (e) => {
   console.log(`[App] Sync queue flushed ${e.detail.synced} item(s) — refreshing data...`);
   loadSubscriptions();
 });
-
-// Initialize Sync UI
-initSyncUI();

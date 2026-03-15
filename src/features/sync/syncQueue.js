@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { supabase } from '../../supabase.js';
+import { SyncUI } from './syncUI.js';
 
 const QUEUE_KEY = 'amiko_sync_queue';
 
@@ -41,9 +42,7 @@ export function queueOperation(action, data) {
 
   saveQueue(deduped);
   console.log(`[SyncQueue] Queued "${action}" — ${deduped.length} total pending`);
-  
-  // Inform UI that the queue has changed
-  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: deduped.length } }));
+  SyncUI.showStatus(`${deduped.length} change${deduped.length > 1 ? 's' : ''} queued`, 'syncing');
 }
 
 // ── Public: how many operations are waiting ───────────────────────────────────
@@ -64,10 +63,9 @@ async function flushQueue() {
     return;
   }
 
-  // Trigger syncing animation UI
-  window.dispatchEvent(new CustomEvent('syncqueue:syncing'));
-
   console.log(`[SyncQueue] Online — flushing ${q.length} pending operation(s)...`);
+  // Use a very long duration so it stays while we loop
+  SyncUI.showStatus(`Syncing ${q.length} change${q.length > 1 ? 's' : ''}...`, 'syncing', 60000); 
   const failed = [];
 
   for (const item of q) {
@@ -108,33 +106,44 @@ async function flushQueue() {
 
   saveQueue(failed);
 
-  // Update UI with remaining (if any) or clear the pending count
-  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: failed.length } }));
-
   const synced = q.length - failed.length;
   if (synced > 0) {
     console.log(`[SyncQueue] ${synced} operation(s) synced ✅`);
+    if (failed.length > 0) {
+        SyncUI.showStatus(`⚠️ ${synced} Synced, ${failed.length} Failed`, 'syncing', 5000);
+    } else {
+        SyncUI.showStatus(`✅ ${synced} Synced`, 'success', 5000);
+    }
     // Tell the main app to refresh so UI matches the cloud
     window.dispatchEvent(new CustomEvent('syncqueue:flushed', { detail: { synced } }));
+  } else if (failed.length > 0) {
+    SyncUI.showStatus(`❌ Sync Failed (${failed.length})`, 'syncing', 5000);
   }
 }
+
+// ── SyncUI Init ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => SyncUI.init());
+
+// (Removed updateBadge function as it is now managed by SyncUI)
 
 // ── Network event listeners ───────────────────────────────────────────────────
 
 window.addEventListener('online', () => {
   console.log('[SyncQueue] Device back online — flushing queue...');
+  SyncUI.updateNetworkState(true);
+  SyncUI.showStatus(`🌐 Online`, 'success', 2000);
   flushQueue();
 });
 
 window.addEventListener('offline', () => {
   console.log('[SyncQueue] Device offline — writes will be queued locally.');
-  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: getPendingCount() } }));
+  SyncUI.updateNetworkState(false);
 });
 
-// Trigger initial state broadcast
-setTimeout(() => {
-  window.dispatchEvent(new CustomEvent('syncqueue:changed', { detail: { count: getPendingCount() } }));
-}, 500);
+// Show initial state on load
+document.addEventListener('DOMContentLoaded', () => {
+    SyncUI.updateNetworkState(navigator.onLine);
+});
 
 // If the app starts up and we already have internet, flush immediately
 if (navigator.onLine) {

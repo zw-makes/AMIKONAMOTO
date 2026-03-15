@@ -1,93 +1,63 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// syncUI.js — AMIKONAMOTO Professional Sync Feedback UI
-//
-// Hooks into the standalone syncQueue events to drive beautiful top-nav 
-// animations and modal feedback without touching existing app state.
-// ─────────────────────────────────────────────────────────────────────────────
+/* src/features/sync/syncUI.js */
 
-/**
- * Initialize all sync-related UI elements
- */
-export function initSyncUI() {
-  const timeEl = document.getElementById('current-time');
-  const pillEl = document.getElementById('offline-center-pill');
-  const pillText = document.getElementById('offline-pill-text');
-  
-  const offlineModal = document.getElementById('offline-modal');
-  const closeOfflineBtn = document.getElementById('close-offline');
+export const SyncUI = {
+    terminal: null,
+    statusText: null,
+    offlineTag: null,
+    modal: null,
+    statusTimeout: null,
 
-  let timeRestoreTimeout = null;
+    init() {
+        this.terminal = document.getElementById('status-terminal');
+        this.statusText = document.getElementById('sync-status-text');
+        this.offlineTag = document.getElementById('offline-tag');
+        this.modal = document.getElementById('offline-modal');
+        const closeBtn = document.getElementById('close-offline-modal');
 
-  // -- Modal Logic --
-  pillEl.addEventListener('click', () => {
-    // Only open the modal if we are currently offline (not when it's just flashing "Online")
-    if (pillEl.classList.contains('show-offline')) {
-      offlineModal.classList.remove('hidden');
+        if (this.offlineTag) {
+            this.offlineTag.addEventListener('click', () => this.showOfflineModal());
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideOfflineModal());
+        }
+
+        // Check initial state
+        this.updateNetworkState(navigator.onLine);
+    },
+
+    /**
+     * Shows a message in the terminal for a few seconds
+     */
+    showStatus(text, type = 'success', duration = 3000) {
+        if (!this.statusText || !this.terminal) return;
+
+        clearTimeout(this.statusTimeout);
+        
+        this.statusText.innerText = text;
+        this.statusText.className = `sync-status-text ${type}`;
+        this.terminal.classList.add('show-status');
+
+        this.statusTimeout = setTimeout(() => {
+            this.terminal.classList.remove('show-status');
+        }, duration);
+    },
+
+    updateNetworkState(isOnline) {
+        if (this.offlineTag) {
+            if (isOnline) {
+                this.offlineTag.classList.add('hidden');
+            } else {
+                this.offlineTag.classList.remove('hidden');
+            }
+        }
+    },
+
+    showOfflineModal() {
+        if (this.modal) this.modal.classList.remove('hidden');
+    },
+
+    hideOfflineModal() {
+        if (this.modal) this.modal.classList.add('hidden');
     }
-  });
-
-  closeOfflineBtn.addEventListener('click', () => {
-    offlineModal.classList.add('hidden');
-  });
-  
-  offlineModal.addEventListener('click', (e) => {
-    if (e.target === offlineModal) offlineModal.classList.add('hidden');
-  });
-
-  // -- Event Listeners from syncQueue.js --
-
-  // 1. Queue Changed (e.g. 1 new item added to the backpack)
-  window.addEventListener('syncqueue:changed', (e) => {
-    const pendingCount = e.detail.count;
-    
-    // If we're completely offline and just lost connection
-    if (!navigator.onLine) {
-       pillText.innerText = 'Offline';
-       pillEl.classList.remove('show-online');
-       pillEl.classList.add('show-offline');
-    }
-
-    if (pendingCount > 0) {
-      // Temporarily hijack the clock to show the pending count
-      clearTimeout(timeRestoreTimeout);
-      
-      const originalTimeHtml = timeEl.innerHTML;
-      timeEl.classList.add('sync-time-override');
-      timeEl.innerText = `${pendingCount} Pending`;
-
-      // Return to clock after 5 seconds
-      timeRestoreTimeout = setTimeout(() => {
-        timeEl.classList.remove('sync-time-override');
-        // The main clock interval will overwrite this immediately, but we clear it just in case
-        timeEl.innerHTML = originalTimeHtml; 
-      }, 5000);
-    }
-  });
-
-  // 2. Syncing has started (Internet is back, firing up to Supabase)
-  window.addEventListener('syncqueue:syncing', () => {
-    // Show green "Online" temporarily
-    pillEl.classList.remove('show-offline');
-    pillEl.classList.add('show-online');
-    pillText.innerText = 'Online';
-
-    // After 2.5 seconds, hide the pill gracefully
-    setTimeout(() => {
-      pillEl.classList.remove('show-online', 'show-offline');
-    }, 2500);
-
-    // Hijack the clock with an animation
-    clearTimeout(timeRestoreTimeout);
-    timeEl.classList.remove('sync-time-override');
-    timeEl.innerHTML = `<div class="sync-loader-text">Syncing<span></span><span></span><span></span></div>`;
-  });
-
-  // 3. Sync finished completely
-  window.addEventListener('syncqueue:flushed', () => {
-    // Immediately return the clock to normal state
-    timeEl.classList.remove('sync-time-override');
-    // Force a UI clock update immediately (will just look like normal text again)
-    const timeEvent = new CustomEvent('syncqueue:clock_restore');
-    window.dispatchEvent(timeEvent);
-  });
-}
+};

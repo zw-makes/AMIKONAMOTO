@@ -7,7 +7,7 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="/src/features/history/history.css">
-  <link rel="stylesheet" href="/src/features/sync/syncUI.css">
+  <link rel="stylesheet" href="/src/features/sync/sync.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -132,14 +132,14 @@
 
     <!-- Top Status Bar -->
     <div class="status-bar">
-      <!-- Fast Sync Indicator positioned absolute in center -->
-      <div id="offline-center-pill">
-        <span class="status-dot"></span>
-        <span id="offline-pill-text">Offline</span>
-      </div>
-
       <div class="status-left">
-        <span id="current-time">12:00 AM</span>
+        <div id="status-terminal" class="status-terminal">
+          <span id="current-time">12:00 AM</span>
+          <span id="sync-status-text" class="sync-status-text hidden">Syncing...</span>
+        </div>
+      </div>
+      <div class="status-center">
+        <div id="offline-tag" class="offline-tag hidden">OFFLINE</div>
       </div>
       <div class="status-right">
         <button class="status-icon-btn" aria-label="Notifications" id="notif-btn" style="position: relative;">
@@ -1066,25 +1066,24 @@
         </div>
       </div>
     </div>
-    <!-- Offline Modal -->
+    <!-- Professional Offline Modal -->
     <div id="offline-modal" class="modal-overlay hidden">
-      <div class="modal-content glass" style="max-width: 320px; padding: 25px;">
-        <div class="modal-header" style="justify-content: space-between;">
-          <h2 class="welcome-title" style="margin: 0;">You're Offline <span class="glow-text">⚡</span></h2>
-          <button id="close-offline" class="nav-arrow"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+      <div class="modal-content glass" style="max-width: 350px; text-align: center; padding: 40px 30px; border-radius: 32px;">
+        <div class="offline-modal-icon" style="margin-bottom: 24px; color: var(--accent-orange); display: inline-flex; justify-content: center; width: 100%;">
+          <div style="background: rgba(255, 95, 31, 0.1); padding: 20px; border-radius: 50%;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16.72 11.06A5 5 0 0 1 15 20H6a5 5 0 0 1-5-5 5 5 0 0 1 4-4.9V10a5 5 0 0 1 .14-1.18M8 8V7a4 4 0 0 1 8 0v1h1a5 5 0 0 1 4.7 3.3"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
             </svg>
-          </button>
+          </div>
         </div>
-        <p class="welcome-desc" style="font-size: 0.9rem; margin-top: 15px; margin-bottom: 0;">
-          Don't worry—you can still use AMIKONAMOTO normally. Any changes you make are safely saved to your device and will automatically sync up to the cloud the moment your connection returns.
+        <h2 style="font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 15px; letter-spacing: -0.01em;">Working Offline</h2>
+        <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.95rem; margin-bottom: 30px; font-family: var(--font-main);">
+          Amikonamoto is currently in <span style="color: var(--text-primary); font-weight: 600;">offline mode</span>. Your changes are saved locally and will auto-sync with the cloud when you're back online.
         </p>
+        <button id="close-offline-modal" class="submit-btn" style="margin: 0; width: 100%; height: 55px; border-radius: 18px; font-weight: 700;">GOT IT</button>
       </div>
     </div>
-
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>
