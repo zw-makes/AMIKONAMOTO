@@ -580,28 +580,28 @@ async function saveToSupabase(sub) {
   // IMMEDIATELY cache the local change to make it offline-first
   localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
 
-  try {
-    // Only send columns that exist in the database to avoid 400 "Bad Request" errors
-    const subToSave = {
-      id: sub.id,
-      name: sub.name,
-      price: sub.price,
-      date: sub.date,
-      type: sub.type,
-      domain: sub.domain,
-      currency: sub.currency,
-      symbol: sub.symbol,
-      color: sub.color,
-      stopped: sub.stopped ?? false,
-      paid: sub.paid ?? false,
-      trialDays: sub.trialDays,
-      trialMonths: sub.trialMonths,
-      recurring: sub.recurring,
-      startDate: sub.startDate,
-      notes: sub.notes || null,
-      user_id: currentUser.id
-    };
+  // Define subToSave OUTSIDE the try block so the catch block can access it
+  const subToSave = {
+    id: sub.id,
+    name: sub.name,
+    price: sub.price,
+    date: sub.date,
+    type: sub.type,
+    domain: sub.domain,
+    currency: sub.currency,
+    symbol: sub.symbol,
+    color: sub.color,
+    stopped: sub.stopped ?? false,
+    paid: sub.paid ?? false,
+    trialDays: sub.trialDays,
+    trialMonths: sub.trialMonths,
+    recurring: sub.recurring,
+    startDate: sub.startDate,
+    notes: sub.notes || null,
+    user_id: currentUser.id
+  };
 
+  try {
     console.log('[Supabase] Attempting to save:', subToSave);
 
     const { data, error } = await supabase
