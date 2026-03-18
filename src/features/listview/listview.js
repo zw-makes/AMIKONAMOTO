@@ -98,7 +98,7 @@ export function renderListView() {
 
     const currentDate = window.currentDate || new Date();
     const settings = (window.userProfile && window.userProfile.settings) || {};
-    const report = window.lastReport || { total: 0, activeSubs: [], symbol: '$', currency: 'USD' };
+    const report = window.lastReport || { total: 0, activeSubs: [], symbol: '$', currency: 'USD', rates: null };
     
     const monthlyTotal = report.total;
     const activeSubs = report.activeSubs;
@@ -118,8 +118,8 @@ export function renderListView() {
     const weekSpending = [0, 0, 0, 0, 0, 0, 0];
     activeSubs.forEach(s => {
         let p = parseFloat(s.price);
-        if (window.getConvertedPrice && window.exchangeRates) {
-            p = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, window.exchangeRates);
+        if (window.getConvertedPrice && report.rates) {
+            p = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, report.rates);
         }
         const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), s.date);
         const dayOfWeek = dateObj.getDay();
@@ -175,29 +175,85 @@ export function renderListView() {
             </div>
             <div class="latest-list">
                 ${relevantSubs.length === 0 ? '<div style="padding:40px; text-align:center; opacity:0.3; font-weight:700;">NO SUBSCRIPTIONS THIS MONTH</div>' : 
-                  relevantSubs.sort((a, b) => a.date - b.date).map(s => {
-                    const domain = getSubDomain(s);
-                    const logoUrl = `https://icon.horse/icon/${domain}`;
-                    const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
-                    const displayPrice = window.getDisplayPrice ? window.getDisplayPrice(s, targetCurrency, useAutoCurrency, window.exchangeRates) : `${s.symbol || '$'}${s.price}`;
-                    const dateStr = `${s.date} ${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getFullYear()}`;
-
-                    return `
-                    <div class="latest-item" onclick="window.showSubscriptionDetails(${s.id}, event)">
-                        <div class="latest-icon">
-                            <img src="${logoUrl}" alt="${s.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23666\\' stroke-width=\\'2\\'><rect width=\\'18\\' height=\\'18\\' x=\\'3\\' y=\\'3\\' rx=\\'2\\'/></svg>'">
-                        </div>
-                        <div class="latest-info">
-                            <div class="latest-name">${s.name} ${s.stopped ? '<span style="font-size:0.6rem; opacity:0.5;">(PAUSED)</span>' : ''}</div>
-                            <div class="latest-date">${dateStr}</div>
-                        </div>
-                        <div class="latest-price">${displayPrice}</div>
-                    </div>
-                    `;
-                }).join('')}
+                  (function() {
+                      const monthEvents = [];
+                      relevantSubs.forEach(s => {
+                          const sDates = window.getSubDates ? window.getSubDates(s) : null;
+                          let endDay = -1;
+                          if (sDates && sDates.end) {
+                              if (sDates.end.getMonth() === currentDate.getMonth() && sDates.end.getFullYear() === currentDate.getFullYear()) {
+                                  endDay = sDates.end.getDate();
+                              }
+                          }
+                          
+                          monthEvents.push({ day: parseInt(s.date), sub: s, isEndEvent: false });
+                          
+                          if (endDay !== -1 && endDay !== parseInt(s.date)) {
+                              const clone = Object.assign({}, s);
+                              clone.id = clone.id + 99999;
+                              monthEvents.push({ day: endDay, sub: clone, isEndEvent: true });
+                          }
+                      });
+                      
+                      monthEvents.sort((a, b) => a.day - b.day);
+                      
+                      let lastDay = null;
+                      return monthEvents.map(event => {
+                          const s = event.sub;
+                          const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
+                          
+                          let displayPrice = `${s.symbol || '$'}${parseFloat(s.price).toFixed(2)}`;
+                          if (useAutoCurrency && report.rates && (s.currency || 'USD') !== targetCurrency) {
+                              const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(s.price), s.currency || 'USD', targetCurrency, report.rates) : parseFloat(s.price);
+                              displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
+                          }
+                          
+                          s.displayPrice = displayPrice;
+                          s.isCarryOver = false;
+                          
+                          if (event.isEndEvent) {
+                              s.isCarryOver = true;
+                              s.displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">ENDS CURRENT</span>`;
+                          } else {
+                              const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                              const sDates = window.getSubDates ? window.getSubDates(s) : null;
+                              const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+                              if (sDates && sDates.start) {
+                                  if (s.type === 'yearly' && currentDate.getMonth() !== sDates.start.getMonth()) {
+                                      s.isCarryOver = true;
+                                      s.displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
+                                  } else if (isMultiMonthTrial && (currentDate.getMonth() !== sDates.start.getMonth() || currentDate.getFullYear() !== sDates.start.getFullYear())) {
+                                      s.isCarryOver = true;
+                                      s.displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
+                                  } else if (sDates.end && sDates.start < viewStart && s.type !== 'yearly' && !isMultiMonthTrial) {
+                                      s.isCarryOver = true;
+                                      s.displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
+                                  }
+                              }
+                          }
+                          
+                          let headerHtml = '';
+                          if (event.day !== lastDay) {
+                              headerHtml = `<div class="detail-section-header">${monthName.toUpperCase()} ${event.day}</div>`;
+                              lastDay = event.day;
+                          }
+                          
+                          if (window.getSwipeTemplate) {
+                              return headerHtml + window.getSwipeTemplate(s);
+                          }
+                          return '';
+                      }).join('');
+                  })()
+                }
             </div>
         </div>
     `;
+
+    setTimeout(() => {
+        if (typeof window.attachSwipeEvents === 'function') {
+            window.attachSwipeEvents();
+        }
+    }, 50);
 }
 
 // Global expose

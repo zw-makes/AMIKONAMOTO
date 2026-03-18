@@ -2243,8 +2243,6 @@ input:checked+.slider:before {
   color: var(--text-secondary);
   margin-top: 25px;
   margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-transform: uppercase;
   font-weight: 700;
   display: flex;

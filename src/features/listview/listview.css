@@ -168,72 +168,16 @@
 }
 
 .latest-list {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 28px;
-    overflow: hidden;
-    backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.latest-item {
     display: flex;
-    align-items: center;
-    padding: 16px;
-    gap: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: background 0.2s ease;
-    cursor: pointer;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.latest-item:last-child {
-    border-bottom: none;
+.latest-list .detail-item-wrapper {
+    margin-bottom: 0 !important;
 }
 
-.latest-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.latest-icon {
-    width: 48px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.latest-icon img {
-    width: 80%;
-    height: 80%;
-    object-fit: contain;
-}
-
-.latest-info {
-    flex: 1;
-}
-
-.latest-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 4px;
-}
-
-.latest-date {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 500;
-}
-
-.latest-price {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'Roboto Mono', monospace;
-}
+/* ── SCROLL HIDE LEGEND LOGIC ── (Handled in bottombar.css) */
 
 /* ── SCROLL HIDE LEGEND LOGIC ── (Handled in bottombar.css) */
 

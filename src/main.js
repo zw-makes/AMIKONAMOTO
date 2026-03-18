@@ -1615,7 +1615,8 @@ async function updateStats() {
     total: monthlyTotal,
     activeSubs: actuallyActiveOnes,
     symbol: finalSymbol,
-    currency: targetCurrency
+    currency: targetCurrency,
+    rates: displayRates || mathRates
   };
 
   // Re-render list view if it's active
@@ -3611,6 +3612,8 @@ function getSwipeTemplate(s) {
     </div>
   `;
 }
+window.getSwipeTemplate = getSwipeTemplate;
+window.attachSwipeEvents = attachSwipeEvents;
 
 // Initial Render
 updateTime();
