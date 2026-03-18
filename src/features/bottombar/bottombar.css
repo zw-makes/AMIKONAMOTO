@@ -5,7 +5,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 0 28px calc(env(safe-area-inset-bottom, 20px) + 24px) 28px;
+    padding: 0 32px calc(env(safe-area-inset-bottom, 20px) + 24px) 32px;
     display: flex;
     flex-direction: column;
     gap: 12px; /* Slightly tighter gap */
@@ -101,7 +101,7 @@
 }
 
 .feature-buttons-container {
-    width: 250px; /* Increased from 210px to fit 4 buttons */
+    width: 240px; /* Slimmed down slightly to fit better horizontally */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -159,7 +159,7 @@
 
 .total-amount {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.45rem;
+    font-size: 1.35rem; /* Slightly smaller for tighter layout */
     font-weight: 800;
     color: #ffffff;
     line-height: 0.9;
