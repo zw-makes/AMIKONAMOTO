@@ -237,3 +237,8 @@
         width: 36px;
     }
 }
+
+/* Hide Frequency Action in List View */
+#list-view-container .swipe-action.freq {
+    display: none !important;
+}
