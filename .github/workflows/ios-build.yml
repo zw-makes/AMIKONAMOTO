@@ -6,13 +6,12 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ACTIONS_ALLOW_UNSECURE_NODE_VERSION: true
 
 jobs:
   build_ios:
     name: Build iOS App
     runs-on: macos-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Silences Node 20 deprecation warnings
     
     steps:
       - name: Checkout Source Code

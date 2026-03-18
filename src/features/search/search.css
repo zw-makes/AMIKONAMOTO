@@ -22,8 +22,8 @@
     width: 100%;
     max-width: 500px;
     height: 100%;
-    /* Accounting for iOS Status Bar / Notch */
-    padding: calc(env(safe-area-inset-top, 0px) + 60px) 24px 24px 24px;
+    /* Accounting for iOS Status Bar / Notch - tighter fit */
+    padding: calc(env(safe-area-inset-top, 0px) + 16px) 24px 24px 24px;
     display: flex;
     flex-direction: column;
     animation: searchPageSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
