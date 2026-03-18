@@ -7,16 +7,13 @@ export function openSearchModal() {
     }
     overlay.classList.remove('hidden');
 
-    // Slight timeout allows display:block to apply before animation/focus
+    // Focus input and reset state
     setTimeout(() => {
         const input = document.getElementById('search-input');
         input.value = '';
-        input.blur(); // Ensure it starts unfocused so it stays in the middle
-        renderResults('');
-        const container = document.getElementById('search-container');
-        container.classList.remove('search-active');
-        document.getElementById('search-results').classList.add('hidden');
-    }, 10);
+        input.focus();
+        updateSearchState('');
+    }, 100);
 }
 
 function createSearchModal() {
@@ -25,22 +22,40 @@ function createSearchModal() {
     overlay.className = 'modal-overlay hidden';
 
     overlay.innerHTML = `
-        <div id="search-container" class="search-container glass">
-            <div class="search-bar">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="search-icon">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
-                <input type="text" id="search-input" placeholder="Search subscriptions..." autocomplete="off">
-                <button id="close-search-btn" class="nav-arrow" style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary);">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <div id="search-container" class="search-container">
+            <header class="search-header">
+                <div class="search-bar-pill">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="search-icon">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search subscriptions..." autocomplete="off">
+                </div>
+                <button id="close-search-btn" title="Close Search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-            </div>
-            <div id="search-results" class="search-results hidden">
-                <div id="search-results-list"></div>
+            </header>
+
+            <div id="search-content" class="search-content">
+                <!-- Search Empty State -->
+                <div id="search-empty-state" class="search-empty-state">
+                    <div class="empty-state-icon">
+                         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </div>
+                    <h2 class="empty-state-title">Search Subscriptions</h2>
+                    <p class="empty-state-subtitle">Enter a name to find your subscriptions</p>
+                </div>
+
+                <!-- Search Results List -->
+                <div id="search-results" class="search-results hidden">
+                    <div id="search-results-list" class="search-results-list"></div>
+                </div>
             </div>
         </div>
     `;
@@ -53,7 +68,6 @@ function createSearchModal() {
         overlay.classList.add('hidden');
     });
 
-    // Close when clicking outside the container
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
             overlay.classList.add('hidden');
@@ -61,31 +75,25 @@ function createSearchModal() {
     });
 
     const input = document.getElementById('search-input');
-    const container = document.getElementById('search-container');
-    const results = document.getElementById('search-results');
-
-    input.addEventListener('focus', () => {
-        // Do nothing initially on focus
-        const val = input.value;
-        if (val.trim()) {
-            container.classList.add('search-active');
-            results.classList.remove('hidden');
-        }
-    });
-
     input.addEventListener('input', (e) => {
-        const val = e.target.value;
-        if (val.trim()) {
-            container.classList.add('search-active');
-            results.classList.remove('hidden');
-            renderResults(val);
-        } else {
-            container.classList.remove('search-active');
-            results.classList.add('hidden');
-        }
+        updateSearchState(e.target.value);
     });
 
     return overlay;
+}
+
+function updateSearchState(query) {
+    const emptyState = document.getElementById('search-empty-state');
+    const resultsContainer = document.getElementById('search-results');
+
+    if (!query.trim()) {
+        emptyState.classList.remove('hidden');
+        resultsContainer.classList.add('hidden');
+    } else {
+        emptyState.classList.add('hidden');
+        resultsContainer.classList.remove('hidden');
+        renderResults(query);
+    }
 }
 
 function getDomain(sub) {
@@ -104,14 +112,29 @@ function getDomain(sub) {
     return domain;
 }
 
+function getSubEndDate(sub) {
+    const start = new Date(sub.startDate);
+    let end = null;
+    if (sub.type === 'trial' || (sub.type === 'monthly' && sub.recurring !== 'recurring') || sub.type === 'one-time') {
+        end = new Date(start);
+        if (sub.type === 'trial') {
+            const tDays = parseInt(sub.trialDays) || 0;
+            const tMonths = parseInt(sub.trialMonths) || 0;
+            end.setMonth(end.getMonth() + tMonths);
+            end.setDate(end.getDate() + tDays);
+        } else {
+            end.setMonth(end.getMonth() + 1);
+        }
+    } else if (sub.type === 'yearly') {
+        end = new Date(start);
+        end.setFullYear(end.getFullYear() + 1);
+    }
+    return end;
+}
+
 function renderResults(query) {
     const list = document.getElementById('search-results-list');
     const subs = window.subscriptions || [];
-
-    if (!query.trim()) {
-        list.innerHTML = '<div class="search-empty">Type to search your subscriptions</div>';
-        return;
-    }
 
     const filtered = subs.filter(s => s.name.toLowerCase().includes(query.toLowerCase()));
 
@@ -120,11 +143,27 @@ function renderResults(query) {
         return;
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     list.innerHTML = filtered.map(sub => {
         const domain = getDomain(sub);
         const logoUrl = `https://icon.horse/icon/${domain}`;
+        
+        // Calculate Ended Status
+        const endDate = getSubEndDate(sub);
+        const isEnded = endDate && today > endDate;
+        const isStopped = sub.stopped;
+        
+        let statusTag = '';
+        if (isStopped) {
+            statusTag = '<span class="status-tag-search stopped">STOPPED</span>';
+        } else if (isEnded) {
+            statusTag = '<span class="status-tag-search ended">ENDED</span>';
+        } else {
+            statusTag = '<span class="status-tag-search active">ACTIVE</span>';
+        }
 
-        // Convert to valid JSON string for our data attribute
         const subData = encodeURIComponent(JSON.stringify(sub));
 
         return `
@@ -134,7 +173,11 @@ function renderResults(query) {
                 </div>
                 <div class="search-result-details">
                     <div class="search-result-name">${sub.name}</div>
-                    <div class="search-result-type">${sub.type} • ${sub.currency || '$'} ${sub.price}</div>
+                    <div class="search-result-meta">
+                        <span>${sub.type}</span>
+                        <span>${sub.currency || '$'} ${sub.price}</span>
+                        ${statusTag}
+                    </div>
                 </div>
             </div>
         `;
@@ -150,7 +193,6 @@ function renderResults(query) {
             try {
                 const subObj = JSON.parse(decodeURIComponent(item.dataset.sub));
                 if (typeof window.showDayDetails === 'function') {
-                    // Pass the single selected sub in an array
                     window.showDayDetails(subObj.date, [subObj]);
                 }
             } catch (err) {
