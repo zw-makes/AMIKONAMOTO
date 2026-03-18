@@ -796,6 +796,12 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
     const daySubs = subscriptions.filter(s => {
       const start = new Date(s.startDate);
       const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+      
+      // Inline styles to prevent iOS context menus
+      cell.style.userSelect = 'none';
+      cell.style.webkitUserSelect = 'none';
+      cell.style.webkitTouchCallout = 'none';
+      cell.style.webkitTapHighlightColor = 'transparent';
       if (s.type === 'monthly' || (s.type === 'trial' && !isMultiMonthTrial) || s.type === 'one-time') {
         if (s.date !== day) return false;
         if (s.type === 'monthly' && s.recurring === 'recurring') {
@@ -995,9 +1001,10 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
       // Long-press logic (1 second)
       let holdTimer;
       const startHold = (e) => {
+        if (e.type === 'touchstart') e.preventDefault();
         holdTimer = setTimeout(() => {
           showTooltip(e, daySubs);
-        }, 1000);
+        }, 300);
       };
       const clearHold = () => {
         clearTimeout(holdTimer);
@@ -1005,11 +1012,11 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
       };
 
       cell.addEventListener('mousedown', startHold);
-      cell.addEventListener('touchstart', startHold, { passive: true });
+      cell.addEventListener('touchstart', startHold, { passive: false });
       cell.addEventListener('mouseup', clearHold);
       cell.addEventListener('mouseleave', clearHold);
       cell.addEventListener('touchend', clearHold);
-      cell.addEventListener('touchmove', clearHold, { passive: true });
+      cell.addEventListener('touchmove', clearHold, { passive: false });
     }
   }
 }
@@ -1065,13 +1072,20 @@ function moveTooltip(e) {
   const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
   const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
-  const x = clientX + 10;
-  const y = clientY + 10;
-
   // Keep tooltip on screen
   const rect = tooltip.getBoundingClientRect();
-  const finalX = x + rect.width > window.innerWidth ? x - rect.width - 20 : x;
-  const finalY = y + rect.height > window.innerHeight ? y - rect.height - 20 : y;
+  
+  // Position ABOVE the cursor/finger, centered horizontally
+  const x = clientX - (rect.width / 2);
+  const y = clientY - rect.height - 25; // 25px offset above
+
+  let finalX = Math.max(10, Math.min(x, window.innerWidth - rect.width - 10));
+  let finalY = y;
+
+  // If it goes off the top, flip it to the bottom
+  if (finalY < 10) {
+    finalY = clientY + 25;
+  }
 
   tooltip.style.left = `${finalX}px`;
   tooltip.style.top = `${finalY}px`;

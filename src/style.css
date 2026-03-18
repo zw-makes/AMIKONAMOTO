@@ -728,6 +728,9 @@ button:active {
   justify-content: center;
   align-items: center;
   animation: pop-in 0.3s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .sub-icon img {
