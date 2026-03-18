@@ -3540,6 +3540,13 @@ function getSwipeTemplate(s) {
   const isStopped = s.stopped;
   const isPaid = window.isSubPaid(s, currentDate);
   const domain = getDomain(s);
+
+  // Check if ended (non-recurring/trial and today > end)
+  const { end } = getSubDates(s);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isEnded = end && today > end;
+
   return `
     <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
       <div class="swipe-actions-bg" style="justify-content: space-between;">
@@ -3578,7 +3585,7 @@ function getSwipeTemplate(s) {
             ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
             ${isStopped
       ? '<span class="status-tag tag-stopped">STOPPED</span>'
-      : '<span class="status-tag tag-active">ACTIVE</span>'}
+      : (isEnded ? '<span class="status-tag tag-ended">ENDED</span>' : '<span class="status-tag tag-active">ACTIVE</span>')}
             <span class="detail-type" style="margin-left: 4px; font-size: 0.6rem; opacity: 0.6;">${s.type} plan</span>
           </div>
         </div>

@@ -1586,6 +1586,12 @@ button:active {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.tag-ended {
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Visibility Fix for Dimmed items */
 .detail-item.dimmed .status-tag {
   color: #fff !important;
@@ -1677,6 +1683,12 @@ button:active {
   background: rgba(255, 255, 255, 0.05);
   color: #888;
   border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-ended {
+  background: rgba(255, 255, 255, 0.03);
+  color: #777;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
 }
 
 .detail-price {

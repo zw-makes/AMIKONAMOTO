@@ -317,6 +317,10 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
             displayPrice = `<span style="opacity:0.6; font-size:0.8rem;">${originalPriceStr}</span> <span style="opacity:0.3; margin:0 2px;">→</span> ${symbol}${converted.toFixed(2)}`;
         }
 
+        const { end } = calculateSubTimeline(s);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isEnded = end !== 'N/A' && todayStr > end;
+
         return `
                 <div class="detail-item ${isStopped ? 'dimmed' : ''}" style="margin:0; width:100%; box-sizing:border-box;">
                     <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
@@ -326,7 +330,7 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
                         <span class="detail-name">${s.name}</span>
                         <div class="tag-container" style="display: flex; gap: 4px; margin-top: 2px;">
                             ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : '<span class="status-tag" style="background:rgba(255,51,51,0.1); color:var(--accent-red);">UNPAID</span>'}
-                            ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : '<span class="status-tag tag-active">ACTIVE</span>'}
+                            ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : (isEnded ? '<span class="status-tag tag-ended">ENDED</span>' : '<span class="status-tag tag-active">ACTIVE</span>')}
                             <span class="detail-type" style="margin-left: 4px; font-size: 0.6rem; opacity: 0.6;">${s.type}</span>
                         </div>
                     </div>
@@ -365,6 +369,10 @@ async function downloadCSV(subs, fileName) {
         if (rates) {
             convertedPrice = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
         }
+        const { end: subEndDate } = calculateSubTimeline(s);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isEnded = subEndDate !== 'N/A' && todayStr > subEndDate;
+
         return [
             s.name.replace(/,/g, ''),
             p.toFixed(2),
@@ -372,7 +380,7 @@ async function downloadCSV(subs, fileName) {
             convertedPrice.toFixed(2),
             targetCurrency,
             s.type,
-            s.stopped ? 'STOPPED' : 'ACTIVE',
+            s.stopped ? 'STOPPED' : (isEnded ? 'ENDED' : 'ACTIVE'),
             window.isSubPaid(s, historyDate) ? 'YES' : 'NO',
             start,
             end,
@@ -433,11 +441,15 @@ async function downloadPDF(subs, fileName, title) {
             total += p;
         }
 
+        const { end: subEndDate } = calculateSubTimeline(s);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isEnded = subEndDate !== 'N/A' && todayStr > subEndDate;
+
         return [
             s.name,
             displayPrice,
             s.type.toUpperCase(),
-            s.stopped ? 'STOPPED' : 'ACTIVE',
+            s.stopped ? 'STOPPED' : (isEnded ? 'ENDED' : 'ACTIVE'),
             window.isSubPaid(s, historyDate) ? 'PAID' : 'UNPAID',
             start,
             end
@@ -494,6 +506,10 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
             displayPrice = `${symbol}${p.toFixed(2)}`;
         }
 
+        const { end: subEndDate } = calculateSubTimeline(s);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isEnded = subEndDate !== 'N/A' && todayStr > subEndDate;
+
         return `
             <div class="st-item">
                 <div class="st-item-main">
@@ -504,7 +520,7 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
                         <span class="st-item-name">${s.name}</span>
                         <div class="st-tags">
                             <span class="st-tag">${s.type.toUpperCase()}</span>
-                            <span class="st-tag ${s.stopped ? 'st-stopped' : 'st-active'}">${s.stopped ? 'STOPPED' : 'ACTIVE'}</span>
+                            <span class="st-tag ${s.stopped ? 'st-stopped' : (isEnded ? 'st-ended' : 'st-active')}">${s.stopped ? 'STOPPED' : (isEnded ? 'ENDED' : 'ACTIVE')}</span>
                             <span class="st-tag ${window.isSubPaid(s, historyDate) ? 'st-paid' : 'st-unpaid'}">${window.isSubPaid(s, historyDate) ? 'PAID' : 'UNPAID'}</span>
                         </div>
                     </div>

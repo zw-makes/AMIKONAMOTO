@@ -255,6 +255,11 @@
     background: rgba(255, 85, 85, 0.1);
 }
 
+.st-ended {
+    color: #aaa;
+    background: rgba(255, 255, 255, 0.05);
+}
+
 .st-paid {
     color: #7df9ff !important;
     background: rgba(125, 249, 255, 0.1);

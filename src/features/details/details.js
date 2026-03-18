@@ -100,12 +100,17 @@ function updateActiveDot(index) {
 function createCardHTML(s, viewDate = new Date()) {
     const domain = s.domain || 'example.com';
     const price = `${s.symbol || '$'}${s.price.toFixed(2)}`;
-    const statusClass = s.stopped ? 'status-stopped' : 'status-active';
-    const statusText = s.stopped ? 'Stopped' : 'Active';
-
+    
     // Real world today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Calculate Billing/End Date
+    const { end } = getSubCalculatedDates(s);
+    const isEnded = end && today > end;
+
+    const statusClass = s.stopped ? 'status-stopped' : (isEnded ? 'status-ended' : 'status-active');
+    const statusText = s.stopped ? 'Stopped' : (isEnded ? 'Ended' : 'Active');
 
     // Calendar context date
     const calendarDate = new Date(viewDate);
@@ -152,8 +157,6 @@ function createCardHTML(s, viewDate = new Date()) {
         contextStatusValue = calendarDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    // Calculate Billing/End Date
-    const { end } = getSubCalculatedDates(s);
     const billingDate = end ? end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
 
     // Currency Exchange (if applicable)
