@@ -53,6 +53,10 @@
     height: 220px;
     position: relative;
     margin-top: 20px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .chart-y-axis {
@@ -112,6 +116,9 @@
     height: 100%;
     justify-content: flex-end;
     padding: 0 2px; /* Responsive buffer */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .chart-bar {
@@ -123,6 +130,9 @@
     transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .chart-bar.empty {
