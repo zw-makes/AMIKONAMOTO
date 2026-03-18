@@ -5,10 +5,10 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 0 24px calc(env(safe-area-inset-bottom, 20px) + 24px) 24px;
+    padding: 0 28px calc(env(safe-area-inset-bottom, 20px) + 24px) 28px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px; /* Slightly tighter gap */
     z-index: 100;
     pointer-events: none;
 }
@@ -23,12 +23,32 @@
     align-items: center;
     gap: 8px;
 
-    /* Standard iOS Glass (Not Liquid) */
-    background: rgba(15, 15, 15, 0.4);
-    backdrop-filter: blur(25px) saturate(160%);
-    -webkit-backdrop-filter: blur(25px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    /* Transparent Glass */
+    background: rgba(15, 15, 15, 0.25); /* More transparent as requested */
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), 
+                opacity 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+                max-height 0.4s ease,
+                margin 0.4s ease,
+                padding 0.4s ease;
+    max-height: 100px;
+    overflow: visible;
+}
+
+.calendar-legend-box.hidden-scrolled {
+    transform: translateY(40px) scale(0.9); /* Pull down slightly instead of flying away */
+    opacity: 0;
+    pointer-events: none;
+    max-height: 0;
+    margin-bottom: -12px; /* Pull the bottom bar up */
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    overflow: hidden;
 }
 
 .legend-labels {
@@ -64,12 +84,12 @@
 .feature-buttons-container,
 .grand-total-container {
     pointer-events: auto;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(45px) saturate(220%);
-    -webkit-backdrop-filter: blur(45px) saturate(220%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6),
-        inset 0 0 25px rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.02); /* EXTREMELY transparent for maximum visibility */
+    backdrop-filter: blur(40px) saturate(220%);
+    -webkit-backdrop-filter: blur(40px) saturate(220%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5),
+        inset 0 0 25px rgba(255, 255, 255, 0.02);
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -108,24 +128,6 @@
     background: rgba(255, 255, 255, 0.15);
     color: #fff;
     transform: translateY(-2px);
-}
-
-/* ── SCROLL HIDE LEGEND LOGIC ── */
-.calendar-legend-box {
-    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), 
-                opacity 0.4s cubic-bezier(0.19, 1, 0.22, 1),
-                filter 0.4s ease !important;
-}
-
-.calendar-legend-box.hidden-scrolled {
-    transform: translateY(120%) scale(0.9);
-    opacity: 0;
-    pointer-events: none;
-    filter: blur(10px);
-}
-
-.list-view-container {
-    padding-bottom: 160px !important;
 }
 
 .feature-btn.magic-active {

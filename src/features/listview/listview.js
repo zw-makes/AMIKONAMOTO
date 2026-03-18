@@ -32,13 +32,15 @@ export function initListView() {
     listViewContainer.className = 'list-view-container hidden';
     parent.appendChild(listViewContainer);
 
-    // Initial Scroll Listener Logic
+    // Initial Scroll Listener Logic - ATTACHED TO PARENT SCROLL ROOT
     let lastScrollY = 0;
     const legendBox = document.querySelector('.calendar-legend-box');
 
-    listViewContainer.addEventListener('scroll', () => {
-        const currentScrollY = listViewContainer.scrollTop;
-        if (!legendBox) return;
+    parent.addEventListener('scroll', () => {
+        // Only trigger scroll hiding if list view is active
+        if (!listViewActive || !legendBox) return;
+
+        const currentScrollY = parent.scrollTop;
 
         // Hide on scroll down, show on scroll up
         if (currentScrollY > lastScrollY && currentScrollY > 50) {
@@ -53,6 +55,7 @@ export function initListView() {
 export function toggleListView(btn) {
     const calendarGrid = document.getElementById('calendar-grid');
     const weekdayHeader = document.querySelector('.weekday-header');
+    const parent = document.querySelector('.calendar-container');
     
     listViewActive = !listViewActive;
     
@@ -130,7 +133,7 @@ export function renderListView() {
     const monthName = currentDate.toLocaleString('default', { month: 'long' });
     
     listViewContainer.innerHTML = `
-        <div class="spending-card">
+        <div class="spending-card" style="animation: none;">
             <div class="spending-header">
                 <h3>${monthName.toUpperCase()} SPENDING (${targetCurrency})</h3>
                 <div class="spending-total">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
