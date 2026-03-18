@@ -280,9 +280,6 @@ export function renderListView() {
 
             let holdTimer;
             const startHold = (e) => {
-                // Prevent iOS system context menu (magnifying glass/copy mode)
-                if (e.type === 'touchstart') e.preventDefault(); 
-                
                 holdTimer = setTimeout(() => {
                    if (window.showTooltip) window.showTooltip(e, daySubs);
                 }, 300); // Faster for list view? 
@@ -293,7 +290,7 @@ export function renderListView() {
             };
 
             bar.addEventListener('mousedown', startHold);
-            bar.addEventListener('touchstart', startHold, { passive: false });
+            bar.addEventListener('touchstart', startHold, { passive: true });
             bar.addEventListener('mouseup', clearHold);
             bar.addEventListener('mouseleave', clearHold);
             bar.addEventListener('touchend', clearHold);
@@ -301,6 +298,7 @@ export function renderListView() {
                 clearTimeout(holdTimer);
                 if (window.hideTooltip) window.hideTooltip();
             }, { passive: true });
+            bar.addEventListener('contextmenu', (e) => e.preventDefault());
             
             // Also supports simple hover for non-touch
             bar.addEventListener('mouseenter', (e) => {

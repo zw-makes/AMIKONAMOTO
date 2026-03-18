@@ -1001,7 +1001,6 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
       // Long-press logic (1 second)
       let holdTimer;
       const startHold = (e) => {
-        if (e.type === 'touchstart') e.preventDefault();
         holdTimer = setTimeout(() => {
           showTooltip(e, daySubs);
         }, 300);
@@ -1012,11 +1011,12 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
       };
 
       cell.addEventListener('mousedown', startHold);
-      cell.addEventListener('touchstart', startHold, { passive: false });
+      cell.addEventListener('touchstart', startHold, { passive: true });
       cell.addEventListener('mouseup', clearHold);
       cell.addEventListener('mouseleave', clearHold);
       cell.addEventListener('touchend', clearHold);
-      cell.addEventListener('touchmove', clearHold, { passive: false });
+      cell.addEventListener('touchmove', clearHold, { passive: true });
+      cell.addEventListener('contextmenu', (e) => e.preventDefault());
     }
   }
 }
