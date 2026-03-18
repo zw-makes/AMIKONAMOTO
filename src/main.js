@@ -11,6 +11,10 @@ import { showSubscriptionDetails } from './features/details/details.js';
 import { NativeNotifications } from './features/notifications/nativeNotifications.js';
 import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
 import { queueOperation, getQueue } from './features/sync/syncQueue.js';
+import { initListView, toggleListView } from './features/listview/listview.js';
+
+// Initialize List View
+initListView();
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -1605,6 +1609,19 @@ async function updateStats() {
   }
 
   totalAmountEl.innerText = `${finalSymbol}${monthlyTotal.toFixed(2)}`;
+
+  // Store globally for List View Sync
+  window.lastReport = {
+    total: monthlyTotal,
+    activeSubs: actuallyActiveOnes,
+    symbol: finalSymbol,
+    currency: targetCurrency
+  };
+
+  // Re-render list view if it's active
+  if (typeof window.renderListView === 'function') {
+    window.renderListView();
+  }
 }
 
 // --- Event Listeners ---
@@ -2645,7 +2662,7 @@ function showWelcomeScreen() {
 }
 
 // --- Helper to check if a subscription is relevant to a specific month ---
-function isSubRelevantToMonth(sub, monthDate) {
+window.isSubRelevantToMonth = function (sub, monthDate) {
   const { start, end } = getSubDates(sub);
   const viewStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
   const viewEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
@@ -3603,7 +3620,7 @@ loadSubscriptions(); // Fetch from Supabase
 initNotifications();
 
 // --- Helper to get normalized start and end dates for a subscription ---
-function getSubDates(sub) {
+window.getSubDates = function (sub) {
   const start = new Date(sub.startDate);
   let end = null;
 

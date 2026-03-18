@@ -100,6 +100,10 @@ export function initBottomBar() {
             const action = btn.id;
             if (action === 'search-btn') {
                 openSearchModal();
+            } else if (action === 'list-btn') {
+                if (typeof window.toggleListView === 'function') {
+                    window.toggleListView(btn);
+                }
             } else if (action === 'download-btn') {
                 toggleHistoryMode(btn);
             } else if (action === 'magic-btn') {

@@ -378,10 +378,7 @@ button:active {
   padding: 0 var(--spacing-md);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  /* Allow the calendar to scroll */
-  padding-bottom: 180px;
-  /* Space for the bottom bar */
+  overflow: hidden; /* Changed from auto to let children handle scroll */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -404,9 +401,8 @@ button:active {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   flex: 1;
-  gap: 4px;
-  /* Reduced from 8px to fix overflow */
-  padding-bottom: var(--spacing-md);
+  gap: 1.5px; /* Reduced from 8px to fix overflow */
+  padding-bottom: 140px; /* Moved padding here so grid flows under bars */
 }
 
 .calendar-cell {
