@@ -1,5 +1,6 @@
 .list-view-container {
     padding: 24px;
+    padding-bottom: 160px !important; /* Allow items to show through the bottom bars */
     height: 100%;
     overflow-y: auto;
     display: flex;
