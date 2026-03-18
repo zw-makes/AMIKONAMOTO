@@ -79,6 +79,39 @@ body {
   border: 1px solid var(--border-color);
 }
 
+.tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  pointer-events: none;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.7rem;
+  color: white;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+  animation: tooltip-fade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tooltip.hidden {
+  display: none;
+}
+
+.tooltip-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 6px;
+}
+
+.tooltip-item:last-child {
+  margin-bottom: 0;
+}
+
 button {
   cursor: pointer;
   border: none;
@@ -1310,6 +1343,7 @@ button:active {
 .tooltip-price {
   font-weight: 700;
   color: var(--accent-green);
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .tooltip-item.dimmed {
@@ -1319,17 +1353,17 @@ button:active {
 
 .tooltip-item.dimmed .tooltip-price {
   color: #888 !important;
+  text-shadow: none;
 }
 
 @keyframes tooltip-fade {
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform: translateY(5px) scale(0.98);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 

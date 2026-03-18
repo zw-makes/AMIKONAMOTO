@@ -1014,7 +1014,12 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
   }
 }
 
+window.showTooltip = showTooltip;
+window.moveTooltip = moveTooltip;
+window.hideTooltip = hideTooltip;
+
 async function showTooltip(e, subs) {
+  if (!tooltip) return;
   const settings = userProfile?.settings || {};
   const useAutoCurrency = settings.autoCurrency !== false;
   const targetCurrency = settings.currency || 'USD';
@@ -1049,11 +1054,13 @@ async function showTooltip(e, subs) {
     `;
   }).join('');
 
+  if (!tooltip) return;
   tooltip.classList.remove('hidden');
   moveTooltip(e);
 }
 
 function moveTooltip(e) {
+  if (!tooltip) return;
   // Handle both mouse and touch events
   const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
   const clientY = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -1071,7 +1078,7 @@ function moveTooltip(e) {
 }
 
 function hideTooltip() {
-  tooltip.classList.add('hidden');
+  if (tooltip) tooltip.classList.add('hidden');
 }
 
 window.showDayDetails = async function (day, subs) {

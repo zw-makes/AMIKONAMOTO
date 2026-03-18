@@ -116,6 +116,8 @@ export function renderListView() {
     const activeCount = relevantSubs.filter(s => !s.stopped).length;
 
     const weekSpending = [0, 0, 0, 0, 0, 0, 0];
+    const weekLogos = [[], [], [], [], [], [], []];
+
     activeSubs.forEach(s => {
         let p = parseFloat(s.price);
         if (window.getConvertedPrice && report.rates) {
@@ -124,6 +126,9 @@ export function renderListView() {
         const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), s.date);
         const dayOfWeek = dateObj.getDay();
         weekSpending[dayOfWeek] += p;
+
+        const domain = getSubDomain(s);
+        weekLogos[dayOfWeek].push({ domain, price: p, sub: s });
     });
 
     const maxSpend = Math.max(...weekSpending, 20);
@@ -157,10 +162,20 @@ export function renderListView() {
                 <div class="chart-bars">
                     ${weekSpending.map((amount, i) => {
                         const height = (amount / chartMax) * 100;
+                        
+                        const topLogos = weekLogos[i]
+                            .sort((a, b) => b.price - a.price)
+                            .slice(0, 3)
+                            .map(l => `<img src="https://icon.horse/icon/${l.domain}" class="chart-mini-logo" onerror="this.style.display='none'">`)
+                            .join('');
+
                         return `
                         <div class="chart-bar-group">
                             <div class="chart-bar ${amount === 0 ? 'empty' : ''}" style="height: ${Math.max(amount === 0 ? 5 : height, 5)}%"></div>
                             <span class="chart-day-label">${days[i]}</span>
+                            <div class="chart-logos-container">
+                                ${topLogos}
+                            </div>
                         </div>
                         `;
                     }).join('')}
@@ -253,7 +268,49 @@ export function renderListView() {
         if (typeof window.attachSwipeEvents === 'function') {
             window.attachSwipeEvents();
         }
-    }, 50);
+
+        // Attach Chart Tooltips
+        const barGroups = listViewContainer.querySelectorAll('.chart-bar-group');
+        barGroups.forEach((group, i) => {
+            const bar = group.querySelector('.chart-bar');
+            if (!bar) return;
+
+            const daySubs = weekLogos[i].map(l => l.sub);
+            if (daySubs.length === 0) return;
+
+            let holdTimer;
+            const startHold = (e) => {
+                holdTimer = setTimeout(() => {
+                   if (window.showTooltip) window.showTooltip(e, daySubs);
+                }, 300); // Faster for list view? 
+            };
+            const clearHold = () => {
+                clearTimeout(holdTimer);
+                if (window.hideTooltip) window.hideTooltip();
+            };
+
+            bar.addEventListener('mousedown', startHold);
+            bar.addEventListener('touchstart', startHold, { passive: true });
+            bar.addEventListener('mouseup', clearHold);
+            bar.addEventListener('mouseleave', clearHold);
+            bar.addEventListener('touchend', clearHold);
+            bar.addEventListener('touchmove', (e) => {
+                clearTimeout(holdTimer);
+                if (window.hideTooltip) window.hideTooltip();
+            }, { passive: true });
+            
+            // Also supports simple hover for non-touch
+            bar.addEventListener('mouseenter', (e) => {
+                if (window.showTooltip) window.showTooltip(e, daySubs);
+            });
+            bar.addEventListener('mousemove', (e) => {
+                if (window.moveTooltip) window.moveTooltip(e);
+            });
+            bar.addEventListener('mouseleave', () => {
+                if (window.hideTooltip) window.hideTooltip();
+            });
+        });
+    }, 100);
 }
 
 // Global expose

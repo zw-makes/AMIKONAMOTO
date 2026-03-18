@@ -50,7 +50,7 @@
 
 /* Bar Chart Styling */
 .chart-container {
-    height: 200px;
+    height: 220px;
     position: relative;
     margin-top: 20px;
 }
@@ -64,11 +64,12 @@
     flex-direction: column-reverse;
     justify-content: space-between;
     font-size: 0.55rem;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.75);
     font-weight: 800;
     pointer-events: none;
-    z-index: 2;
+    z-index: 10;
     font-family: 'Roboto Mono', monospace;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 6px rgba(0,0,0,0.9);
 }
 
 .chart-grid-lines {
@@ -92,7 +93,7 @@
 .chart-bars {
     position: absolute;
     left: 0;
-    right: 0; /* Full width - bars now go edge to edge */
+    right: 36px; /* Stop bars before Y-axis labels */
     bottom: 0;
     height: 100%;
     display: flex;
@@ -110,10 +111,13 @@
     gap: 8px;
     height: 100%;
     justify-content: flex-end;
+    padding: 0 2px; /* Responsive buffer */
 }
 
 .chart-bar {
-    width: 44px; /* Even bolder bars */
+    width: 100%;
+    max-width: 44px;
+    min-width: 32px; /* Soft lock for small screens */
     background: #fff; /* White bars as requested */
     border-radius: 10px 10px 10px 10px;
     transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
@@ -135,7 +139,30 @@
     color: #888;
     font-weight: 600;
     text-transform: capitalize;
+    margin-bottom: 2px;
 }
+
+.chart-logos-container {
+    display: flex;
+    justify-content: center;
+    gap: -4px; /* Slight overlap for multiple logos */
+    margin-top: 2px;
+    height: 14px;
+}
+
+.chart-mini-logo {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    object-fit: contain; /* Don't stretch if they aren't perfect squares */
+    background: #000;
+    box-shadow: 0 0 0 1px #111;
+    z-index: 1;
+}
+
+.chart-mini-logo:nth-child(2) { z-index: 2; margin-left: -6px; }
+.chart-mini-logo:nth-child(3) { z-index: 3; margin-left: -6px; }
+
 
 /* Latest Section Styling */
 .latest-section {
