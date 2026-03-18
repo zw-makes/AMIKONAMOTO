@@ -58,6 +58,7 @@ export function toggleListView(btn) {
     const parent = document.querySelector('.calendar-container');
     
     listViewActive = !listViewActive;
+    if (window.HapticsService) window.HapticsService.medium();
     
     if (listViewActive) {
         btn.innerHTML = CALENDAR_ICON;

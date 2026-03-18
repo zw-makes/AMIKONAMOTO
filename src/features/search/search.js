@@ -92,6 +92,7 @@ function updateSearchState(query) {
     } else {
         emptyState.classList.add('hidden');
         resultsContainer.classList.remove('hidden');
+        if (window.HapticsService) window.HapticsService.selection();
         renderResults(query);
     }
 }
@@ -188,6 +189,7 @@ function renderResults(query) {
     items.forEach(item => {
         item.addEventListener('click', (e) => {
             const overlay = document.getElementById('search-modal-overlay');
+            if (window.HapticsService) window.HapticsService.success();
             overlay.classList.add('hidden');
 
             try {

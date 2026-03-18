@@ -12,6 +12,7 @@ import { NativeNotifications } from './features/notifications/nativeNotification
 import { scheduleDailyReminders } from './features/notifications/dailyReminder.js';
 import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 import { initListView, toggleListView } from './features/listview/listview.js';
+import { HapticsService } from './features/haptics/haptics.js';
 
 // Initialize List View
 initListView();
@@ -1027,6 +1028,7 @@ window.hideTooltip = hideTooltip;
 
 async function showTooltip(e, subs) {
   if (!tooltip) return;
+  HapticsService.selection();
   const settings = userProfile?.settings || {};
   const useAutoCurrency = settings.autoCurrency !== false;
   const targetCurrency = settings.currency || 'USD';
@@ -1241,6 +1243,7 @@ window.showDayDetails = async function (day, subs) {
 
 window.deleteSubscription = function (id, e) {
   if (e) e.stopPropagation();
+  HapticsService.heavy();
 
   const subToRemove = subscriptions.find(s => s.id === id);
   if (subToRemove && window.addNotification) {
@@ -1329,6 +1332,7 @@ window.editSubscription = function (id) {
 
 window.stopSubscription = function (id, e) {
   if (e) e.stopPropagation();
+  HapticsService.medium();
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
     sub.stopped = !sub.stopped; // Toggle stopped state
@@ -1369,6 +1373,7 @@ window.stopSubscription = function (id, e) {
 
 window.togglePaidStatus = async function (id, e) {
   if (e) e.stopPropagation();
+  HapticsService.success();
   if (!userProfile) return;
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
@@ -1480,6 +1485,7 @@ function attachSwipeEvents() {
       if (!hasStartedSwipe) {
         if (Math.abs(walk) > threshold) {
           hasStartedSwipe = true;
+          HapticsService.selection(); // Taptic feel when the items "unlock" for swiping
         } else {
           return; // Still just a potential tap
         }

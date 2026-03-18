@@ -96,6 +96,7 @@ export function initBottomBar() {
     buttons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (window.HapticsService) window.HapticsService.light();
 
             const action = btn.id;
             if (action === 'search-btn') {
@@ -114,6 +115,7 @@ export function initBottomBar() {
 
     function toggleStarMode(btn) {
         starModeActive = !starModeActive;
+        if (window.HapticsService) window.HapticsService.medium();
         const calendarGrid = document.getElementById('calendar-grid');
 
         if (starModeActive) {
@@ -171,6 +173,7 @@ export function initBottomBar() {
             const isAlreadyStarred = cell.classList.contains('starred-day') || cell.classList.contains('star-glow');
 
             if (hasSubs || isAlreadyStarred) {
+                if (window.HapticsService) window.HapticsService.selection();
                 cell.classList.toggle('star-glow');
                 cell.classList.toggle('starred-day'); // Immediate visual removal feedback
             } else {
