@@ -192,8 +192,23 @@ function renderResults(query) {
 
             try {
                 const subObj = JSON.parse(decodeURIComponent(item.dataset.sub));
+                
+                // Navigate the global calendar context to the subscription's month/year
+                if (window.currentDate) {
+                    const subStartDate = new Date(subObj.startDate);
+                    // Use the 1st of the month for the global navigator to avoid day-overflow bugs
+                    window.currentDate = new Date(subStartDate.getFullYear(), subStartDate.getMonth(), 1);
+                    
+                    if (typeof window.renderCalendar === 'function') window.renderCalendar();
+                    if (typeof window.renderHeader === 'function') window.renderHeader();
+                    if (typeof window.updateStats === 'function') window.updateStats();
+                }
+
                 if (typeof window.showDayDetails === 'function') {
-                    window.showDayDetails(subObj.date, [subObj]);
+                    // Find all subs for that same day in the newly navigated month
+                    const allSubs = window.subscriptions || [];
+                    const daySubs = allSubs.filter(s => s.date === subObj.date);
+                    window.showDayDetails(subObj.date, daySubs);
                 }
             } catch (err) {
                 console.error('Failed to parse search result click:', err);
