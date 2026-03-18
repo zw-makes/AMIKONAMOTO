@@ -5,7 +5,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 0 16px calc(env(safe-area-inset-bottom, 20px) + 20px) 16px;
+    padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 12px) 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -216,11 +216,10 @@
 
 @media (max-width: 380px) {
     .total-amount {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
     }
 
     .feature-buttons-container {
-        padding: 0 12px;
-        width: 210px; /* Increased from 190px to fit 4 buttons */
+        padding: 0 4px;
     }
 }
