@@ -53,28 +53,30 @@
 
 .chart-y-axis {
     position: absolute;
-    right: -10px; /* Pull labels slightly tighter to the edge */
+    right: 4px; /* Float right inside the bars area */
     top: 0;
     bottom: 20px;
     display: flex;
     flex-direction: column-reverse;
     justify-content: space-between;
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.2);
     font-weight: 800;
-    padding-left: 10px;
+    pointer-events: none;
+    z-index: 2;
     font-family: 'Roboto Mono', monospace;
 }
 
 .chart-grid-lines {
     position: absolute;
     left: 0;
-    right: 25px; /* Increase width for bars by moving grid end */
+    right: 0; /* Full width */
     top: 0;
     bottom: 20px;
     display: flex;
     flex-direction: column-reverse;
     justify-content: space-between;
+    z-index: 1;
 }
 
 .chart-grid-line {
@@ -86,13 +88,14 @@
 .chart-bars {
     position: absolute;
     left: 0;
-    right: 20px; 
+    right: 0; /* Full width - bars now go edge to edge */
     bottom: 0;
     height: 100%;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     padding-bottom: 20px;
+    z-index: 3;
 }
 
 .chart-bar-group {
