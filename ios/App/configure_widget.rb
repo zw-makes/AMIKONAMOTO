@@ -27,12 +27,32 @@ file_names.each do |file_name|
   end
 end
 
-# Keep Info.plist reference in the group but NOT in build phases (to avoid duplicate output)
+# Keep Info.plist reference in the group
 unless widget_group.files.find { |f| f.name == 'Info.plist' }
   widget_group.new_file(File.join('WidgetExtension', 'Info.plist'))
 end
 
-# 3. Build settings for Widget
+# 3. Create Entitlements file for App Groups
+entitlements_content = <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.amikonamoto.app</string>
+	</array>
+</dict>
+</plist>
+PLIST
+
+File.write('WidgetExtension/WidgetExtension.entitlements', entitlements_content)
+# Add Entitlements file to the project group
+unless widget_group.files.find { |f| f.name == 'WidgetExtension.entitlements' }
+  widget_group.new_file(File.join('WidgetExtension', 'WidgetExtension.entitlements'))
+end
+
+# 4. Build settings for Widget
 widget_target.build_configurations.each do |config|
   config.build_settings['PRODUCT_NAME'] = target_name
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = widget_bundle_id
@@ -51,20 +71,22 @@ widget_target.build_configurations.each do |config|
   config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
   config.build_settings['VALIDATE_PRODUCT'] = 'NO'
   config.build_settings['ENABLE_BITCODE'] = 'NO'
+  # Link entitlements
+  config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'WidgetExtension/WidgetExtension.entitlements'
 end
 
-# 4. Update Main App settings
+# 5. Update Main App settings
 main_target = project.targets.find { |t| t.name == 'App' }
 main_target.build_configurations.each do |config|
   config.build_settings['VALIDATE_PRODUCT'] = 'NO'
 end
 
-# 5. Dependencies
+# 6. Dependencies
 unless main_target.dependencies.find { |d| d.target&.name == widget_target.name }
   main_target.add_dependency(widget_target)
 end
 
-# 6. Embed App Extensions build phase
+# 7. Embed App Extensions build phase
 embed_extensions_phase = main_target.copy_files_build_phases.find { |p| p.name == 'Embed App Extensions' } || 
                          main_target.new_copy_files_build_phase('Embed App Extensions')
 embed_extensions_phase.symbol_dst_subfolder_spec = :plug_ins
@@ -74,4 +96,4 @@ end
 
 # Save project
 project.save
-puts "Successfully configured WidgetExtension target in App.xcodeproj with Info.plist"
+puts "Successfully configured WidgetExtension target in App.xcodeproj with App Groups"
