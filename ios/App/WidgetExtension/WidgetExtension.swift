@@ -34,13 +34,13 @@ struct WidgetExtensionEntryView : View {
         VStack {
             Text("AMIKONAMOTO")
                 .font(.headline)
-                .foregroundColor(.blue)
+                .foregroundColor(.white)
             Text(entry.message)
                 .font(.body)
+                .foregroundColor(.white)
                 .padding(.top, 4)
         }
-        .padding()
-        .background(Color.white) // Simpler background for compatibility
+        .containerBackground(.blue.gradient, for: .widget)
     }
 }
 
@@ -57,4 +57,9 @@ struct WidgetExtension: Widget {
     }
 }
 
-
+@main
+struct WidgetExtensionBundle: WidgetBundle {
+    var body: some Widget {
+        WidgetExtension()
+    }
+}
