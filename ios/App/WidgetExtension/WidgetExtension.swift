@@ -57,8 +57,4 @@ struct WidgetExtension: Widget {
     }
 }
 
-#Preview(as: .systemSmall) {
-    WidgetExtension()
-} settlement: {
-    SimpleEntry(date: .now, message: "AMIKONAMOTO")
-}
+
