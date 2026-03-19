@@ -34,6 +34,14 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx @capacitor/cli sync ios
 
+      - name: Install xcodeproj gem
+        run: sudo gem install xcodeproj
+
+      - name: Configure iOS Widget Extension
+        run: |
+          cd ios/App
+          ruby configure_widget.rb
+
       - name: Build unsigned iOS App
         run: |
           cd ios/App

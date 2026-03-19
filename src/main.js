@@ -13,6 +13,7 @@ import { scheduleDailyReminders } from './features/notifications/dailyReminder.j
 import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 import { initListView, toggleListView } from './features/listview/listview.js';
 import { HapticsService } from './features/haptics/haptics.js';
+import { updateWidgetData } from './features/widget/widget.js';
 
 // Initialize List View
 initListView();
@@ -1650,6 +1651,9 @@ async function updateStats() {
   if (typeof window.renderListView === 'function') {
     window.renderListView();
   }
+
+  // Update iOS Widget
+  updateWidgetData(`${finalSymbol}${monthlyTotal.toFixed(2)}`);
 }
 
 // --- Event Listeners ---
