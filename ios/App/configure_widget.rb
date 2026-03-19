@@ -48,6 +48,8 @@ widget_target.build_configurations.each do |config|
   config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   config.build_settings['MARKETING_VERSION'] = '1.0'
   config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
+  config.build_settings['VALIDATE_PRODUCT'] = 'NO'
+  config.build_settings['ENABLE_BITCODE'] = 'NO'
 end
 
 # 4. (Skipped) Entitlements for App Groups
