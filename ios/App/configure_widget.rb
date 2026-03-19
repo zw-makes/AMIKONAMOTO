@@ -41,9 +41,13 @@ widget_target.build_configurations.each do |config|
   config.build_settings['TARGETED_DEVICE_FAMILY'] = '1,2'
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['LD_RUNPATH_SEARCH_PATHS'] = '$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks'
+  config.build_settings['SKIP_INSTALL'] = 'YES'
   config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
   config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
   config.build_settings['CODE_SIGN_IDENTITY'] = ''
+  config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
+  config.build_settings['MARKETING_VERSION'] = '1.0'
+  config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
 end
 
 # 4. Create Entitlements file
