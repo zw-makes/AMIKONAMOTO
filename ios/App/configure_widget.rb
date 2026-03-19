@@ -8,11 +8,6 @@ target_name = 'WidgetExtension'
 app_bundle_id = 'com.amikonamoto.app'
 widget_bundle_id = 'com.amikonamoto.app.widget'
 
-# Check if target already exists
-if project.targets.find { |t| t.name == target_name }
-  puts "Target #{target_name} already exists."
-end
-
 # Find or create target
 widget_target = project.targets.find { |t| t.name == target_name } || 
                 project.new_target(:app_extension, target_name, :ios, '15.0')
@@ -32,13 +27,17 @@ file_names.each do |file_name|
   end
 end
 
+# Keep Info.plist reference in the group but NOT in build phases (to avoid duplicate output)
+unless widget_group.files.find { |f| f.name == 'Info.plist' }
+  widget_group.new_file(File.join('WidgetExtension', 'Info.plist'))
+end
+
 # 3. Build settings for Widget
 widget_target.build_configurations.each do |config|
   config.build_settings['PRODUCT_NAME'] = target_name
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = widget_bundle_id
-  config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'
-  # Avoid dictionary for now to prevent xcodebuild crash
-  config.build_settings['INFOPLIST_KEY_CFBundleDisplayName'] = 'AMIKONAMOTO'
+  config.build_settings['INFOPLIST_FILE'] = 'WidgetExtension/Info.plist'
+  config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
   config.build_settings['TARGETED_DEVICE_FAMILY'] = '1,2'
   config.build_settings['SWIFT_VERSION'] = '5.0'
@@ -50,6 +49,8 @@ widget_target.build_configurations.each do |config|
   config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   config.build_settings['MARKETING_VERSION'] = '1.0'
   config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
+  config.build_settings['VALIDATE_PRODUCT'] = 'NO'
+  config.build_settings['ENABLE_BITCODE'] = 'NO'
 end
 
 # 4. Update Main App settings
@@ -73,4 +74,4 @@ end
 
 # Save project
 project.save
-puts "Successfully configured WidgetExtension target in App.xcodeproj"
+puts "Successfully configured WidgetExtension target in App.xcodeproj with Info.plist"
