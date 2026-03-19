@@ -39,7 +39,8 @@ struct WidgetExtensionEntryView : View {
                 .font(.body)
                 .padding(.top, 4)
         }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .padding()
+        .background(Color.white) // Simpler background for compatibility
     }
 }
 

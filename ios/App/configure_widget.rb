@@ -15,7 +15,7 @@ if project.targets.find { |t| t.name == target_name }
 end
 
 # Create target
-widget_target = project.new_target(:app_extension, target_name, :ios, '17.0')
+widget_target = project.new_target(:app_extension, target_name, :ios, '15.0')
 widget_target.name = target_name
 widget_target.product_name = target_name
 
@@ -34,12 +34,13 @@ end
 widget_target.build_configurations.each do |config|
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = widget_bundle_id
   config.build_settings['INFOPLIST_FILE'] = 'WidgetExtension/Info.plist'
-  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
+  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
   config.build_settings['TARGETED_DEVICE_FAMILY'] = '1,2'
   config.build_settings['SWIFT_VERSION'] = '5.0'
   config.build_settings['LD_RUNPATH_SEARCH_PATHS'] = '$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks'
-  # Entitlements for App Groups
-  config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'WidgetExtension/WidgetExtension.entitlements'
+  config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+  config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+  config.build_settings['CODE_SIGN_IDENTITY'] = ''
 end
 
 # 4. Create Entitlements file
