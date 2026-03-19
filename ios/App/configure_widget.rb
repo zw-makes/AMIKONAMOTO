@@ -11,7 +11,6 @@ widget_bundle_id = 'com.amikonamoto.app.widget'
 # Check if target already exists
 if project.targets.find { |t| t.name == target_name }
   puts "Target #{target_name} already exists."
-  # Still update settings just in case
 end
 
 # Find or create target
@@ -38,9 +37,8 @@ widget_target.build_configurations.each do |config|
   config.build_settings['PRODUCT_NAME'] = target_name
   config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = widget_bundle_id
   config.build_settings['GENERATE_INFOPLIST_FILE'] = 'YES'
-  config.build_settings['INFOPLIST_KEY_NSExtension'] = {
-    'NSExtensionPointIdentifier' => 'com.apple.widgetkit-extension'
-  }
+  # Avoid dictionary for now to prevent xcodebuild crash
+  config.build_settings['INFOPLIST_KEY_CFBundleDisplayName'] = 'AMIKONAMOTO'
   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
   config.build_settings['TARGETED_DEVICE_FAMILY'] = '1,2'
   config.build_settings['SWIFT_VERSION'] = '5.0'
@@ -52,11 +50,9 @@ widget_target.build_configurations.each do |config|
   config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   config.build_settings['MARKETING_VERSION'] = '1.0'
   config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
-  config.build_settings['VALIDATE_PRODUCT'] = 'NO'
-  config.build_settings['ENABLE_BITCODE'] = 'NO'
 end
 
-# 4. Update Main App settings too!
+# 4. Update Main App settings
 main_target = project.targets.find { |t| t.name == 'App' }
 main_target.build_configurations.each do |config|
   config.build_settings['VALIDATE_PRODUCT'] = 'NO'
@@ -71,7 +67,7 @@ end
 embed_extensions_phase = main_target.copy_files_build_phases.find { |p| p.name == 'Embed App Extensions' } || 
                          main_target.new_copy_files_build_phase('Embed App Extensions')
 embed_extensions_phase.symbol_dst_subfolder_spec = :plug_ins
-unless embed_extensions_phase.files_references.find { |f| f == widget_target.product_reference }
+unless embed_extensions_phase.files_references.find { |f| f.file_ref&.path&.include?(target_name) }
   embed_extensions_phase.add_file_reference(widget_target.product_reference)
 end
 
