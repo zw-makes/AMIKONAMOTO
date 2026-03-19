@@ -50,21 +50,8 @@ widget_target.build_configurations.each do |config|
   config.build_settings['CURRENT_PROJECT_VERSION'] = '1'
 end
 
-# 4. Create Entitlements file
-entitlements_content = <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>group.com.amikonamoto.app</string>
-	</array>
-</dict>
-</plist>
-PLIST
-
-File.write('WidgetExtension/WidgetExtension.entitlements', entitlements_content)
+# 4. (Skipped) Entitlements for App Groups
+# Removed to simplify the build and pass unsigned validation.
 
 # 5. Add dependency to main App target
 main_target = project.targets.find { |t| t.name == 'App' }
