@@ -1,21 +1,23 @@
-import { registerPlugin } from '@capacitor/core';
-
-const WidgetBridge = registerPlugin('WidgetBridge');
-
 export const updateWidgetData = async (message) => {
   try {
-    // Sync data to the shared App Group container
-    await WidgetBridge.setItem({
-      key: 'widgetMessage',
-      value: message,
-      group: 'group.com.amikonamoto.app'
+    let syncKey = localStorage.getItem('subtrack_widget_sync_key');
+    if (!syncKey) {
+        syncKey = 'subtrack_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('subtrack_widget_sync_key', syncKey);
+    }
+
+    // Using a free anonymous bucket
+    const bucketId = 'yvG6nQZQ6XbZQK3Z2X7h7X'; 
+    
+    await fetch(`https://kvdb.io/${bucketId}/${syncKey}`, {
+        method: 'POST',
+        body: message
     });
     
-    // Refresh the widget to show the new data
-    await WidgetBridge.reloadAllTimelines();
-    
-    console.log('[Widget] Data synced successfully:', message);
+    console.log('[Widget] Data synced successfully:', message, ' | Key:', syncKey);
   } catch (err) {
     console.error('[Widget] Failed to sync data:', err);
   }
 };
+
+window.getWidgetSyncKey = () => localStorage.getItem('subtrack_widget_sync_key');

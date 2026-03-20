@@ -21,6 +21,7 @@
     "@capacitor/local-notifications": "^8.0.2",
     "@capacitor/share": "^8.0.1",
     "@supabase/supabase-js": "^2.98.0",
-    "capacitor-widget-bridge": "^8.1.0"
+    "capacitor-widget-bridge": "^8.1.0",
+    "uuid": "^13.0.0"
   }
 }
