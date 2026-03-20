@@ -1,4 +1,5 @@
 name: Build iOS (Unsigned IPA)
+
 on:
   push:
     branches: [ "main", "master" ]
@@ -10,9 +11,9 @@ env:
 
 jobs:
   build_ios:
-    name: Build iOS App
+    name: Build iOS App + Widget
     runs-on: macos-latest
-    
+
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
@@ -34,15 +35,172 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx @capacitor/cli sync ios
 
-      - name: Install xcodeproj gem
-        run: sudo gem install xcodeproj
-
-      - name: Configure iOS Widget Extension
+      - name: Inject Widget Target into Xcode Project
         run: |
-          cd ios/App
-          ruby configure_widget.rb
+          python3 << 'PYTHON_SCRIPT'
+          pbxproj_path = "ios/App/App.xcodeproj/project.pbxproj"
+          with open(pbxproj_path, "r") as f:
+              content = f.read()
 
-      - name: Build unsigned iOS App
+          if "SubTrackWidget" in content:
+              print("Widget target already present. Skipping injection.")
+              exit(0)
+
+          print("Injecting SubTrackWidget target...")
+
+          widget_build_files = """
+          AA000001000000000000CAFE /* SubTrackWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000CAFE /* SubTrackWidget.swift */; };
+          AA000003000000000000CAFE /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AA000004000000000000CAFE /* Info.plist */; };
+          AA000009000000000000CAFE /* AppGroupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000CAFE /* AppGroupManager.swift */; };
+          """
+          content = content.replace("/* End PBXBuildFile section */", widget_build_files + "/* End PBXBuildFile section */")
+
+          widget_file_refs = """
+          AA000002000000000000CAFE /* SubTrackWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubTrackWidget.swift; sourceTree = "<group>"; };
+          AA000004000000000000CAFE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+          AA000005000000000000CAFE /* SubTrackWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SubTrackWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+          AA000010000000000000CAFE /* AppGroupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupManager.swift; sourceTree = "<group>"; };
+          """
+          content = content.replace("/* End PBXFileReference section */", widget_file_refs + "/* End PBXFileReference section */")
+
+          widget_group = """
+          AA000006000000000000CAFE /* SubTrackWidget */ = {
+              isa = PBXGroup;
+              children = (
+                  AA000002000000000000CAFE /* SubTrackWidget.swift */,
+                  AA000004000000000000CAFE /* Info.plist */,
+              );
+              path = SubTrackWidget;
+              sourceTree = "<group>";
+          };
+          """
+          content = content.replace("/* End PBXGroup section */", widget_group + "/* End PBXGroup section */")
+
+          content = content.replace(
+              "504EC3061FED79650016851F /* App */,",
+              "504EC3061FED79650016851F /* App */,\n\t\t\t\tAA000006000000000000CAFE /* SubTrackWidget */,"
+          )
+          content = content.replace(
+              "504EC3041FED79650016851F /* App.app */,",
+              "504EC3041FED79650016851F /* App.app */,\n\t\t\t\tAA000005000000000000CAFE /* SubTrackWidget.appex */,"
+          )
+          content = content.replace(
+              "504EC3071FED79650016851F /* AppDelegate.swift */,",
+              "504EC3071FED79650016851F /* AppDelegate.swift */,\n\t\t\t\tAA000010000000000000CAFE /* AppGroupManager.swift */,"
+          )
+
+          widget_target = """
+          AA000007000000000000CAFE /* SubTrackWidget */ = {
+              isa = PBXNativeTarget;
+              buildConfigurationList = AA00000B000000000000CAFE /* Build configuration list for PBXNativeTarget "SubTrackWidget" */;
+              buildPhases = (
+                  AA00000C000000000000CAFE /* Sources */,
+                  AA00000D000000000000CAFE /* Resources */,
+              );
+              buildRules = ();
+              dependencies = ();
+              name = SubTrackWidget;
+              productName = SubTrackWidget;
+              productReference = AA000005000000000000CAFE /* SubTrackWidget.appex */;
+              productType = "com.apple.product-type.app-extension";
+          };
+          """
+          content = content.replace("/* End PBXNativeTarget section */", widget_target + "/* End PBXNativeTarget section */")
+
+          content = content.replace(
+              "504EC3031FED79650016851F /* App */,\n\t\t\t);",
+              "504EC3031FED79650016851F /* App */,\n\t\t\t\tAA000007000000000000CAFE /* SubTrackWidget */,\n\t\t\t);"
+          )
+
+          widget_build_phases = """
+          AA00000C000000000000CAFE /* Sources */ = {
+              isa = PBXSourcesBuildPhase;
+              buildActionMask = 2147483647;
+              files = (
+                  AA000001000000000000CAFE /* SubTrackWidget.swift in Sources */,
+              );
+              runOnlyForDeploymentPostprocessing = 0;
+          };
+          AA00000D000000000000CAFE /* Resources */ = {
+              isa = PBXResourcesBuildPhase;
+              buildActionMask = 2147483647;
+              files = (
+                  AA000003000000000000CAFE /* Info.plist in Resources */,
+              );
+              runOnlyForDeploymentPostprocessing = 0;
+          };
+          """
+          content = content.replace("/* End PBXResourcesBuildPhase section */", widget_build_phases + "/* End PBXResourcesBuildPhase section */")
+
+          content = content.replace(
+              "504EC3081FED79650016851F /* AppDelegate.swift in Sources */,",
+              "504EC3081FED79650016851F /* AppDelegate.swift in Sources */,\n\t\t\t\tAA000009000000000000CAFE /* AppGroupManager.swift in Sources */,"
+          )
+
+          widget_build_configs = """
+          AA000008000000000000CAFE /* Debug */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = {
+                  CLANG_ENABLE_MODULES = YES;
+                  CODE_SIGN_IDENTITY = "";
+                  CODE_SIGNING_ALLOWED = NO;
+                  CODE_SIGNING_REQUIRED = NO;
+                  INFOPLIST_FILE = SubTrackWidget/Info.plist;
+                  IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+                  LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+                  PRODUCT_BUNDLE_IDENTIFIER = com.amikonamoto.app.SubTrackWidget;
+                  PRODUCT_NAME = SubTrackWidget;
+                  SDKROOT = iphoneos;
+                  SKIP_INSTALL = YES;
+                  SWIFT_VERSION = 5.0;
+                  TARGETED_DEVICE_FAMILY = "1,2";
+              };
+              name = Debug;
+          };
+          AA0000AA000000000000CAFE /* Release */ = {
+              isa = XCBuildConfiguration;
+              buildSettings = {
+                  CLANG_ENABLE_MODULES = YES;
+                  CODE_SIGN_IDENTITY = "";
+                  CODE_SIGNING_ALLOWED = NO;
+                  CODE_SIGNING_REQUIRED = NO;
+                  INFOPLIST_FILE = SubTrackWidget/Info.plist;
+                  IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+                  LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+                  PRODUCT_BUNDLE_IDENTIFIER = com.amikonamoto.app.SubTrackWidget;
+                  PRODUCT_NAME = SubTrackWidget;
+                  SDKROOT = iphoneos;
+                  SKIP_INSTALL = YES;
+                  SWIFT_COMPILATION_MODE = wholemodule;
+                  SWIFT_OPTIMIZATION_LEVEL = "-O";
+                  SWIFT_VERSION = 5.0;
+                  TARGETED_DEVICE_FAMILY = "1,2";
+              };
+              name = Release;
+          };
+          """
+          content = content.replace("/* End XCBuildConfiguration section */", widget_build_configs + "/* End XCBuildConfiguration section */")
+
+          widget_config_list = """
+          AA00000B000000000000CAFE /* Build configuration list for PBXNativeTarget "SubTrackWidget" */ = {
+              isa = XCConfigurationList;
+              buildConfigurations = (
+                  AA000008000000000000CAFE /* Debug */,
+                  AA0000AA000000000000CAFE /* Release */,
+              );
+              defaultConfigurationIsVisible = 0;
+              defaultConfigurationName = Release;
+          };
+          """
+          content = content.replace("/* End XCConfigurationList section */", widget_config_list + "/* End XCConfigurationList section */")
+
+          with open(pbxproj_path, "w") as f:
+              f.write(content)
+
+          print("Widget target successfully injected!")
+          PYTHON_SCRIPT
+
+      - name: Build App (unsigned)
         run: |
           cd ios/App
           xcodebuild build \
