@@ -773,6 +773,16 @@
               <span class="slider round"></span>
             </label>
           </div>
+          
+          <div class="form-group" style="margin-top: 15px;">
+            <label style="display:flex; justify-content: space-between;">
+              <span>Scriptable Widget Sync Key</span>
+            </label>
+            <input type="text" id="widget-sync-key-display" readonly value="Loading..." 
+                   style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px dashed var(--border-color); color: var(--accent-green); text-align: center; cursor: pointer;" 
+                   onclick="this.select(); document.execCommand('copy'); alert('Widget Sync Key copied to clipboard!');">
+            <p style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 5px; text-align: center;">Tap to copy key for iOS Scriptable Widget</p>
+          </div>
           <div class="form-group">
             <label>Time Zone</label>
             <div class="custom-dropdown dropdown-up" id="timezone-picker">
