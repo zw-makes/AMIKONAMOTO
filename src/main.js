@@ -3224,6 +3224,10 @@ settingsCurrencyTrigger.addEventListener('click', (e) => {
 });
 
 appSettingsBtn.addEventListener('click', () => {
+  const syncKeyInput = document.getElementById('widget-sync-key-display');
+  if (syncKeyInput && window.getWidgetSyncKey) {
+      syncKeyInput.value = window.getWidgetSyncKey() || 'Not Generated';
+  }
   window.showAppSettings();
 });
 
