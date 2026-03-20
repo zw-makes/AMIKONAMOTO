@@ -200,7 +200,7 @@ jobs:
           print("Widget target successfully injected!")
           PYTHON_SCRIPT
 
-      - name: Build App (unsigned)
+      - name: Build Main App (unsigned)
         run: |
           cd ios/App
           xcodebuild build \
@@ -213,9 +213,34 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CONFIGURATION_BUILD_DIR="$(pwd)/build"
 
-      - name: Package to IPA
+      - name: Build Widget Extension (unsigned)
         run: |
-          cd ios/App/build
+          cd ios/App
+          xcodebuild build \
+            -project App.xcodeproj \
+            -target SubTrackWidget \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build-widget"
+
+      - name: Embed Widget inside App.app and Package IPA
+        run: |
+          cd ios/App
+
+          # Create the PlugIns directory inside App.app (this is where Apple looks for extensions)
+          mkdir -p build/App.app/PlugIns
+
+          # Copy the built widget extension into the app bundle
+          cp -r build-widget/SubTrackWidget.appex build/App.app/PlugIns/SubTrackWidget.appex
+
+          echo "Widget embedded! Contents of App.app/PlugIns:"
+          ls -la build/App.app/PlugIns/
+
+          # Package into IPA
+          cd build
           mkdir Payload
           mv App.app Payload/
           zip -r AMIKONAMOTO.ipa Payload
