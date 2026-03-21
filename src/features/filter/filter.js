@@ -203,14 +203,29 @@ function selectFilterCurrency(code, symbol) {
     document.getElementById('filter-currency-dropdown').classList.add('hidden');
 }
 
+function updateFilterBadges() {
+    const isFiltered = filters.name !== '' || 
+                       filters.frequency !== 'all' || 
+                       filters.currency !== 'all' || 
+                       filters.status !== 'all';
+
+    const headerBadge = document.getElementById('filter-badge-header');
+    const optBadge = document.getElementById('filter-badge-opt');
+
+    if (headerBadge) headerBadge.classList.toggle('hidden', !isFiltered);
+    if (optBadge) optBadge.classList.toggle('hidden', !isFiltered);
+}
+
 // --- Global Actions ---
 export function applyFilters() {
     filters.name = document.getElementById('filter-platform-name').value.trim();
     filters.currency = document.getElementById('filter-currency-val').value;
-    // frequency is managed by buttons
+    // frequency and status are managed by buttons
 
     console.log('[Filter] Applying:', filters);
     
+    updateFilterBadges();
+
     if (window.renderCalendar) window.renderCalendar();
     if (window.updateStats) window.updateStats();
 
@@ -225,6 +240,7 @@ export function clearFilters() {
         status: 'all'
     };
     resetModalUI();
+    updateFilterBadges();
     applyFilters();
 }
 
