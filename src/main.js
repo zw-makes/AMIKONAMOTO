@@ -13,10 +13,13 @@ import { scheduleDailyReminders } from './features/notifications/dailyReminder.j
 import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 import { initListView, toggleListView } from './features/listview/listview.js';
 import { HapticsService } from './features/haptics/haptics.js';
+import { initFilter } from './features/filter/filter.js';
 import { updateWidgetData } from './features/widget/widget.js';
 
 // Initialize List View
 initListView();
+// Initialize Filter
+initFilter();
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -322,6 +325,8 @@ const popularApps = [
   { name: 'Dropbox', domain: 'dropbox.com' },
   { name: 'Discord Nitro', domain: 'discord.com' }
 ];
+window.popularApps = popularApps;
+window.getDomain = getDomain;
 
 function renderPlatformList(filter = '') {
   const platformList = document.getElementById('platform-list');
@@ -668,6 +673,48 @@ function renderHeader() {
   }
 }
 
+// --- Filter Logic ---
+window.getDisplaySubscriptions = function() {
+    const f = window.getGlobalFilters ? window.getGlobalFilters() : null;
+    if (!f) return subscriptions;
+
+    return subscriptions.filter(s => {
+        // Filter by platform name
+        if (f.name && !s.name.toLowerCase().includes(f.name.toLowerCase())) return false;
+        
+        // Filter by frequency
+        if (f.frequency !== 'all' && s.type !== f.frequency) return false;
+        
+        // Filter by currency
+        if (f.currency && f.currency !== 'all') {
+            const subCurr = (s.currency || 'USD').toUpperCase();
+            const filterCurr = f.currency.toUpperCase();
+            if (subCurr !== filterCurr) return false;
+        }
+
+        // Filter by status
+        if (f.status && f.status !== 'all') {
+            const { end } = window.getSubDates ? window.getSubDates(s) : { end: null };
+            const isEnded = end && end < new Date();
+            const isPaid = window.isSubPaid ? window.isSubPaid(s, currentDate) : false;
+            
+            if (f.status === 'active') {
+                if (s.stopped || isEnded) return false;
+            } else if (f.status === 'cancelled') {
+                if (!s.stopped) return false;
+            } else if (f.status === 'ended') {
+                if (!isEnded) return false;
+            } else if (f.status === 'paid') {
+                if (!isPaid) return false;
+            } else if (f.status === 'unpaid') {
+                if (isPaid) return false;
+            }
+        }
+        
+        return true;
+    });
+};
+
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -677,6 +724,9 @@ function getFirstDayOfMonth(year, month) {
   let day = new Date(year, month, 1).getDay();
   return day === 0 ? 6 : day - 1; // 0 (Mon) to 6 (Sun)
 }
+
+window.renderCalendar = renderCalendar;
+window.updateStats = updateStats;
 
 function renderCalendar() {
   calendarGrid.innerHTML = '';
@@ -795,7 +845,7 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
 
   // Check for subscriptions on this day (only for current month)
   if (!isOtherMonth) {
-    const daySubs = subscriptions.filter(s => {
+    const daySubs = getDisplaySubscriptions().filter(s => {
       const start = new Date(s.startDate);
       const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
       
@@ -1557,7 +1607,8 @@ function attachSwipeEvents() {
 
 async function updateStats() {
   // Main aggregate footer should only show ACTIVE monthly commitment relevant to THE VIEWED month
-  const activeSubs = subscriptions.filter(s => !s.stopped && isSubRelevantToMonth(s, currentDate));
+  const displaySubs = getDisplaySubscriptions();
+  const activeSubs = displaySubs.filter(s => !s.stopped && isSubRelevantToMonth(s, currentDate));
   const settings = userProfile?.settings || {};
   let useAutoCurrency = settings.autoCurrency !== false;
   let targetCurrency = settings.currency || 'USD';
@@ -1578,7 +1629,7 @@ async function updateStats() {
     mathRates = displayRates;
   } else {
     // Check for mixed currencies across all subscriptions to ensure consistency
-    const uniqueCurrencies = new Set(subscriptions.map(s => s.currency || 'USD'));
+    const uniqueCurrencies = new Set(displaySubs.map(s => s.currency || 'USD'));
     if (uniqueCurrencies.size > 1) {
       // Background math correction
       mathRates = await fetchExchangeRates(targetCurrency);
@@ -1617,7 +1668,7 @@ async function updateStats() {
     }
   });
 
-  const relevantSubs = subscriptions.filter(s => isSubRelevantToMonth(s, currentDate));
+  const relevantSubs = displaySubs.filter(s => isSubRelevantToMonth(s, currentDate));
   const activeCount = actuallyActiveOnes.length;
 
   subCountEl.innerText = relevantSubs.length;
@@ -2756,7 +2807,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
   }
 
   // --- GET RELEVANT SUBSCRIPTIONS FOR THIS MONTH ---
-  const relevantSubs = subscriptions.filter(s => isSubRelevantToMonth(s, currentDate));
+  const relevantSubs = getDisplaySubscriptions().filter(s => isSubRelevantToMonth(s, currentDate));
 
   // Determine what counts towards numerical totals (exclude carry-overs)
   const summedSubs = relevantSubs.filter(s => {

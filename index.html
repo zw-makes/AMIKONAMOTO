@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/features/filter/filter.css">
   <title>SubTrack - Monthly Subscription Tracker</title>
 </head>
 
@@ -169,7 +170,7 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /></svg>
               <span>History</span>
             </div>
-            <div id="opt-filter-btn" style="padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); const s = document.getElementById('search-btn'); if(s) s.click();">
+            <div id="opt-filter-btn" style="padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); if(window.toggleFilterModal) window.toggleFilterModal();">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               <span>Filter</span>
             </div>
@@ -1139,6 +1140,99 @@
       </div>
     </div>
   </div>
+    <!-- Filter Modal (Premium Glass) -->
+    <div id="filter-modal" class="modal-overlay hidden">
+      <div class="modal-content glass" style="max-width: 400px; padding: 25px;">
+        <div class="modal-header">
+          <h2>Filter Dashboard</h2>
+          <button class="nav-arrow" onclick="window.toggleFilterModal(false)"
+            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-body" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px;">
+          <!-- Platform Filter -->
+          <div class="filter-section">
+            <label class="filter-label">Platform Name</label>
+            <div class="platform-row">
+                <div class="platform-picker" id="filter-platform-picker">
+                  <button type="button" class="platform-trigger" id="filter-platform-trigger">
+                    <div id="filter-platform-icon" class="platform-icon-preview">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="18" height="18" x="3" y="3" rx="2" />
+                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+                      </svg>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div class="platform-dropdown hidden" id="filter-platform-dropdown">
+                    <input type="text" id="filter-platform-search" placeholder="Search apps..." autocomplete="off">
+                    <ul id="filter-platform-list"></ul>
+                  </div>
+                </div>
+                <input type="text" id="filter-platform-name" placeholder="Search by name..." class="filter-input" style="flex: 1;">
+            </div>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="filter-section">
+            <label class="filter-label">Status</label>
+            <div class="filter-tags-row">
+              <button type="button" class="filter-status-tag filter-tag active" data-value="all">All</button>
+              <button type="button" class="filter-status-tag filter-tag" data-value="paid">Paid</button>
+              <button type="button" class="filter-status-tag filter-tag" data-value="unpaid">Unpaid</button>
+              <button type="button" class="filter-status-tag filter-tag" data-value="active">Active</button>
+              <button type="button" class="filter-status-tag filter-tag" data-value="cancelled">Cancel</button>
+              <button type="button" class="filter-status-tag filter-tag" data-value="ended">Ended</button>
+            </div>
+          </div>
+
+          <!-- Frequency Filter -->
+          <div class="filter-section">
+            <label class="filter-label">Frequency</label>
+            <div class="filter-tags-row">
+              <button type="button" class="filter-freq-tag filter-tag active" data-value="all">All</button>
+              <button type="button" class="filter-freq-tag filter-tag" data-value="monthly">Monthly</button>
+              <button type="button" class="filter-freq-tag filter-tag" data-value="yearly">Yearly</button>
+              <button type="button" class="filter-freq-tag filter-tag" data-value="trial">Trial</button>
+            </div>
+          </div>
+
+          <!-- Currency Filter -->
+          <div class="filter-section">
+            <label class="filter-label">Currency</label>
+            <div class="currency-picker dropdown-up" id="filter-currency-picker" style="width: 100%;">
+              <button type="button" class="currency-trigger" id="filter-currency-trigger" style="width: 100%; justify-content: space-between; padding: 12px 14px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="filter-currency-symbol" style="color: var(--text-primary); font-weight: 700; width: 20px; text-align: center;">?</span>
+                    <span id="filter-currency-code" style="color: var(--text-secondary);">Any Currency</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <div class="currency-dropdown hidden" id="filter-currency-dropdown" style="width: 100%;">
+                <input type="text" id="filter-currency-search" placeholder="Search currency..." autocomplete="off">
+                <ul id="filter-currency-list"></ul>
+              </div>
+            </div>
+            <input type="hidden" id="filter-currency-val" value="all">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; gap: 12px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+          <button class="filter-btn-secondary" onclick="window.clearFilters()" style="flex: 1; font-size: 0.7rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(255, 255, 255, 0.1);">Clear</button>
+          <button class="filter-btn-primary" onclick="window.applyFilters()" style="flex: 1; font-size: 0.7rem; color: var(--accent-blue); background: rgba(0, 162, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(0, 162, 255, 0.1);">Apply View</button>
+        </div>
+      </div>
+    </div>
+
     <div id="tooltip" class="tooltip hidden"></div>
     <script type="module" src="/src/main.js"></script>
 </body>

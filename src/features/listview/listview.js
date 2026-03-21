@@ -106,7 +106,8 @@ export function renderListView() {
     const targetSymbol = report.symbol;
     const targetCurrency = report.currency;
 
-    const subs = window.subscriptions || [];
+    // Use filtered subscriptions from main.js
+    const subs = window.getDisplaySubscriptions ? window.getDisplaySubscriptions() : (window.subscriptions || []);
     const relevantSubs = subs.filter(s => {
         if (typeof window.isSubRelevantToMonth === 'function') {
             return window.isSubRelevantToMonth(s, currentDate);

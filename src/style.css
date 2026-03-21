@@ -972,7 +972,8 @@ button:active {
   position: relative;
 }
 
-.platform-row #sub-name {
+.platform-row #sub-name,
+.platform-row #filter-platform-name {
   flex: 1;
 }
 
@@ -1026,7 +1027,8 @@ button:active {
   overflow: hidden;
 }
 
-#platform-search {
+#platform-search,
+#filter-platform-search {
   width: 100% !important;
   background: var(--surface-bg) !important;
   border: none !important;
@@ -1036,13 +1038,15 @@ button:active {
   font-size: 0.85rem !important;
 }
 
-#platform-list {
+#platform-list,
+#filter-platform-list {
   list-style: none;
   max-height: 200px;
   overflow-y: auto;
 }
 
-#platform-list li {
+#platform-list li,
+#filter-platform-list li {
   padding: 10px 14px;
   font-size: 0.85rem;
   color: var(--text-secondary);
@@ -1192,7 +1196,13 @@ button:active {
   overflow: hidden;
 }
 
-#currency-search {
+.dropdown-up .currency-dropdown {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+#currency-search,
+#filter-currency-search {
   width: 100% !important;
   background: var(--surface-bg) !important;
   border: none !important;
@@ -1202,13 +1212,15 @@ button:active {
   font-size: 0.85rem !important;
 }
 
-#currency-list {
+#currency-list,
+#filter-currency-list {
   list-style: none;
   max-height: 200px;
   overflow-y: auto;
 }
 
-#currency-list li {
+#currency-list li,
+#filter-currency-list li {
   padding: 10px 14px;
   font-size: 0.85rem;
   color: var(--text-secondary);
