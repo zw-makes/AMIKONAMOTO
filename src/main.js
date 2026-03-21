@@ -3860,3 +3860,12 @@ window.addEventListener('syncqueue:flushed', (e) => {
   console.log(`[App] Sync queue flushed ${e.detail.synced} item(s) — refreshing data...`);
   loadSubscriptions();
 });
+
+// --- Header Options Menu Logic (Outside click only) ---
+document.addEventListener('click', (e) => {
+    const optionsDropdown = document.getElementById('header-options-dropdown');
+    const optionsBtn = document.getElementById('header-options-btn');
+    if (optionsDropdown && !optionsDropdown.classList.contains('hidden') && !optionsDropdown.contains(e.target) && !optionsBtn.contains(e.target)) {
+        optionsDropdown.classList.add('hidden');
+    }
+});

@@ -105,10 +105,12 @@ export function initBottomBar() {
                 if (typeof window.toggleListView === 'function') {
                     window.toggleListView(btn);
                 }
-            } else if (action === 'download-btn') {
-                toggleHistoryMode(btn);
-            } else if (action === 'magic-btn') {
+            } else if (action === 'star-btn') {
                 toggleStarMode(btn);
+            } else if (action === 'ai-btn') {
+                // AI Assistant / Insights
+                if(window.showAIInsights) window.showAIInsights();
+                else console.log("AI Analyst triggered!");
             }
         });
     });

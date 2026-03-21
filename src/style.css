@@ -141,6 +141,8 @@ button:active {
 
 /* Top Status Bar Styles */
 .status-bar {
+  position: relative;
+  z-index: 2000;
   padding: calc(env(safe-area-inset-top, 20px) + 12px) 20px 0 20px;
   display: flex;
   justify-content: space-between;
