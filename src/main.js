@@ -14,7 +14,6 @@ import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 import { initListView, toggleListView } from './features/listview/listview.js';
 import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
-import { updateWidgetData } from './features/widget/widget.js';
 
 // Initialize List View
 initListView();
@@ -1702,9 +1701,6 @@ async function updateStats() {
   if (typeof window.renderListView === 'function') {
     window.renderListView();
   }
-
-  // Update iOS Widget
-  updateWidgetData(`${finalSymbol}${monthlyTotal.toFixed(2)}`);
 }
 
 // --- Event Listeners ---
@@ -3275,10 +3271,6 @@ settingsCurrencyTrigger.addEventListener('click', (e) => {
 });
 
 appSettingsBtn.addEventListener('click', () => {
-  const syncKeyInput = document.getElementById('widget-sync-key-display');
-  if (syncKeyInput && window.getWidgetSyncKey) {
-      syncKeyInput.value = window.getWidgetSyncKey() || 'Not Generated';
-  }
   window.showAppSettings();
 });
 
