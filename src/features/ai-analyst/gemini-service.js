@@ -1,10 +1,12 @@
 /**
- * Groq AI Service for SubTrack
- * Uses Groq's Llama 3.3 70B - Natural conversations + real app data
+ * Supabase AI Service for SubTrack
+ * Safely calls Groq's Llama 3.3 70B through a Supabase Edge Function to avoid leaking keys.
  */
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-// Keywords that suggest the user is asking about their subscriptions
+// Import the global supabase client
+// Assuming supabase is initialized globally in main.js
+const getSupabase = () => window.supabase;
+
 const SUBSCRIPTION_KEYWORDS = [
     'subscription', 'spend', 'spending', 'cost', 'pay', 'paying', 'paid',
     'renew', 'renewal', 'monthly', 'yearly', 'annual', 'trial', 'cancel',
@@ -21,19 +23,17 @@ function isSubscriptionRelated(prompt) {
 
 export async function askGroq(userPrompt, subscriptionData = []) {
     try {
-        if (!API_KEY) throw new Error('VITE_GROQ_API_KEY is missing from .env');
+        const supabase = getSupabase();
+        if (!supabase) throw new Error('Supabase client not initialized');
 
-        // Only include subscription data if the query seems subscription-related
         const needsContext = isSubscriptionRelated(userPrompt);
 
         let subContext = '';
         if (needsContext && subscriptionData.length > 0) {
-            // Use the app's already-calculated stats (exchange rates already applied)
-            const report = window.lastReport; // Set by the app's updateStats()
+            const report = window.lastReport;
 
             const trimmedSubs = subscriptionData.map(s => ({
                 name: s.name,
-                // Show each price in its original currency (don't re-convert)
                 price: `${s.symbol || s.currency || ''}${s.price}`,
                 type: s.type,
                 billingDay: s.date,
@@ -42,49 +42,29 @@ export async function askGroq(userPrompt, subscriptionData = []) {
             }));
 
             const grandTotalLine = report
-                ? `The app already calculated the grand total for this month as: ${report.symbol}${report.total.toFixed(2)} ${report.currency}. Use this exact number.`
-                : 'No grand total available yet.';
+                ? `[CRITICAL RULE] The app's pre-calculated Grand Total for the EXACT CURRENT VIEWED MONTH is: ${report.symbol}${report.total.toFixed(2)} ${report.currency}. You MUST use this exact number if asked about the current total.`
+                : '[CRITICAL RULE] No grand total data is currently available.';
 
-            subContext = `\n\n[SUBSCRIPTION DATA - Do NOT do your own currency conversions. Use prices as-is.]
+            subContext = `\n\n[SUBSCRIPTION DATA - DO NOT create your own totals or math.]
 ${grandTotalLine}
-All subscriptions (${subscriptionData.length} total):
-${JSON.stringify(trimmedSubs)}
-]`;
+If the user asks for the grand total or cost of ANY past or future month, YOU MUST REFUSE TO CALCULATE IT. 
+Instead, exactly say: "I only have access to the math for the month you are currently viewing. Please use the calendar arrows at the top of the app to go to that month, and then ask me again!"
+
+Subscriptions: ${JSON.stringify(trimmedSubs)}]`;
         }
 
-        const systemPrompt = `You are SubTrack AI, a smart and friendly personal assistant built into the SubTrack app — a subscription manager.
-Be natural and conversational, like ChatGPT. For casual messages like "hi", just respond warmly and briefly.
-CRITICAL RULE: When subscription data is provided, NEVER do your own currency conversions or exchange rate math. 
-Always trust and use the pre-calculated grand total from the app. Report prices exactly as given.
-When analyzing subscriptions, be concise and insightful. Today: ${new Date().toLocaleDateString()}.`;
-
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt + subContext }
-                ],
-                temperature: 0.7,
-                max_tokens: 600
-            })
+        // Call the secure Supabase Edge Function
+        const { data, error } = await supabase.functions.invoke('chat-groq', {
+            body: { userPrompt, subContext }
         });
 
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err?.error?.message || `Groq API error (HTTP ${response.status})`);
-        }
+        if (error) throw new Error(error.message || 'Failed to call Supabase AI function');
+        if (data && data.error) throw new Error(data.error);
 
-        const data = await response.json();
-        return data.choices[0].message.content;
+        return data.reply;
 
     } catch (error) {
-        console.error('Groq Service Error:', error);
+        console.error('Supabase AI Service Error:', error);
         return `Sorry, I ran into an issue: ${error.message}`;
     }
 }
