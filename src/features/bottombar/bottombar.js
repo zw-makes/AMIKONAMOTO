@@ -4,6 +4,8 @@
  */
 import { initHistory, toggleHistoryMode } from '../history/history.js';
 import { openSearchModal } from '../search/search.js';
+import { openAIAnalyst } from '../ai-analyst/ai-analyst.js';
+
 
 export function initBottomBar() {
     const container = document.querySelector('.bottom-bar-container');
@@ -109,8 +111,8 @@ export function initBottomBar() {
                 toggleStarMode(btn);
             } else if (action === 'ai-btn') {
                 // AI Assistant / Insights
-                if(window.showAIInsights) window.showAIInsights();
-                else console.log("AI Analyst triggered!");
+                openAIAnalyst();
+                if(window.HapticsService) window.HapticsService.medium();
             }
         });
     });
