@@ -68,3 +68,24 @@ Subscriptions: ${JSON.stringify(trimmedSubs)}]`;
         return `Sorry, I ran into an issue: ${error.message}`;
     }
 }
+
+export async function generateChatTitle(firstQuery) {
+    try {
+        const supabase = getSupabase();
+        if (!supabase) return "New Chat";
+
+        const titlePrompt = `Based on this user's question, generate a very short 2-4 word title for this chat. DO NOT USE QUOTES. ONLY OUTPUT THE TITLE TEXT.
+Question: "${firstQuery}"`;
+
+        const { data, error } = await supabase.functions.invoke('chat-groq', {
+            body: { userPrompt: titlePrompt, subContext: " " } 
+        });
+
+        if (error || (data && data.error)) return "AI Chat";
+
+        // Clean up quotes if the AI accidentally adds them
+        return (data.reply || "AI Chat").replace(/["']/g, '').trim();
+    } catch (e) {
+        return "AI Chat";
+    }
+}

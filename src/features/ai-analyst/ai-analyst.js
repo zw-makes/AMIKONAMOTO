@@ -1,9 +1,12 @@
 /**
- * AI Analyst (Gemini Powered) Feature
- * Handles the "Chat" style interface for premium subscription insights.
+ * AI Analyst (Groq Powered) Feature - Redesigned UI
+ * Handles the "Grok" style interface.
  */
 import './ai-analyst.css';
-import { askGroq } from './gemini-service.js';
+import { askGroq, generateChatTitle } from './gemini-service.js';
+
+// Global state for chat
+let isFirstMessage = true;
 
 export function openAIAnalyst() {
     let overlay = document.getElementById('ai-analyst-overlay');
@@ -24,94 +27,64 @@ function createAIAnalystOverlay() {
     overlay.id = 'ai-analyst-overlay';
     overlay.className = 'ai-analyst-overlay hidden';
 
-    // Get User Name
-    let userName = 'User';
-    
-    // 1. Try Window Global (Most reliable)
-    if (window.userProfile && window.userProfile.name) {
-        userName = window.userProfile.name;
-    } 
-    // 2. Try LocalStorage (Fallbacks)
-    else {
-        const rawUser = localStorage.getItem('user_profile') || 
-                       localStorage.getItem('profile_' + (window.currentUser?.id || ''));
-        try {
-            if (rawUser) {
-                const parsed = JSON.parse(rawUser);
-                userName = parsed.name || 'User';
-            }
-        } catch (e) { console.warn('Failed to parse user profile for AI greeting', e); }
-    }
-
-    const firstWord = userName.split(' ')[0];
-    console.log('AI Analyst: Greeting user', firstWord);
+    const logoUrl = "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png";
 
     overlay.innerHTML = `
         <div class="ai-analyst-container">
             <header class="ai-header">
-                <button class="header-action-btn" id="close-ai-btn">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                <button class="header-btn" id="close-ai-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8h16M4 16h16"/></svg>
                 </button>
-                <div class="header-right">
-                    <button class="header-action-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                    </button>
-                    <button class="header-action-btn" id="clear-chat-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    </button>
-                </div>
+                <div class="ai-chat-title" id="chat-title">New Chat</div>
+                <button class="header-btn" id="clear-chat-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                </button>
             </header>
 
             <main class="ai-content" id="ai-chat-content">
-                <section class="ai-greeting" id="initial-ai-view">
-                    <h1>Hello <span class="user-name">${firstWord}</span></h1>
-                    <div class="ai-question">How can I help<br>you today?</div>
-                    <p class="ai-subtitle">I'm your SubTrack AI assistant. I can analyze your spending, find better deals, or remind you of upcoming trials.</p>
-                    
-                    <section class="ai-suggestions">
-                        <div class="suggestion-card" onclick="document.getElementById('ai-chat-input').value='Summarize my monthly spending'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
-                            <div class="suggestion-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H7M17 19H7M22 12H2"/></svg>
-                            </div>
-                            <div class="suggestion-text">
-                                <div class="suggestion-label">Review my<br>spending</div>
-                            </div>
-                        </div>
-                        
-                        <div class="suggestion-card" onclick="document.getElementById('ai-chat-input').value='Find upcoming renewals'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
-                            <div class="suggestion-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
-                            </div>
-                            <div class="suggestion-text">
-                                <div class="suggestion-label">Check upcoming<br>renewals</div>
-                            </div>
-                        </div>
-
-                        <div class="suggestion-card" onclick="document.getElementById('ai-chat-input').value='Help me save money'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
-                            <div class="suggestion-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
-                            </div>
-                            <div class="suggestion-text">
-                                <div class="suggestion-label">Optimize my<br>portfolio</div>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-
+                <div class="initial-view" id="initial-ai-view">
+                    <img src="${logoUrl}" class="ai-center-logo" id="main-ai-logo" alt="AI Logo" />
+                </div>
                 <div id="chat-messages" class="chat-messages hidden"></div>
             </main>
 
             <footer class="ai-footer">
-                <div class="ai-input-pill">
-                    <div class="gemini-orb" id="orb-status"></div>
-                    <input type="text" id="ai-chat-input" placeholder="Ask or Type Something..." autocomplete="off">
-                    <div class="ai-input-actions">
-                        <button class="ai-action-btn mic-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                        </button>
-                        <button class="ai-action-btn magic-btn" id="send-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z"/></svg>
-                        </button>
+                <div class="ai-suggestions-row" id="suggestions-row">
+                    <button class="suggestion-pill blue" onclick="document.getElementById('ai-chat-input').value='Analyze my spending'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                        Try AI Analyst
+                    </button>
+                    <button class="suggestion-pill" onclick="document.getElementById('ai-chat-input').value='Show my active subscriptions'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                        List Subs
+                    </button>
+                </div>
+
+                <div class="ai-input-box">
+                    <div class="ai-input-wrapper">
+                        <input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="Ask Anything" autocomplete="off">
+                    </div>
+                    <div class="input-toolbar">
+                        <div class="toolbar-left">
+                            <button class="tool-icon-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            </button>
+                            <button class="tool-pill-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                Fast
+                            </button>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="tool-icon-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                            </button>
+                            <button class="cute-send-btn" id="send-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </footer>
@@ -131,26 +104,46 @@ function createAIAnalystOverlay() {
     });
 
     const input = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('send-btn');
+
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handleChatSubmission(input.value);
             input.value = '';
         }
     });
 
-    const sendBtn = document.getElementById('send-btn');
     sendBtn.addEventListener('click', () => {
-        handleChatSubmission(input.value);
-        input.value = '';
+        if (input.value.trim().length > 0) {
+            handleChatSubmission(input.value);
+            input.value = '';
+        }
     });
 
     return overlay;
 }
 
 function ResetChat() {
-    const greeting = document.getElementById('initial-ai-view');
+    isFirstMessage = true;
+    const initialView = document.getElementById('initial-ai-view');
     const messages = document.getElementById('chat-messages');
-    if (greeting) greeting.classList.remove('hidden');
+    const suggestions = document.getElementById('suggestions-row');
+    const logo = document.getElementById('main-ai-logo');
+    const titleEl = document.getElementById('chat-title');
+
+    if (titleEl) {
+        titleEl.innerText = 'New Chat';
+        titleEl.classList.remove('loading');
+    }
+
+    if (initialView) {
+        initialView.classList.remove('hidden');
+        initialView.style.opacity = '1';
+        initialView.style.position = 'absolute';
+    }
+    if (logo) logo.classList.remove('thinking');
+    if (suggestions) suggestions.classList.remove('hidden');
     if (messages) {
         messages.classList.add('hidden');
         messages.innerHTML = '';
@@ -160,30 +153,52 @@ function ResetChat() {
 async function handleChatSubmission(query) {
     if (!query.trim()) return;
 
+    if (isFirstMessage) {
+        isFirstMessage = false;
+        const titleEl = document.getElementById('chat-title');
+        if (titleEl) {
+            titleEl.classList.add('loading');
+            titleEl.innerText = 'Naming...';
+            generateChatTitle(query).then(title => {
+                titleEl.classList.remove('loading');
+                titleEl.innerText = title;
+            });
+        }
+    }
+
     const initialView = document.getElementById('initial-ai-view');
     const chatMessages = document.getElementById('chat-messages');
-    const orb = document.getElementById('orb-status');
+    const logo = document.getElementById('main-ai-logo');
+    const suggestions = document.getElementById('suggestions-row');
 
-    // 1. Enter Chat Mode
-    if (initialView) initialView.classList.add('hidden');
+    // Hide suggestions
+    if (suggestions) suggestions.classList.add('hidden');
+
+    // Make initial view act as a background watermark instead of leaving DOM
+    if (initialView) {
+        initialView.style.position = 'fixed';
+        initialView.style.opacity = '0.05'; 
+        // We move it to fixed so it stays behind scrolling text
+    }
+
     if (chatMessages) chatMessages.classList.remove('hidden');
 
-    // 2. Render User Message
+    // Render User Message
     addMessage('user', query);
 
-    // 3. Thinking State
+    // Thinking State
     if (window.HapticsService) window.HapticsService.light();
-    if (orb) orb.style.animation = 'rotateOrb 1s linear infinite, thinkingPulse 1s ease-in-out infinite alternate';
+    if (logo) logo.classList.add('thinking');
     
     const thinkingMsgId = addMessage('assistant', "Thinking...");
 
-    // 4. Call Gemini
+    // Call Groq Engine
     const subData = window.subscriptions || [];
     const response = await askGroq(query, subData);
 
-    // 5. Render Response
+    // Render Response
     updateMessage(thinkingMsgId, response);
-    if (orb) orb.style.animation = 'rotateOrb 10s linear infinite';
+    if (logo) logo.classList.remove('thinking');
     if (window.HapticsService) window.HapticsService.medium();
 }
 
