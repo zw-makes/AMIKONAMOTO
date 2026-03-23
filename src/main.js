@@ -584,6 +584,7 @@ async function loadSubscriptions() {
   updateStats();
 }
 
+window.saveToSupabase = saveToSupabase;
 async function saveToSupabase(sub) {
   if (!currentUser) return null;
   

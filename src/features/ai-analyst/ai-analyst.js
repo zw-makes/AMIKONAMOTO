@@ -8,6 +8,8 @@ import { askGroq, generateChatTitle } from './gemini-service.js';
 // Global state for chat
 let isFirstMessage = true;
 let messageCounter = 0;
+let selectedSub = null; // Currently 'active' sub for editing
+let chatHistory = []; // For Undo functionality
 
 let viewportResizeHandler = null;
 
@@ -137,9 +139,18 @@ function createAIAnalystOverlay() {
     });
 
     const input = document.getElementById('ai-chat-input');
-    const sendBtn = document.getElementById('send-btn');
+    const inputField = document.getElementById('ai-chat-input');
+    
+    // Add selected pill zone INSIDE the wrapper for a pro inline look
+    const wrapper = overlay.querySelector('.ai-input-wrapper');
+    if (wrapper && !document.getElementById('ai-selected-pill-zone')) {
+        const pillZone = document.createElement('div');
+        pillZone.id = 'ai-selected-pill-zone';
+        pillZone.className = 'ai-selected-pill-zone hidden';
+        wrapper.insertBefore(pillZone, wrapper.firstChild);
+    }
 
-    input.addEventListener('keypress', (e) => {
+    inputField.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleChatSubmission(input.value);
@@ -217,33 +228,273 @@ async function handleChatSubmission(query) {
     if (chatMessages) chatMessages.classList.remove('hidden');
 
     // Render User Message
-    addMessage('user', query);
-
-    // Thinking State
+    const currentSelection = selectedSub; // Capture for the message bubble
+    addMessage('user', query, currentSelection);
+    
+    // Smooth pill removal if you want to clear after send, 
+    // but usually better to keep 'locked' focus for follow-up questions.
+    // I will keep it locked as requested 'selected sub'
     if (window.HapticsService) window.HapticsService.light();
     if (logo) logo.classList.add('thinking');
     
     const thinkingMsgId = addMessage('assistant', "Thinking...");
+    const thinkingEl = document.getElementById(thinkingMsgId);
+    if (thinkingEl) thinkingEl.querySelector('.message-bubble').classList.add('thinking-pulse');
 
     // Call Groq Engine
     const subData = window.subscriptions || [];
-    const response = await askGroq(query, subData);
+    const response = await askGroq(query, subData, selectedSub);
 
-    // Render Response
-    updateMessage(thinkingMsgId, response);
+    // Render Response with Typography Animation
     if (logo) logo.classList.remove('thinking');
+    await typeMessage(thinkingMsgId, response);
+    
+    // Check for actions in the final response
+    handleAiActions(response);
+
     if (window.HapticsService) window.HapticsService.medium();
 }
 
-function addMessage(sender, text) {
+function handleAiActions(text) {
+    const actionMatch = text.match(/<action>(.*?)<\/action>/);
+    if (!actionMatch) return;
+
+    try {
+        const action = JSON.parse(actionMatch[1]);
+        if (action.type === 'UPDATE_SUB') {
+            executeSubUpdate(action.payload);
+        } else if (action.type === 'TOGGLE_PAID') {
+            if (window.togglePaidStatus) window.togglePaidStatus(action.payload.id);
+        } else if (action.type === 'DELETE_SUB') {
+            executeSubDelete(action.payload);
+        }
+    } catch (e) {
+        console.error('Failed to parse AI action:', e);
+    }
+}
+
+async function executeSubDelete(payload) {
+    const sub = (window.subscriptions || []).find(s => s.id === payload.id);
+    if (!sub) return;
+
+    // Save for UNDO
+    chatHistory.push({ type: 'DELETE', sub: JSON.parse(JSON.stringify(sub)) });
+
+    if (window.deleteSubscription) {
+        await window.deleteSubscription(payload.id);
+    }
+    
+    showUndoToast(sub.name, "Deleted");
+    if (selectedSub?.id === payload.id) deselectSub();
+}
+
+async function executeSubUpdate(payload) {
+    const allSubs = window.subscriptions || [];
+    const sub = allSubs.find(s => s.id === payload.id);
+    if (!sub) return;
+
+    // Save history for UNDO
+    chatHistory.push({ type: 'UPDATE', sub: JSON.parse(JSON.stringify(sub)) });
+
+    // Apply changes
+    Object.assign(sub, payload.changes);
+    
+    // Save to DB
+    if (window.saveToSupabase) {
+        await window.saveToSupabase(sub);
+    }
+    
+    // Visual Refresh
+    if (window.updateStats) window.updateStats();
+    if (window.renderCalendar) window.renderCalendar();
+    
+    showUndoToast(sub.name);
+    
+    // Clear selection if it was the edited one
+    if (selectedSub && selectedSub.id === sub.id) {
+        deselectSub();
+    }
+}
+
+function showUndoToast(name, verb = 'Updated') {
+    const toast = document.createElement('div');
+    toast.className = 'ai-undo-toast';
+    toast.innerHTML = `
+        <span>${verb} ${name} successfully!</span>
+        <button onclick="window.undoLastAiAction(this)">UNDO</button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 500);
+    }, 6000);
+}
+
+window.undoLastAiAction = async function(btn) {
+    const lastAction = chatHistory.pop();
+    if (!lastAction) return;
+
+    if (lastAction.type === 'UPDATE') {
+        const sub = (window.subscriptions || []).find(s => s.id === lastAction.sub.id);
+        if (sub) {
+            Object.assign(sub, lastAction.sub);
+            if (window.saveToSupabase) await window.saveToSupabase(sub);
+            if (window.updateStats) window.updateStats();
+            if (window.renderCalendar) window.renderCalendar();
+            if (window.HapticsService) window.HapticsService.heavy();
+        }
+    }
+
+    if (btn) btn.parentElement.remove();
+};
+
+window.selectSubForChat = function(id) {
+    const sub = (window.subscriptions || []).find(s => s.id === id);
+    if (!sub) return;
+    
+    selectedSub = sub;
+    if (window.HapticsService) window.HapticsService.light();
+    renderSelectedSubPill();
+};
+
+function renderSelectedSubPill() {
+    const zone = document.getElementById('ai-selected-pill-zone');
+    if (!zone) return;
+
+    if (!selectedSub) {
+        zone.classList.add('hidden');
+        return;
+    }
+
+    zone.className = 'ai-selected-pill-zone show';
+    zone.innerHTML = `
+        <div class="ai-selected-pill" onclick="window.deselectSub(event)" style="cursor: pointer;">
+            <img src="https://icon.horse/icon/${selectedSub.domain}" class="pill-logo">
+        </div>
+    `;
+}
+
+window.deselectSub = function(e) {
+    if (e) e.stopPropagation();
+    selectedSub = null;
+    renderSelectedSubPill();
+};
+
+async function typeMessage(id, fullText) {
+    const msg = document.getElementById(id);
+    if (!msg) return;
+    const bubble = msg.querySelector('.message-bubble');
+    bubble.classList.remove('thinking-pulse');
+    bubble.innerText = '';
+
+    // Robustly extract all meta-tags and CLEAN the text before typing
+    let previewIds = [];
+    let cleanText = fullText;
+
+    // Extract Sub Previews
+    const previewMatch = fullText.match(/<sub-preview>\[(.*?)\]<\/sub-preview>/);
+    if (previewMatch) {
+        previewIds = previewMatch[1].split(',').map(n => parseInt(n.trim()));
+        cleanText = cleanText.replace(previewMatch[0], '');
+    }
+
+    // Extract Actions (STRICTLY REMOVE FROM VISIBLE TEXT)
+    const actionMatch = fullText.match(/<action>(.*?)<\/action>/);
+    if (actionMatch) {
+        cleanText = cleanText.replace(actionMatch[0], '');
+    }
+
+    cleanText = cleanText.trim();
+
+    const words = cleanText.split(' ');
+    for (let i = 0; i < words.length; i++) {
+        bubble.innerText += (i === 0 ? '' : ' ') + words[i];
+        
+        const main = document.getElementById('ai-chat-content');
+        if (main) main.scrollTop = main.scrollHeight;
+        
+        const baseDelay = words.length > 50 ? 10 : 25;
+        await new Promise(res => setTimeout(res, baseDelay));
+    }
+
+    // Render Preview Box if IDs found
+    if (previewIds.length > 0) {
+        renderSubscriptionPreview(msg, previewIds);
+    }
+}
+
+function renderSubscriptionPreview(container, ids) {
+    const allSubs = window.subscriptions || [];
+    const targetSubs = allSubs.filter(s => ids.includes(s.id));
+    if (targetSubs.length === 0) return;
+
+    const previewBox = document.createElement('div');
+    previewBox.className = 'ai-sub-preview-box';
+    
+    let subHtml = targetSubs.map(s => {
+        const domain = s.domain || 'google.com';
+        const isPaid = window.isSubPaid ? window.isSubPaid(s, window.currentDate || new Date()) : false;
+        const isStopped = s.stopped;
+        
+        // Update function to selectSubForChat
+        return `
+            <div class="ai-static-card ${isStopped ? 'dimmed' : ''}" onclick="window.selectSubForChat(${s.id})">
+                <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
+                    <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
+                </div>
+                <div class="detail-info">
+                    <span class="detail-name">${s.name}</span>
+                    <div class="tag-container" style="display: flex; gap: 4px; margin-top: 2px;">
+                        ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
+                        ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : '<span class="status-tag tag-active">ACTIVE</span>'}
+                    </div>
+                </div>
+                <div class="detail-price">${s.symbol || '$'}${s.price.toFixed(2)}</div>
+            </div>
+        `;
+    }).join('');
+
+    previewBox.innerHTML = `
+        <div class="ai-preview-header">
+            <span>SHOWING ${targetSubs.length} SUBSCRIPTION${targetSubs.length > 1 ? 'S' : ''}</span>
+            <div class="ai-preview-badge">SMART PREVIEW</div>
+        </div>
+        <div class="ai-preview-list">
+            ${subHtml}
+        </div>
+    `;
+
+    container.appendChild(previewBox);
+    
+    const main = document.getElementById('ai-chat-content');
+    if (main) main.scrollTop = main.scrollHeight;
+
+    // NO attachSwipeEvents here - keeps them static
+}
+
+function addMessage(sender, text, attachedSub = null) {
     const chatMessages = document.getElementById('chat-messages');
     messageCounter++;
     const msgId = 'msg-' + messageCounter + '-' + Date.now();
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${sender}-message`;
     messageDiv.id = msgId;
+
+    let subBadge = '';
+    if (sender === 'user' && attachedSub) {
+        subBadge = `
+            <div class="user-sub-badge">
+                <img src="https://icon.horse/icon/${attachedSub.domain}" class="tiny-logo">
+            </div>
+        `;
+    }
+
     messageDiv.innerHTML = `
-        <div class="message-bubble">${text}</div>
+        <div class="message-bubble">
+            ${subBadge}
+            ${text}
+        </div>
     `;
     chatMessages.appendChild(messageDiv);
     
