@@ -13,6 +13,7 @@ export function openAIAnalyst() {
     if (!overlay) {
         overlay = createAIAnalystOverlay();
     }
+    document.body.classList.add('ai-analyst-open');
     overlay.classList.remove('hidden');
 
     // Focus input
@@ -20,6 +21,12 @@ export function openAIAnalyst() {
         const input = document.getElementById('ai-chat-input');
         if (input) input.focus();
     }, 400);
+}
+
+function closeAIAnalyst() {
+    const overlay = document.getElementById('ai-analyst-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.classList.remove('ai-analyst-open');
 }
 
 function createAIAnalystOverlay() {
@@ -99,7 +106,7 @@ function createAIAnalystOverlay() {
 
     const closeBtn = document.getElementById('close-ai-btn');
     closeBtn.addEventListener('click', () => {
-        overlay.classList.add('hidden');
+        closeAIAnalyst();
     });
 
     const clearBtn = document.getElementById('clear-chat-btn');
