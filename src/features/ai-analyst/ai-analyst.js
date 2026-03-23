@@ -7,6 +7,7 @@ import { askGroq, generateChatTitle } from './gemini-service.js';
 
 // Global state for chat
 let isFirstMessage = true;
+let messageCounter = 0;
 
 let viewportResizeHandler = null;
 
@@ -236,7 +237,8 @@ async function handleChatSubmission(query) {
 
 function addMessage(sender, text) {
     const chatMessages = document.getElementById('chat-messages');
-    const msgId = 'msg-' + Date.now();
+    messageCounter++;
+    const msgId = 'msg-' + messageCounter + '-' + Date.now();
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${sender}-message`;
     messageDiv.id = msgId;
