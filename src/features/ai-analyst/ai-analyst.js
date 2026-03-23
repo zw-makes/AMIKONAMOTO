@@ -16,6 +16,17 @@ export function openAIAnalyst() {
     document.body.classList.add('ai-analyst-open');
     overlay.classList.remove('hidden');
 
+    // Force header to stay at top of visual viewport (iOS fix)
+    if (window.visualViewport) {
+        const header = overlay.querySelector('.ai-header');
+        const handleResize = () => {
+            if (header) header.style.top = `${window.visualViewport.offsetTop}px`;
+        };
+        window.visualViewport.addEventListener('resize', handleResize);
+        window.visualViewport.addEventListener('scroll', handleResize);
+        handleResize();
+    }
+
     // Focus input
     setTimeout(() => {
         const input = document.getElementById('ai-chat-input');
