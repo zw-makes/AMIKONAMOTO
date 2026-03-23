@@ -1,13 +1,4 @@
 /* Premium iOS AI Analyst Experience (Grok-inspired Design) */
-/* Bulletproof iOS prevent-scroll logic */
-body.ai-analyst-open {
-    overflow: hidden !important;
-    position: fixed !important; 
-    width: 100% !important;
-    height: 100% !important;
-    top: 0;
-    left: 0;
-}
 
 .ai-analyst-overlay {
     position: fixed;
@@ -15,8 +6,7 @@ body.ai-analyst-open {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 100dvh; 
-    width: 100vw;
+    height: 100%; /* Switch back to height 100% to let the browser size it */
     background: #000000;
     z-index: 10000;
     display: flex;
@@ -24,7 +14,6 @@ body.ai-analyst-open {
     color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     animation: slideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-    overflow: hidden;
     overscroll-behavior: none;
 }
 
@@ -32,11 +21,9 @@ body.ai-analyst-open {
     width: 100%;
     max-width: 500px;
     height: 100%;
-    display: grid;
-    grid-template-rows: auto 1fr auto; /* Natural layout: Header, Content, Footer */
+    display: flex;
+    flex-direction: column;
     background-color: #000000;
-    position: relative;
-    overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -51,15 +38,15 @@ body.ai-analyst-open {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0; /* Never shrink the header */
 }
 
 /* Natural scrolling content area */
 .ai-content {
-    min-height: 0;
+    flex: 1; /* Take up all remaining space */
     position: relative;
     overflow-y: auto;
     scrollbar-width: none;

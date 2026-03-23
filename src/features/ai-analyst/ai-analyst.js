@@ -8,20 +8,29 @@ import { askGroq, generateChatTitle } from './gemini-service.js';
 // Global state for chat
 let isFirstMessage = true;
 
+let viewportResizeHandler = null;
+
 export function openAIAnalyst() {
     let overlay = document.getElementById('ai-analyst-overlay');
     if (!overlay) {
         overlay = createAIAnalystOverlay();
     }
-    document.body.classList.add('ai-analyst-open');
     overlay.classList.remove('hidden');
 
-    // Prevent the browser from yanking the entire overlay up (Natural feel)
-    overlay.addEventListener('touchmove', (e) => {
-        if (!e.target.closest('.ai-content') && !e.target.closest('.ai-chat-input')) {
-            e.preventDefault();
-        }
-    }, { passive: false });
+    // Force container to match visual viewport exactly (iOS keyboard fix)
+    if (window.visualViewport) {
+        const container = overlay.querySelector('.ai-analyst-container');
+        viewportResizeHandler = () => {
+            if (container) {
+                container.style.height = `${window.visualViewport.height}px`;
+                // Also bump up the container by the offsetTop so we scroll along with the page jump
+                container.style.transform = `translateY(${window.visualViewport.offsetTop}px)`;
+            }
+        };
+        window.visualViewport.addEventListener('resize', viewportResizeHandler);
+        window.visualViewport.addEventListener('scroll', viewportResizeHandler);
+        viewportResizeHandler(); // Initial set
+    }
 
     // Focus input
     setTimeout(() => {
@@ -33,7 +42,12 @@ export function openAIAnalyst() {
 function closeAIAnalyst() {
     const overlay = document.getElementById('ai-analyst-overlay');
     if (overlay) overlay.classList.add('hidden');
-    document.body.classList.remove('ai-analyst-open');
+    
+    if (window.visualViewport && viewportResizeHandler) {
+        window.visualViewport.removeEventListener('resize', viewportResizeHandler);
+        window.visualViewport.removeEventListener('scroll', viewportResizeHandler);
+        viewportResizeHandler = null;
+    }
 }
 
 function createAIAnalystOverlay() {
