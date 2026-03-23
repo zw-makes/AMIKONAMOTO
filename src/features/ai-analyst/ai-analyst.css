@@ -21,9 +21,11 @@
     width: 100%;
     max-width: 500px;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr auto; /* Correct layout: No overlapping */
     background-color: #000000;
+    position: relative;
+    overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -33,31 +35,28 @@
 
 /* === Top Header === */
 .ai-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: calc(env(safe-area-inset-top, 20px) + 12px) 16px 12px 16px;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
+    padding: calc(env(safe-area-inset-top, 20px) + 8px) 16px 8px 16px;
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 105;
+    z-index: 10;
 }
 
 /* Natural scrolling content area */
 .ai-content {
-    flex: 1; /* Take up all remaining space */
+    min-height: 0;
     position: relative;
     overflow-y: auto;
     scrollbar-width: none;
-    padding: calc(env(safe-area-inset-top, 20px) + 70px) 16px 160px 16px; /* Padding supports content under floating header/footer */
+    padding: 0 16px;
     display: flex;
     flex-direction: column;
 }
+
 
 /* Match the Pricing Page back button exactly */
 .back-btn {
@@ -222,21 +221,16 @@
 
 /* === Bottom Bar & Input === */
 .ai-footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 8px 16px 12px 16px; /* Removed extra safe area dead space */
+    padding: 12px 16px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 8px);
     display: flex;
     flex-direction: column;
     gap: 12px;
-    background: transparent;
-    z-index: 105;
-    pointer-events: none; /* Passes touches through transparent gaps */
-}
-
-.ai-footer > * {
-    pointer-events: auto; /* Catch touches on the actual children */
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 10;
 }
 
 .ai-suggestions-row {
@@ -251,10 +245,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(21, 21, 21, 0.85);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
     color: #fff;
     padding: 10px 18px;
     border-radius: 24px;
@@ -262,6 +253,7 @@
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .suggestion-pill.blue {
