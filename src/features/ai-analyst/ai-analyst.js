@@ -16,6 +16,13 @@ export function openAIAnalyst() {
     document.body.classList.add('ai-analyst-open');
     overlay.classList.remove('hidden');
 
+    // Prevent the browser from yanking the entire overlay up (Natural feel)
+    overlay.addEventListener('touchmove', (e) => {
+        if (!e.target.closest('.ai-content') && !e.target.closest('.ai-chat-input')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
     // Focus input
     setTimeout(() => {
         const input = document.getElementById('ai-chat-input');
@@ -48,7 +55,7 @@ function createAIAnalystOverlay() {
                 </button>
                 <div class="ai-chat-title" id="chat-title">New Chat</div>
                 <button class="header-btn" id="clear-chat-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 4 5s2.5 3 2.5 5v2"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-4 5s-2.5 3-2.5 5v2"/><path d="M9 14c-2 1-4 3-4 6 0 2 2 2 2 2"/><path d="M15 14c2 1 4 3 4 6 0 2-2 2-2 2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
                 </button>
             </header>
 
