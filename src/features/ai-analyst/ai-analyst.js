@@ -32,8 +32,12 @@ function createAIAnalystOverlay() {
     overlay.innerHTML = `
         <div class="ai-analyst-container">
             <header class="ai-header">
-                <button class="header-btn" id="close-ai-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8h16M4 16h16"/></svg>
+                <button class="back-btn" id="close-ai-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Back</span>
                 </button>
                 <div class="ai-chat-title" id="chat-title">New Chat</div>
                 <button class="header-btn" id="clear-chat-btn">
