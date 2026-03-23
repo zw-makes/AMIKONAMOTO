@@ -33,15 +33,19 @@
 
 /* === Top Header === */
 .ai-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     padding: calc(env(safe-area-inset-top, 20px) + 12px) 16px 12px 16px;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Never shrink the header */
+    z-index: 105;
 }
 
 /* Natural scrolling content area */
@@ -50,7 +54,7 @@
     position: relative;
     overflow-y: auto;
     scrollbar-width: none;
-    padding: 0 16px;
+    padding: calc(env(safe-area-inset-top, 20px) + 70px) 16px 160px 16px; /* Padding supports content under floating header/footer */
     display: flex;
     flex-direction: column;
 }
@@ -218,11 +222,21 @@
 
 /* === Bottom Bar & Input === */
 .ai-footer {
-    padding: 12px 16px;
-    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 16px 12px 16px; /* Removed extra safe area dead space */
     display: flex;
     flex-direction: column;
     gap: 12px;
+    background: transparent;
+    z-index: 105;
+    pointer-events: none; /* Passes touches through transparent gaps */
+}
+
+.ai-footer > * {
+    pointer-events: auto; /* Catch touches on the actual children */
 }
 
 .ai-suggestions-row {
@@ -237,7 +251,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #151515;
+    background: rgba(21, 21, 21, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #fff;
     padding: 10px 18px;
     border-radius: 24px;
@@ -245,21 +262,25 @@
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
-    border: none;
 }
 
 .suggestion-pill.blue {
-    background: #10244b;
+    background: rgba(16, 36, 75, 0.85);
+    border-color: rgba(77, 166, 255, 0.2);
     color: #4da6ff;
 }
 
 .ai-input-box {
-    background: #151515;
+    background: rgba(25, 25, 25, 0.5); /* Glassmorphism translucent look */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border-radius: 24px;
     padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .ai-input-wrapper {
