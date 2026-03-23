@@ -245,12 +245,13 @@ async function handleChatSubmission(query) {
     const subData = window.subscriptions || [];
     const response = await askGroq(query, subData, selectedSub);
 
+    // OPTIMISTIC UPDATE: Check for actions BEFORE typing
+    // This ensures that when the typewriter renders previews, the data is already fresh in window.subscriptions
+    handleAiActions(response);
+
     // Render Response with Typography Animation
     if (logo) logo.classList.remove('thinking');
     await typeMessage(thinkingMsgId, response);
-    
-    // Check for actions in the final response
-    handleAiActions(response);
 
     if (window.HapticsService) window.HapticsService.medium();
 }

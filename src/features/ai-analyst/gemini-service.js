@@ -49,11 +49,15 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
             let selectionContext = '';
             if (selectedSub) {
                 selectionContext = `\n[LOCKED SUBSCRIPTION] The user has specifically LOCKED the following subscription for focus: ${JSON.stringify(selectedSub)}. 
-[ACTION PERMISSIONS] YOU HAVE 100% PERMISSION TO:
+[ADMIN PERMISSIONS] YOU HAVE 100% PERMISSION TO:
 - Change ANY field (price, name, date, currency, symbol, notes).
 - Mark as Stopped/Cancelled (set stopped: true).
 - Mark as Paid/Unpaid (use TOGGLE_PAID).
 - DELETE the subscription entirely (use DELETE_SUB).
+
+[ACTION RULE] Speak in the NEW state (after the change). 
+Example: "Netflix is now $15." instead of "I will change Netflix to $15." 
+Confirm the action concisely in 1 sentence.
 
 [ACTION TAGS] To edit, output ONLY ONE tag at the end:
 <action>{"type": "UPDATE_SUB", "payload": {"id": ${selectedSub.id}, "changes": {"notes": "new note content", "stopped": true}}}</action>
