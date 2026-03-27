@@ -626,3 +626,4 @@ function getHistoryColor(type) {
 }
 
 window.toggleHistoryMode = toggleHistoryMode;
+window.calculateSubTimeline = calculateSubTimeline;

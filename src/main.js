@@ -2446,7 +2446,11 @@ finalDeleteBtn.addEventListener('click', async () => {
   finalDeleteBtn.disabled = true;
 
   try {
-    // 1. Call the database function to delete the user
+    // 1. Manually clear out dependencies that might block the deletion
+    // The 'notifications' table currently lacks a 'CASCADE' rule, so we must wipe it first.
+    await supabase.from('notifications').delete().eq('user_id', currentUser.id);
+
+    // 2. Call the database function to delete the user entirely
     const { error: deleteError } = await supabase.rpc('delete_user_permanently');
     if (deleteError) throw deleteError;
 

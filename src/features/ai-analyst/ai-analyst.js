@@ -10,6 +10,9 @@ let isFirstMessage = true;
 let messageCounter = 0;
 let selectedSub = null; // Currently 'active' sub for editing
 let chatHistory = []; // For Undo functionality
+let chatSessionId = null; // Current DB session ID
+let conversationMemory = []; // Last 8 messages for AI context
+window.chatHistory = chatHistory; // Expose for internal tools
 
 let viewportResizeHandler = null;
 
@@ -71,9 +74,14 @@ function createAIAnalystOverlay() {
                     <span>Back</span>
                 </button>
                 <div class="ai-chat-title" id="chat-title">New Chat</div>
-                <button class="header-btn" id="clear-chat-btn">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 4 5s2.5 3 2.5 5v2"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-4 5s-2.5 3-2.5 5v2"/><path d="M9 14c-2 1-4 3-4 6 0 2 2 2 2 2"/><path d="M15 14c2 1 4 3 4 6 0 2-2 2-2 2"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/></svg>
-                </button>
+                <div class="header-actions" style="display: flex; gap: 8px;">
+                    <button class="header-btn" id="download-chat-btn" title="Download Chat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </button>
+                    <button class="header-btn" id="clear-chat-btn" title="New Chat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </button>
+                </div>
             </header>
 
             <main class="ai-content" id="ai-chat-content">
@@ -135,8 +143,18 @@ function createAIAnalystOverlay() {
 
     const clearBtn = document.getElementById('clear-chat-btn');
     clearBtn.addEventListener('click', () => {
-        ResetChat();
+        showNewChatConfirm();
     });
+
+    const downloadBtn = document.getElementById('download-chat-btn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            downloadChatHistory();
+        });
+    }
+
+    // Load last session from DB
+    loadLastChat();
 
     const input = document.getElementById('ai-chat-input');
     const inputField = document.getElementById('ai-chat-input');
@@ -168,8 +186,205 @@ function createAIAnalystOverlay() {
     return overlay;
 }
 
+function showNewChatConfirm() {
+    // Don't show if no chat started yet
+    if (isFirstMessage) return;
+
+    const existing = document.getElementById('new-chat-confirm-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'new-chat-confirm-overlay';
+    overlay.innerHTML = `
+        <div class="new-chat-confirm-box">
+            <div class="new-chat-confirm-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <h3>Start New Chat?</h3>
+            <p>This conversation will be permanently deleted and a fresh one will begin.</p>
+            <div class="new-chat-confirm-actions">
+                <button class="confirm-cancel-btn" onclick="document.getElementById('new-chat-confirm-overlay').remove()">Cancel</button>
+                <button class="confirm-ok-btn" onclick="window.confirmNewChat()">Start Fresh</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('show'));
+}
+
+window.confirmNewChat = async function() {
+    const overlay = document.getElementById('new-chat-confirm-overlay');
+    if (overlay) overlay.remove();
+    await deleteCurrentSession();
+    ResetChat();
+};
+
+async function deleteCurrentSession() {
+    if (!chatSessionId) return;
+    const supabase = window.supabase;
+    if (!supabase) return;
+    await supabase.from('ai_chat_messages').delete().eq('session_id', chatSessionId);
+    await supabase.from('ai_chat_sessions').delete().eq('id', chatSessionId);
+    chatSessionId = null;
+    conversationMemory = [];
+}
+
+async function downloadChatHistory() {
+    const supabase = window.supabase;
+    let chatText = "SubTrack AI Chat Export\n=======================\n\n";
+
+    if (!chatSessionId || !supabase) {
+        // Fallback: Read from DOM if not saved yet
+        const msgs = document.querySelectorAll('.chat-message .message-bubble');
+        if (msgs.length === 0) {
+            alert("No chat history to download.");
+            return;
+        }
+        msgs.forEach(el => {
+            const isUser = el.parentElement.classList.contains('user-message');
+            // innerText natively cleans up HTML
+            chatText += (isUser ? "You:\n" : "SubTrack AI:\n") + el.innerText.trim() + "\n\n";
+        });
+    } else {
+        const { data: msgs } = await supabase
+            .from('ai_chat_messages')
+            .select('role, content')
+            .eq('session_id', chatSessionId)
+            .order('created_at', { ascending: true });
+            
+        if (!msgs || msgs.length === 0) {
+            alert("No chat history to download.");
+            return;
+        }
+        msgs.forEach(m => {
+            chatText += (m.role === 'user' ? "You:\n" : "SubTrack AI:\n") + m.content + "\n\n";
+        });
+    }
+
+    const titleEl = document.getElementById('chat-title');
+    const title = titleEl ? titleEl.innerText.replace(/[^a-z0-9]/gi, '_') : 'Chat';
+
+    const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SubTrack_${title}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+async function getOrCreateSession(title = 'New Chat') {
+    const supabase = window.supabase;
+    if (!supabase) return null;
+    
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    if (!userId) return null;
+
+    if (chatSessionId) return chatSessionId;
+
+    const { data, error } = await supabase
+        .from('ai_chat_sessions')
+        .insert({ user_id: userId, title })
+        .select('id')
+        .single();
+
+    if (error || !data) return null;
+    chatSessionId = data.id;
+    return chatSessionId;
+}
+
+async function saveMsgToDb(role, content, meta = {}) {
+    const supabase = window.supabase;
+    if (!supabase || !chatSessionId) return;
+    await supabase.from('ai_chat_messages').insert({
+        session_id: chatSessionId,
+        role,
+        content,
+        meta
+    });
+}
+
+async function loadLastChat() {
+    const supabase = window.supabase;
+    if (!supabase) return;
+    
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    if (!userId) return;
+
+    // Get the most recent session
+    const { data: sessions } = await supabase
+        .from('ai_chat_sessions')
+        .select('id, title')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    if (!sessions || sessions.length === 0) return;
+    const session = sessions[0];
+    chatSessionId = session.id;
+
+    // Get messages for this session
+    const { data: msgs } = await supabase
+        .from('ai_chat_messages')
+        .select('role, content, meta')
+        .eq('session_id', chatSessionId)
+        .order('created_at', { ascending: true });
+
+    if (!msgs || msgs.length === 0) return;
+
+    // Restore title
+    const titleEl = document.getElementById('chat-title');
+    if (titleEl) titleEl.innerText = session.title;
+
+    // Restore messages to UI
+    const chatMessages = document.getElementById('chat-messages');
+    const initialView = document.getElementById('initial-ai-view');
+    const suggestions = document.getElementById('suggestions-row');
+
+    if (initialView) { initialView.style.opacity = '0.05'; initialView.style.position = 'fixed'; }
+    if (suggestions) suggestions.classList.add('hidden');
+    if (chatMessages) chatMessages.classList.remove('hidden');
+    isFirstMessage = false;
+
+    const allSubs = window.subscriptions || [];
+
+    msgs.forEach(m => {
+        const attachedSub = (m.role === 'user' && m.meta?.attachedSubId) 
+            ? allSubs.find(s => s.id === m.meta.attachedSubId) 
+            : null;
+
+        let displayContent = m.content;
+        if (m.role === 'assistant') {
+            // Strip ALL backend tags before rendering (same logic as typeMessage)
+            displayContent = displayContent.replace(/[<\[]action[>\]][\s\S]*?[<\[]\/(action)[>\]]/gi, '');
+            displayContent = displayContent.replace(/[<\[](sub-preview)[>\]]\[?(.*?)\]?[<\[]\/(sub-preview)[>\]]/gi, '');
+            displayContent = displayContent.replace(/\[(sub-preview|action)\][^\[]*/gi, '');
+        }
+
+        const msgId = addMessage(m.role === 'user' ? 'user' : 'assistant', m.role === 'assistant' ? renderMarkdown(displayContent) : displayContent, attachedSub);
+        
+        // Restore Smart Previews if they existed
+        if (m.role === 'assistant' && m.meta?.previewIds && m.meta.previewIds.length > 0) {
+            const container = document.getElementById(msgId);
+            if (container) renderSubscriptionPreview(container, m.meta.previewIds);
+        }
+    });
+
+    // Rebuild conversationMemory from last 8
+    conversationMemory = msgs.slice(-8).map(m => ({
+        role: m.role,
+        content: m.content
+    }));
+
+    const main = document.getElementById('ai-chat-content');
+    if (main) setTimeout(() => main.scrollTop = main.scrollHeight, 100);
+}
+
 function ResetChat() {
     isFirstMessage = true;
+    conversationMemory = [];
     const initialView = document.getElementById('initial-ai-view');
     const messages = document.getElementById('chat-messages');
     const suggestions = document.getElementById('suggestions-row');
@@ -199,13 +414,19 @@ async function handleChatSubmission(query) {
 
     if (isFirstMessage) {
         isFirstMessage = false;
+        // Create DB session first
+        await getOrCreateSession('New Chat');
         const titleEl = document.getElementById('chat-title');
         if (titleEl) {
             titleEl.classList.add('loading');
             titleEl.innerText = 'Naming...';
-            generateChatTitle(query).then(title => {
+            generateChatTitle(query).then(async title => {
                 titleEl.classList.remove('loading');
                 titleEl.innerText = title;
+                // Update session title in DB
+                if (chatSessionId && window.supabase) {
+                    await window.supabase.from('ai_chat_sessions').update({ title }).eq('id', chatSessionId);
+                }
             });
         }
     }
@@ -229,11 +450,17 @@ async function handleChatSubmission(query) {
 
     // Render User Message
     const currentSelection = selectedSub; // Capture for the message bubble
-    addMessage('user', query, currentSelection);
+    const userMsgId = addMessage('user', query, currentSelection);
+
+    // Capture memory BEFORE pushing current query to prevent duplicated sequence breaking
+    const snapshotMemory = [...conversationMemory];
+
+    // Save user message to DB + memory (include attached sub ID if any)
+    saveMsgToDb('user', query, { attachedSubId: currentSelection?.id });
     
-    // Smooth pill removal if you want to clear after send, 
-    // but usually better to keep 'locked' focus for follow-up questions.
-    // I will keep it locked as requested 'selected sub'
+    conversationMemory.push({ role: 'user', content: query });
+    if (conversationMemory.length > 16) conversationMemory.splice(0, 2);
+    
     if (window.HapticsService) window.HapticsService.light();
     if (logo) logo.classList.add('thinking');
     
@@ -241,34 +468,88 @@ async function handleChatSubmission(query) {
     const thinkingEl = document.getElementById(thinkingMsgId);
     if (thinkingEl) thinkingEl.querySelector('.message-bubble').classList.add('thinking-pulse');
 
-    // Call Groq Engine
+    // Call Groq Engine with conversation memory snapshot
     const subData = window.subscriptions || [];
-    const response = await askGroq(query, subData, selectedSub);
+    const response = await askGroq(query, subData, selectedSub, snapshotMemory);
 
     // OPTIMISTIC UPDATE: Check for actions BEFORE typing
-    // This ensures that when the typewriter renders previews, the data is already fresh in window.subscriptions
     handleAiActions(response);
 
     // Render Response with Typography Animation
     if (logo) logo.classList.remove('thinking');
     await typeMessage(thinkingMsgId, response);
 
+    // After typing, the preview IDs are known (typeMessage matches them)
+    // Extract them for the DB save
+    let previewIds = [];
+    const previewMatches = [...response.matchAll(/<sub-preview>\[?(.*?)\]?<\/sub-preview>/g)];
+    previewMatches.forEach(m => {
+        previewIds.push(...m[1].split(',').map(n => parseInt(n.trim())));
+    });
+
+    // Clean response for DB (strip action tags)
+    const cleanResponse = response.replace(/<action>.*?<\/action>/gs, '').replace(/<sub-preview>.*?<\/sub-preview>/gs, '').trim();
+    saveMsgToDb('assistant', cleanResponse, { previewIds });
+    
+    conversationMemory.push({ role: 'assistant', content: cleanResponse });
+    if (conversationMemory.length > 16) conversationMemory.splice(0, 2);
+
     if (window.HapticsService) window.HapticsService.medium();
 }
 
-function handleAiActions(text) {
-    const actionMatch = text.match(/<action>(.*?)<\/action>/);
+async function handleAiActions(text) {
+    // Hyper-robust regex: catches <action>, [action], and typo variants
+    const actionMatch = text.match(/[<\[]action[>\]]([\s\S]*?)[<\[]\/(action)[>\]]/i);
     if (!actionMatch) return;
 
     try {
-        const action = JSON.parse(actionMatch[1]);
-        if (action.type === 'UPDATE_SUB') {
-            executeSubUpdate(action.payload);
-        } else if (action.type === 'TOGGLE_PAID') {
-            if (window.togglePaidStatus) window.togglePaidStatus(action.payload.id);
-        } else if (action.type === 'DELETE_SUB') {
-            executeSubDelete(action.payload);
+        // Clear any markdown code blocks the AI might have added
+        let jsonStr = actionMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
+        const action = JSON.parse(jsonStr);
+        const type = action.type?.toUpperCase();
+
+        console.log(`[Lion Agent] Executing action: ${type}`, action.payload);
+
+        switch (type) {
+            case 'UPDATE_SUB':
+                await executeSubUpdate(action.payload);
+                break;
+            case 'TOGGLE_PAID':
+                if (window.togglePaidStatus) await window.togglePaidStatus(action.payload.id);
+                break;
+            case 'DELETE_SUB':
+                await executeSubDelete(action.payload);
+                break;
+            case 'SHOW_HISTORY':
+                const historyBtn = document.getElementById('hist-nav-btn') || document.getElementById('history-btn');
+                if (window.toggleHistoryMode && historyBtn) {
+                    window.toggleHistoryMode(historyBtn);
+                }
+                break;
+            case 'SHOW_EXPORT':
+            case 'SHOWEXPORT':
+                const downloadBtn = document.getElementById('hist-download-monthly');
+                if (downloadBtn) {
+                    const historyModal = document.getElementById('history-modal');
+                    if (historyModal && historyModal.classList.contains('hidden')) {
+                        // Open history first, then show export
+                        const hBtn = document.getElementById('hist-nav-btn') || document.getElementById('history-btn');
+                        if (window.toggleHistoryMode && hBtn) window.toggleHistoryMode(hBtn);
+                    }
+                    // Trigger the download logic
+                    setTimeout(() => downloadBtn.click(), 300);
+                }
+                break;
+            case 'UNDO':
+                await window.undoLastAiAction();
+                break;
+            default:
+                console.warn(`[Lion Agent] Unknown action type: ${type}`);
         }
+
+        // --- NEW: Sync all chat previews with new state ---
+        if (window.refreshAllPreviews) window.refreshAllPreviews();
+
     } catch (e) {
         console.error('Failed to parse AI action:', e);
     }
@@ -291,7 +572,7 @@ async function executeSubDelete(payload) {
 
 async function executeSubUpdate(payload) {
     const allSubs = window.subscriptions || [];
-    const sub = allSubs.find(s => s.id === payload.id);
+    const sub = allSubs.find(s => s.id == payload.id); // Loose check for string/number IDs
     if (!sub) return;
 
     // Save history for UNDO
@@ -382,42 +663,126 @@ window.deselectSub = function(e) {
     renderSelectedSubPill();
 };
 
+// === Lightweight Markdown Renderer ===
+function renderMarkdown(text) {
+    // Escape HTML entities first to prevent XSS
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Headings
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+    // Horizontal Rule
+    html = html.replace(/^[-*_]{3,}$/gm, '<hr>');
+
+    // Blockquotes
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // Tables (basic: | col | col |)
+    html = html.replace(/((?:^\|.+\|\n?)+)/gm, (match) => {
+        const rows = match.trim().split('\n').filter(r => !/^\|[-:\s|]+\|$/.test(r));
+        if (rows.length === 0) return match;
+        const header = rows[0];
+        const body = rows.slice(1);
+        const thCells = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
+        const tbRows = body.map(r => {
+            const cells = r.split('|').filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<table><thead><tr>${thCells}</tr></thead><tbody>${tbRows}</tbody></table>`;
+    });
+
+    // Numbered lists
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (match) => {
+        const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+        return `<ol>${items}</ol>`;
+    });
+
+    // Bullet lists
+    html = html.replace(/((?:^[*\-+] .+\n?)+)/gm, (match) => {
+        const items = match.trim().split('\n').map(l => `<li>${l.replace(/^[*\-+] /, '')}</li>`).join('');
+        return `<ul>${items}</ul>`;
+    });
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold + Italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    // Bold
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    // Italic
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+    // Strikethrough
+    html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+
+    // Paragraphs (double newline = paragraph break)
+    html = html.replace(/\n\n/g, '</p><p>');
+    // Single newlines
+    html = html.replace(/\n/g, '<br>');
+
+    return `<p>${html}</p>`;
+}
+
 async function typeMessage(id, fullText) {
     const msg = document.getElementById(id);
     if (!msg) return;
     const bubble = msg.querySelector('.message-bubble');
     bubble.classList.remove('thinking-pulse');
-    bubble.innerText = '';
+    bubble.innerHTML = '';
 
-    // Robustly extract all meta-tags and CLEAN the text before typing
     let previewIds = [];
     let cleanText = fullText;
 
-    // Extract Sub Previews
-    const previewMatch = fullText.match(/<sub-preview>\[(.*?)\]<\/sub-preview>/);
-    if (previewMatch) {
-        previewIds = previewMatch[1].split(',').map(n => parseInt(n.trim()));
-        cleanText = cleanText.replace(previewMatch[0], '');
-    }
+    // === STEALTH TAG STRIPPER (Bracket-Proof, All Variants) ===
+    // Strip ALL variants of sub-preview: <sub-preview>, [sub-preview], etc.
+    const subPreviewRegex = /[<\[](sub-preview)[>\]](\[?)(.*?)(\]?)[<\[]\/(sub-preview)[>\]]/gis;
+    const allPreviewMatches = [...fullText.matchAll(subPreviewRegex)];
+    allPreviewMatches.forEach(m => {
+        const raw = m[3].replace(/\[|\]/g, '').trim();
+        raw.split(',').forEach(n => {
+            const num = parseInt(n.trim());
+            if (!isNaN(num)) previewIds.push(num);
+        });
+        cleanText = cleanText.replace(m[0], '');
+    });
 
-    // Extract Actions (STRICTLY REMOVE FROM VISIBLE TEXT)
-    const actionMatch = fullText.match(/<action>(.*?)<\/action>/);
-    if (actionMatch) {
-        cleanText = cleanText.replace(actionMatch[0], '');
-    }
+    // Strip ALL variants of action tags: <action>, [action], etc.
+    cleanText = cleanText.replace(/[<\[]action[>\]][\s\S]*?[<\[]\/(action)[>\]]/gi, '');
+
+    // Strip any remaining orphan tags that the AI hallucinated (e.g., extra newlines after stripping)
+    cleanText = cleanText.replace(/[<\[](sub-preview|action)[>\]][^<\[]*[<\[]\/\1[>\]]/gi, '');
+    // Strip unclosed / broken bracket tags
+    cleanText = cleanText.replace(/\[(sub-preview|action)\][^\]]*(\[\/\1\])?/gi, '');
+    cleanText = cleanText.replace(/<(sub-preview|action)>[^<]*(<\/\1>)?/gi, '');
 
     cleanText = cleanText.trim();
-
     const words = cleanText.split(' ');
+
+    // Type word-by-word as plain text first
+    let typed = '';
     for (let i = 0; i < words.length; i++) {
-        bubble.innerText += (i === 0 ? '' : ' ') + words[i];
-        
+        typed += (i === 0 ? '' : ' ') + words[i];
+        bubble.innerText = typed;
+
         const main = document.getElementById('ai-chat-content');
         if (main) main.scrollTop = main.scrollHeight;
-        
-        const baseDelay = words.length > 50 ? 10 : 25;
+
+        const baseDelay = words.length > 50 ? 8 : 20;
         await new Promise(res => setTimeout(res, baseDelay));
     }
+
+    // Once done typing, render full Markdown into HTML
+    bubble.innerHTML = renderMarkdown(cleanText);
+
+    const main = document.getElementById('ai-chat-content');
+    if (main) main.scrollTop = main.scrollHeight;
 
     // Render Preview Box if IDs found
     if (previewIds.length > 0) {
@@ -432,26 +797,40 @@ function renderSubscriptionPreview(container, ids) {
 
     const previewBox = document.createElement('div');
     previewBox.className = 'ai-sub-preview-box';
+    previewBox.setAttribute('data-ids', ids.join(',')); // Store for refresh syncing
     
     let subHtml = targetSubs.map(s => {
         const domain = s.domain || 'google.com';
         const isPaid = window.isSubPaid ? window.isSubPaid(s, window.currentDate || new Date()) : false;
+        const { end } = window.calculateSubTimeline ? window.calculateSubTimeline(s) : { end: 'N/A' };
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isEnded = end !== 'N/A' && todayStr > end;
         const isStopped = s.stopped;
         
-        // Update function to selectSubForChat
+        // Premium structure like Grand Total
+        const { start: displayStart, end: displayEnd } = window.calculateSubTimeline ? window.calculateSubTimeline(s) : { start: 'N/A', end: 'N/A' };
+        
         return `
-            <div class="ai-static-card ${isStopped ? 'dimmed' : ''}" onclick="window.selectSubForChat(${s.id})">
-                <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
-                    <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
-                </div>
-                <div class="detail-info">
-                    <span class="detail-name">${s.name}</span>
-                    <div class="tag-container" style="display: flex; gap: 4px; margin-top: 2px;">
-                        ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
-                        ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : '<span class="status-tag tag-active">ACTIVE</span>'}
+            <div class="ai-static-card ${isStopped || isEnded ? 'dimmed' : ''}" onclick="window.selectSubForChat(${s.id})" style="border: 1px solid #ffffff08; background: #ffffff05; border-radius: 12px; margin-bottom: 8px; cursor: pointer; padding: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="width: 32px; height: 32px; background: #111; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ffffff0a;">
+                            <img src="https://icon.horse/icon/${domain}" style="width:70%; height:70%; object-fit:contain;">
+                        </div>
+                        <div class="detail-info">
+                            <span class="detail-name" style="font-weight: 600; font-size: 0.85rem; color: #fff;">${s.name}</span>
+                            <div class="tag-container" style="display: flex; gap: 4px; margin-top: 4px;">
+                                <span class="status-tag" style="font-size: 0.55rem; padding: 2px 6px; background: #ffffff0a; color: #aaa; border-radius: 4px;">${s.type.toUpperCase()}</span>
+                                ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
+                                ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : (isEnded ? '<span class="status-tag tag-ended" style="background:#ffb86c20; color:#ffb86c;">ENDED</span>' : '<span class="status-tag tag-active">ACTIVE</span>')}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="detail-price" style="font-weight: 700; color: #fff; font-size: 0.85rem;">${s.symbol || '$'}${s.price.toFixed(2)}</div>
+                        <div style="font-size: 0.6rem; color: #666; font-family: monospace; margin-top: 2px;">${displayStart} — ${displayEnd}</div>
                     </div>
                 </div>
-                <div class="detail-price">${s.symbol || '$'}${s.price.toFixed(2)}</div>
             </div>
         `;
     }).join('');
@@ -514,3 +893,56 @@ function updateMessage(id, newText) {
         if (main) main.scrollTop = main.scrollHeight;
     }
 }
+
+/**
+ * Global UI Refresh: Finds all smart previews in chat and updates their tags (Paid, Stopped, etc.)
+ */
+window.refreshAllPreviews = function() {
+    const allPreviews = document.querySelectorAll('.ai-sub-preview-box');
+    allPreviews.forEach(box => {
+        const idsAttr = box.getAttribute('data-ids');
+        if (!idsAttr) return;
+
+        const ids = idsAttr.split(',').map(id => parseInt(id.trim()));
+        const allSubs = window.subscriptions || [];
+        const targetSubs = allSubs.filter(s => ids.includes(s.id));
+
+        const listEl = box.querySelector('.ai-preview-list');
+        if (listEl && targetSubs.length > 0) {
+            listEl.innerHTML = targetSubs.map(s => {
+                const domain = s.domain || 'google.com';
+                const isPaid = window.isSubPaid ? window.isSubPaid(s, window.currentDate || new Date()) : false;
+                
+                // Calculate if ended
+                const { start: displayStart, end: displayEnd } = window.calculateSubTimeline ? window.calculateSubTimeline(s) : { start: 'N/A', end: 'N/A' };
+                const todayStr = new Date().toISOString().split('T')[0];
+                const isEnded = displayEnd !== 'N/A' && todayStr > displayEnd;
+                const isStopped = s.stopped;
+                
+                return `
+                    <div class="ai-static-card ${isStopped || isEnded ? 'dimmed' : ''}" onclick="window.selectSubForChat(${s.id})" style="border: 1px solid #ffffff08; background: #ffffff05; border-radius: 12px; margin-bottom: 8px; cursor: pointer; padding: 10px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="width: 32px; height: 32px; background: #111; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ffffff0a;">
+                                    <img src="https://icon.horse/icon/${domain}" style="width:70%; height:70%; object-fit:contain;">
+                                </div>
+                                <div class="detail-info">
+                                    <span class="detail-name" style="font-weight: 600; font-size: 0.85rem; color: #fff;">${s.name}</span>
+                                    <div class="tag-container" style="display: flex; gap: 4px; margin-top: 4px;">
+                                        <span class="status-tag" style="font-size: 0.55rem; padding: 2px 6px; background: #ffffff0a; color: #aaa; border-radius: 4px;">${s.type.toUpperCase()}</span>
+                                        ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : ''}
+                                        ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : (isEnded ? '<span class="status-tag tag-ended" style="background:#ffb86c20; color:#ffb86c;">ENDED</span>' : '<span class="status-tag tag-active">ACTIVE</span>')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="detail-price" style="font-weight: 700; color: #fff; font-size: 0.85rem;">${s.symbol || '$'}${s.price.toFixed(2)}</div>
+                                <div style="font-size: 0.6rem; color: #666; font-family: monospace; margin-top: 2px;">${displayStart} — ${displayEnd}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    });
+};

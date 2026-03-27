@@ -90,18 +90,27 @@ function buildMessage(subscriptions, dayOffset) {
 
   if (renewingToday.length === 1) {
     return {
-      title: `⚠️ ${renewingToday[0].name} Renews Today`,
-      body: `Your ${renewingToday[0].name} is due today. Tap to mark it as paid.`
+      title: `🦁 Lion Alert: ${renewingToday[0].name} Due`,
+      body: `Your ${renewingToday[0].name} renewal is today. Auditor's recommendation: Mark it as paid now.`
     };
   }
   if (renewingToday.length > 1) {
     return {
-      title: `⚠️ ${renewingToday.length} Subscriptions Renew Today`,
-      body: `${renewingToday.map(s => s.name).join(', ')} are all due today!`
+      title: `⚠️ Lion Audit: ${renewingToday.length} Renewals`,
+      body: `${renewingToday.map(s => s.name).join(', ')} are all due today. Let's manage your cash flow.`
     };
   }
 
-  // ── Priority 2: Renewing in 1–3 days ───────────────────────────────────
+  // ── Priority 2: Trials & Expiring Guards ────────────────────────────────
+  const trial = active.find(s => s.type === 'trial');
+  if (trial && dayOffset % 5 === 0) { // Every 5 days, remind they have a trial
+    return {
+      title: `🦁 Lion Spotted a Trial: ${trial.name}`,
+      body: `You still have an active trial for ${trial.name}. Should we kill it before it charges you?`
+    };
+  }
+
+  // ── Priority 3: Renewing in 1–3 days ───────────────────────────────────
   for (let d = 1; d <= 3; d++) {
     const futureDate = new Date(targetDate);
     futureDate.setDate(futureDate.getDate() + d);
@@ -109,45 +118,45 @@ function buildMessage(subscriptions, dayOffset) {
     if (upcoming.length > 0) {
       const dayStr = d === 1 ? 'tomorrow' : `in ${d} days`;
       return {
-        title: `🔔 ${upcoming[0].name} Renews ${d === 1 ? 'Tomorrow' : `in ${d} Days`}`,
-        body: `Stay ahead — ${upcoming[0].name} renews ${dayStr}. ${activeCnt} ${subWord} tracked.`
+        title: `🔔 Lion Guard: ${upcoming[0].name} Soon`,
+        body: `Upcoming renewal ${dayStr} for ${upcoming[0].name}. I'm keeping an eye on it for you.`
       };
     }
   }
 
-  // ── Priority 3: All clear — rotate professional messages ────────────────
-  const allClear = [
+  // ── Priority 4: All clear — The Lion's Financial Wisdom ────────────────
+  const lionWisdom = [
     {
-      title: '📊 Subscription Overview',
-      body: `${activeCnt} active ${subWord} tracked. No renewals today — you're all clear!`
+      title: '🦁 The Lion\'s Daily Audit',
+      body: `Monitoring ${activeCnt} ${subWord}. Everything looks clean. No dues today.`
     },
     {
-      title: '💳 AMIKONAMOTO Daily',
-      body: `Managing ${activeCnt} ${subWord} like a pro. Open to review your calendar.`
+      title: '📊 Auditor\'s Note',
+      body: `You have ${activeCnt} ${subWord} active. Open the app to audit your monthly trend.`
     },
     {
-      title: '📱 All Clear Today',
-      body: `No subscription events today. ${activeCnt} ${subWord} being monitored for you.`
+      title: '💰 Subscription Guard',
+      body: `No renewals today. Your cash flow is protected by the Lion.`
     },
     {
-      title: '✅ You\'re on Track',
-      body: `${activeCnt} ${subWord} in your tracker — no action needed today!`
+      title: '🦁 Proactive Tip',
+      body: `Seeing duplicate apps? I can help you consolidate and save. Open chat to start.`
     },
     {
-      title: '💡 Stay Organized',
-      body: `AMIKONAMOTO is watching ${activeCnt} ${subWord} for you. Tap to check in.`
+      title: '✅ You\'re Optimized',
+      body: `${activeCnt} items in your tracker. No action needed today. Stay elite.`
     },
     {
-      title: '🗓️ Daily Check-in',
-      body: `Quiet day ahead. Your ${activeCnt} ${subWord} are all under control.`
+      title: '🗓️ Calendar Guard',
+      body: `I've scanned the next 30 days. Your ${activeCnt} ${subWord} are all under control.`
     },
     {
-      title: '🔍 Subscription Snapshot',
-      body: `${activeCnt} active ${subWord}. No dues today — enjoy the break!`
+      title: '🧠 Financial Intelligence',
+      body: `The Lion is watching. No upcoming spikes detected in your subscription list.`
     }
   ];
 
-  return allClear[dayOffset % allClear.length];
+  return lionWisdom[dayOffset % lionWisdom.length];
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
