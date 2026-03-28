@@ -4,6 +4,7 @@
  */
 import './ai-analyst.css';
 import { askGroq, generateChatTitle } from './gemini-service.js';
+import { animateThanosSnap } from './thanos-snap.js';
 
 // Global state for chat
 let isFirstMessage = true;
@@ -233,6 +234,13 @@ function showNewChatConfirm() {
 window.confirmNewChat = async function() {
     const overlay = document.getElementById('new-chat-confirm-overlay');
     if (overlay) overlay.remove();
+    
+    // Animate Thanos Snap on the chat history before deletion
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages && !chatMessages.classList.contains('hidden') && chatMessages.children.length > 0) {
+        await animateThanosSnap(chatMessages);
+    }
+    
     await deleteCurrentSession();
     ResetChat();
 };
@@ -477,6 +485,12 @@ function ResetChat() {
     if (messages) {
         messages.classList.add('hidden');
         messages.innerHTML = '';
+        // Reset animation cleanup
+        messages.style.filter = '';
+        messages.style.transform = '';
+        messages.style.opacity = '';
+        messages.style.pointerEvents = '';
+        messages.dataset.isAnimating = 'false';
     }
 }
 
