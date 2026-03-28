@@ -375,8 +375,9 @@ async function loadLastChat() {
     isFirstMessage = false;
 
     const allSubs = window.subscriptions || [];
+    const msgDomMap = [];
 
-    msgs.forEach(m => {
+    msgs.forEach((m, idx) => {
         const attachedSub = (m.role === 'user' && m.meta?.attachedSubId) 
             ? allSubs.find(s => s.id === m.meta.attachedSubId) 
             : null;
@@ -390,6 +391,7 @@ async function loadLastChat() {
         }
 
         const msgId = addMessage(m.role === 'user' ? 'user' : 'assistant', m.role === 'assistant' ? renderMarkdown(displayContent) : displayContent, attachedSub);
+        msgDomMap.push(msgId);
         
         // Restore Smart Previews if they existed
         if (m.role === 'assistant' && m.meta?.previewIds && m.meta.previewIds.length > 0) {
@@ -401,6 +403,42 @@ async function loadLastChat() {
         if (m.role === 'assistant' && m.meta?.suggestions && m.meta.suggestions.length > 0) {
             const container = document.getElementById(msgId);
             if (container) renderSuggestions(container, m.meta.suggestions);
+        }
+    });
+
+    // History Cleanup Pass
+    const allLists = chatMessages.querySelectorAll('.ai-suggestions-list');
+    const allPreviews = chatMessages.querySelectorAll('.ai-sub-preview-box');
+    
+    // Expire everything
+    allLists.forEach(l => l.classList.add('expired'));
+    allPreviews.forEach(p => p.classList.add('expired'));
+    
+    // Un-expire the latest turn if it belongs to the AI
+    if (msgs.length > 0 && msgs[msgs.length - 1].role === 'assistant') {
+        const lastId = msgDomMap[msgDomMap.length - 1];
+        const lastContainer = document.getElementById(lastId);
+        if (lastContainer) {
+            const list = lastContainer.querySelector('.ai-suggestions-list');
+            const box = lastContainer.querySelector('.ai-sub-preview-box');
+            if (list) list.classList.remove('expired');
+            if (box) box.classList.remove('expired');
+        }
+    }
+
+    // Restore "Tapped" visual states by looking ahead at the next user query
+    msgs.forEach((m, idx) => {
+        if (m.role === 'assistant' && m.meta?.suggestions) {
+            const nextMsg = msgs[idx + 1];
+            if (nextMsg && nextMsg.role === 'user' && m.meta.suggestions.includes(nextMsg.content)) {
+                const container = document.getElementById(msgDomMap[idx]);
+                if (container) {
+                    const pills = container.querySelectorAll('.dynamic-suggestion-pill');
+                    pills.forEach(p => {
+                        if (p.innerText.trim() === nextMsg.content.trim()) p.classList.add('tapped');
+                    });
+                }
+            }
         }
     });
 
@@ -477,8 +515,13 @@ async function handleChatSubmission(query) {
     const logo = document.getElementById('main-ai-logo');
     const suggestions = document.getElementById('suggestions-row');
 
-    // Hide suggestions
+    // Hide global suggestions (initial view ones)
     if (suggestions) suggestions.classList.add('hidden');
+
+    // Expire any dynamic suggestions and previews currently in the active thread
+    document.querySelectorAll('.ai-suggestions-list:not(.expired), .ai-sub-preview-box:not(.expired)').forEach(el => {
+        el.classList.add('expired');
+    });
 
     // Make initial view act as a background watermark instead of leaving DOM
     if (initialView) {
@@ -1004,6 +1047,12 @@ function renderSuggestions(container, options, previewIds = []) {
         pill.className = 'dynamic-suggestion-pill';
         pill.innerText = opt;
         pill.onclick = () => {
+            if (suggestionsList.classList.contains('expired')) return;
+            
+            // Mark visually as used
+            pill.classList.add('tapped');
+            suggestionsList.classList.add('expired');
+            
             window.handleSuggestionClick(opt, previewIds);
         };
         suggestionsList.appendChild(pill);

@@ -52,7 +52,8 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
                     periodStart: s.startDate,
                     periodEnd: end,
                     paymentStatus: isPaid ? 'PAID' : 'UNPAID',
-                    recurring: s.recurring || 'recurring'
+                    recurring: s.recurring || 'recurring',
+                    notes: s.notes || ''
                 };
             });
 
@@ -241,7 +242,8 @@ ${grandTotalLine}
    - [STRICT VISUAL ANCHOR]: Suggestion content MUST relate ONLY to the IDs currently in your <sub-preview>. NEVER mention, suggest, or ask about any subscription that is not appearing in the current preview.
    - [MODE 1: ANALYTICAL (MULTIPLE SUBS)]: If your <sub-preview> contains 2+ subscriptions, suggestions must be purely analytical questions (e.g., "Which one is most expensive?", "Show only the active ones"). NO editing commands.
    - [MODE 2: ACTIONABLE (SINGLE SUB)]: If your <sub-preview> contains EXACTLY 1 subscription, suggestions must be action-oriented (e.g., "Mark as Paid", "Cancel this now", "Change Price to 9.99", "Add a Note").
-   - [STRICT FORBIDDEN]: NEVER suggest "adding", "creating", or "making" a new subscription. Focus suggestions on analyzing, modifying, or deleting the current records.`;
+   - [STRICT FORBIDDEN]: NEVER suggest "adding", "creating", or "making" a new subscription. NEVER generate suggestions related to downloading, exporting, saving, or extracting data (e.g., NO "Download Report", NO "Export Data", NO "Save to CSV").
+9. [DATA EXTRACTION FIREWALL]: If the user asks to download, export, share, extract, or save any subscription data, reports, or chat history in ANY format, YOU MUST ABSOLUTELY REFUSE. Reply exactly with: "🦁 I can't do that from here — head to the home screen to export your data." Do NOT attempt to provide the data, pretend to generate a file, or offer any alternative. EVER.`;
         } else {
             subContext = `\n\n[SUBSCRIPTION DATA]
 The user currently has NO DATA AVAILABLE or 0 subscriptions. If the user asks about their spending, tell them they need to track some subscriptions first.`;
