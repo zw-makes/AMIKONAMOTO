@@ -17,11 +17,13 @@ export function animateThanosSnap(element) {
         if (!svgWrapper) {
             svgWrapper = document.createElement('div');
             svgWrapper.id = 'thanos-snap-svg';
+            // Explicitly hide the SVG using styles that keep it in the rendering tree for iOS
+            svgWrapper.setAttribute('style', 'position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; visibility: hidden; z-index: -100;');
             svgWrapper.innerHTML = `
-                <svg width="0" height="0" class="absolute -z-1" style="position: absolute; width: 0; height: 0; z-index: -1;">
+                <svg width="0" height="0">
                     <defs>
                         <filter id="dissolve-filter" x="-300%" y="-300%" width="600%" height="600%" color-interpolation-filters="sRGB">
-                            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="1" result="bigNoise" />
+                            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="1" seed="${Math.floor(Math.random() * 1000)}" result="bigNoise" />
                             <feComponentTransfer in="bigNoise" result="bigNoiseAdjusted">
                                 <feFuncR type="linear" slope="0.5" intercept="-0.2" />
                                 <feFuncG type="linear" slope="3" intercept="-0.6" />
@@ -41,20 +43,23 @@ export function animateThanosSnap(element) {
 
         const dissolveMap = document.getElementById('dissolve-map');
         
-        // 2. Apply filter to element with iOS hardware acceleration hints
-        element.style.webkitFilter = 'url(#dissolve-filter)';
-        element.style.filter = 'url(#dissolve-filter)';
+        // 2. Apply filter with iOS force-composition trick
+        element.style.webkitFilter = 'url(#dissolve-filter) brightness(1.001)';
+        element.style.filter = 'url(#dissolve-filter) brightness(1.001)';
+        element.style.webkitBackfaceVisibility = 'hidden'; 
         element.style.willChange = 'transform, opacity, filter';
-        element.style.pointerEvents = 'none'; // disable interaction during snap
+        element.style.pointerEvents = 'none'; 
         
-        // Increased duration from 0.6 to 1.8 for a much smoother, visible snap effect
         const durationSeconds = 1.8; 
         const durationMs = durationSeconds * 1000;
-        const maxDisplacement = 400; // Increased displacement for more "dust"
-        const opacityChangeStart = 0.2; // Starts fading out at 20%
+        const maxDisplacement = 400; 
+        const opacityChangeStart = 0.2; 
         
         const easeOutCubic = (time) => 1 - Math.pow(1 - time, 3);
         
+        // Ensure dissolve-map scale is initialized to something non-zero to "wake up" the filter
+        if (dissolveMap) dissolveMap.setAttribute('scale', '0.1');
+
         let start = null;
 
         function tick(timestamp) {
@@ -73,7 +78,7 @@ export function animateThanosSnap(element) {
             let elementOpacity = 1;
             if (progress > opacityChangeStart) {
                 const opacityProgress = (progress - opacityChangeStart) / (1 - opacityChangeStart);
-                elementOpacity = 1 - (opacityProgress * opacityProgress); // slight ease-in for opacity
+                elementOpacity = 1 - (opacityProgress * opacityProgress); 
             }
             
             // Use translate3d for iOS hardware acceleration
@@ -84,17 +89,18 @@ export function animateThanosSnap(element) {
             if (progress < 1) {
                 requestAnimationFrame(tick);
             } else {
-                // Done! Stay dissolved (opacity 0) so the element doesn't flash back on screen.
-                // ResetChat or the caller is responsible for completely wiping the DOM and resetting styles.
                 element.style.opacity = '0';
                 element.style.pointerEvents = 'none';
-                element.style.willChange = ''; // Clean up
+                element.style.willChange = ''; 
                 element.dataset.isAnimating = 'false';
                 if (dissolveMap) dissolveMap.setAttribute('scale', '0');
                 resolve();
             }
         }
-        
-        requestAnimationFrame(tick);
+
+        // Give iOS a tiny beat (50ms) to recognize the filter before ticking starts
+        setTimeout(() => {
+            requestAnimationFrame(tick);
+        }, 50);
     });
 }
