@@ -20,7 +20,8 @@ serve(async (req) => {
       { name: "SMP-K3", key: Deno.env.get('GROQ_API_KEY_K3') },
       { name: "SMP-K4", key: Deno.env.get('GROQ_API_KEY_K4') },
       { name: "SMP-K5", key: Deno.env.get('GROQ_API_KEY_K5') },
-      { name: "SMP-K6", key: Deno.env.get('GROQ_API_KEY_K6') }
+      { name: "SMP-K6", key: Deno.env.get('GROQ_API_KEY_K6') },
+      { name: "SMP-K7", key: Deno.env.get('GROQ_API_KEY_K7') }
     ].filter(k => !!k.key);
 
     if (keyPool.length === 0) {
@@ -68,17 +69,7 @@ You read the 'subscriptions' JSON array as if it were a high-stakes balance shee
 ## [ARTICLE IV: THE ATOMIC TOOLBOX - ENGAGEMENT RULES]
 Your actions are surgical strikes on financial data.
 
-### [4.1: [UPDATE_SUB] - THE MODIFICATION SCALPEL]
-Fields: 'name', 'price', 'currency', 'date', 'type', 'stopped', 'notes'.
-- RULE (STOP): When user says 'Cancel', use {"stopped": true}.
-- RULE (RESUME): When user says 'Resume' or 'Restart', use {"stopped": false}.
-- RULE (NOTES): Write professional audits.
-
-### [4.2: [TOGGLE_PAID] - THE FISCAL SYNC]
-- Trigger: User says "I've paid this," "Mark as paid," "Unpaid," "Not paid yet."
-- Action: Invert the current month's paymentStatus.
-
-### [4.3: [SHOW_HISTORY] & [SHOW_EXPORT]]
+### [4.1: [SHOW_HISTORY] & [SHOW_EXPORT]]
 - USE: Navigation only. Use whenever user asks for "Records," "History," "Calendar," "Export," "Download," or "PDF."
 
 ---
@@ -89,13 +80,6 @@ Fields: 'name', 'price', 'currency', 'date', 'type', 'stopped', 'notes'.
 If user asks "What's unpaid?", you must scan paymentStatus. 
 Logic: List each app using its currency. 
 Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile?"
-
-### [5.2: THE STRATEGIC CANCELLATION]
-User: "Cancel Netflix."
-Logic:
-1. Confirm ID is selected.
-2. Respond: "🦁 Adjusted. Netflix is now stopped. Reclamation of annual capital complete."
-3. <action>{"type": "UPDATE_SUB", "payload": {"id": 123, "changes": {"stopped": true}}}</action>
 
 ---
 
@@ -108,9 +92,12 @@ Logic:
 ---
 
 ## [ARTICLE VII: FINAL MANDATES & FAIL-SAFES]
-7.1 SELECTION: If no ID is provided, you CANNOT act. Instruct the user to tap the app icon.
-7.2 EMOJI: Every interaction begins with "🦁".
-7.3 FORMATTING: Never wrap <action> in markdown.
+7.1 EMOJI: Every interaction begins with "🦁".
+7.2 FORMATTING: Never wrap <action> in markdown.
+7.3 VISUAL MANDATE (PARITY RULE): ALWAYS append the <sub-preview>[ids]</sub-preview> tag at the VERY END.
+    - [STRICT PARITY]: The IDs in the tag MUST EXACTLY MATCH the subscriptions you discussed in your text.
+    - If you audit 'Netflix', the tag must only contain the Netflix ID.
+    - If you are listing 'Two subs', the tag MUST contain exactly those two IDs. DO NOT append extra IDs.
 7.4 VISUAL MANDATE (PARITY RULE): ALWAYS append the <sub-preview>[ids]</sub-preview> tag at the VERY END.
     - [STRICT PARITY]: The IDs in the tag MUST EXACTLY MATCH the subscriptions you discussed in your text.
     - If you audit 'Netflix', the tag must only contain the Netflix ID.
@@ -139,9 +126,10 @@ Logic:
     let finalReply = null;
     let lastErrorMsg = "Unknown Error";
     
-    const randomPool = keyPool.sort(() => 0.5 - Math.random()).slice(0, 2);
+    // Shuffle the entire pool to distribute load evenly
+    const shuffledPool = [...keyPool].sort(() => 0.5 - Math.random());
 
-    for (const poolKey of randomPool) {
+    for (const poolKey of shuffledPool) {
       try {
         const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
@@ -158,19 +146,35 @@ Logic:
         });
 
         if (!groqResponse.ok) {
-          lastErrorMsg = `HTTP ${groqResponse.status}`;
+          const status = groqResponse.status;
+          lastErrorMsg = `HTTP ${status}`;
+          
+          // If 429 (Rate Limit), just log and move to the next key
+          if (status === 429) {
+            console.warn(`Key "${poolKey.name}" rate limited (429). Trying next key...`);
+            continue;
+          }
+          
+          // For other errors, we still continue to next key
           continue;
         }
 
         const data = await groqResponse.json();
-        finalReply = data.choices[0].message.content;
-        break; 
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+          finalReply = data.choices[0].message.content;
+          break; // SUCCESS!
+        } else {
+          lastErrorMsg = "Invalid response format from AI";
+        }
       } catch (err) {
         lastErrorMsg = err.message;
       }
     }
 
-    return new Response(JSON.stringify({ reply: finalReply || `Lion Offline: ${lastErrorMsg}` }), {
+    return new Response(JSON.stringify({ 
+      reply: finalReply, 
+      error: finalReply ? null : `Lion Offline: ${lastErrorMsg}` 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

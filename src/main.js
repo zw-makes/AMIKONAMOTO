@@ -521,6 +521,7 @@ function updateTime() {
   timeEl.innerText = timeStr;
 }
 
+window.loadSubscriptions = loadSubscriptions;
 async function loadSubscriptions() {
   if (!currentUser) return;
 
@@ -1422,8 +1423,8 @@ window.stopSubscription = function (id, e) {
   }
 };
 
-window.togglePaidStatus = async function (id, e) {
-  if (e) e.stopPropagation();
+window.togglePaidStatus = async function (id, e, forceStatus = null) {
+  if (e && e.stopPropagation) e.stopPropagation();
   HapticsService.success();
   if (!userProfile) return;
   const sub = subscriptions.find(s => s.id === id);
@@ -1441,24 +1442,35 @@ window.togglePaidStatus = async function (id, e) {
     // For trials and yearly plans, we toggle the entire history
     const isMultiMonthTrial = sub.type === 'trial' && parseInt(sub.trialMonths) > 0;
     if (sub.type === 'yearly' || isMultiMonthTrial) {
-      if (history.length > 0) {
-        // Was paid, now unpaid globally
-        userProfile.settings.paid_history[id] = [];
-        newState = false;
+      if (forceStatus !== null) {
+        newState = forceStatus;
+        userProfile.settings.paid_history[id] = newState ? [monthKey] : [];
       } else {
-        // Was unpaid, now paid globally (just push current month as marker)
-        userProfile.settings.paid_history[id] = [monthKey];
-        newState = true;
+        if (history.length > 0) {
+          // Was paid, now unpaid globally
+          userProfile.settings.paid_history[id] = [];
+          newState = false;
+        } else {
+          // Was unpaid, now paid globally (just push current month as marker)
+          userProfile.settings.paid_history[id] = [monthKey];
+          newState = true;
+        }
       }
     } else {
       // Normal monthly toggle
       const index = history.indexOf(monthKey);
-      if (index > -1) {
-        history.splice(index, 1);
-        newState = false;
+      if (forceStatus !== null) {
+        newState = forceStatus;
+        if (newState && index === -1) history.push(monthKey);
+        else if (!newState && index > -1) history.splice(index, 1);
       } else {
-        history.push(monthKey);
-        newState = true;
+        if (index > -1) {
+          history.splice(index, 1);
+          newState = false;
+        } else {
+          history.push(monthKey);
+          newState = true;
+        }
       }
     }
     
