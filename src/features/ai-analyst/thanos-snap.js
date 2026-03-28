@@ -3,6 +3,28 @@
  * Highly inspired by Mikhail Bespalov's codepen and the React implementation from 21st.dev
  */
 
+// 1. Inject SVG directly at the module level immediately when script loads 
+// This ensures iOS/Safari has the filter registered BEFORE any animation starts.
+(function injectFilter() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('thanos-snap-svg-container')) return;
+    const svgWrapper = document.createElement('div');
+    svgWrapper.id = 'thanos-snap-svg-container';
+    // Position it slightly more 'centrally' but still tiny/invisible to encourage Safari to render it
+    svgWrapper.setAttribute('style', 'position: fixed; top: 10px; left: 10px; width: 2px; height: 2px; opacity: 0.1; pointer-events: none; z-index: -9999; overflow: hidden;');
+    svgWrapper.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="1" height="1">
+            <defs>
+                <filter id="thanos-snap-filter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" result="noise" />
+                    <feDisplacementMap id="thanos-snap-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+            </defs>
+        </svg>
+    `;
+    document.body.appendChild(svgWrapper);
+})();
+
 export function animateThanosSnap(element) {
     return new Promise((resolve) => {
         // Prevent multiple simultaneous animations on the same element
@@ -12,54 +34,39 @@ export function animateThanosSnap(element) {
         }
         element.dataset.isAnimating = 'true';
 
-        // 1. Inject SVG to body if it doesn't exist
-        let svgWrapper = document.getElementById('thanos-snap-svg');
-        if (!svgWrapper) {
-            svgWrapper = document.createElement('div');
-            svgWrapper.id = 'thanos-snap-svg';
-            // Explicitly hide the SVG using styles that keep it in the rendering tree for iOS
-            svgWrapper.setAttribute('style', 'position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; visibility: hidden; z-index: -100;');
-            svgWrapper.innerHTML = `
-                <svg width="0" height="0">
-                    <defs>
-                        <filter id="dissolve-filter" x="-300%" y="-300%" width="600%" height="600%" color-interpolation-filters="sRGB">
-                            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="1" seed="${Math.floor(Math.random() * 1000)}" result="bigNoise" />
-                            <feComponentTransfer in="bigNoise" result="bigNoiseAdjusted">
-                                <feFuncR type="linear" slope="0.5" intercept="-0.2" />
-                                <feFuncG type="linear" slope="3" intercept="-0.6" />
-                            </feComponentTransfer>
-                            <feTurbulence type="fractalNoise" baseFrequency="1" numOctaves="2" result="fineNoise" />
-                            <feMerge result="combinedNoise">
-                                <feMergeNode in="bigNoiseAdjusted" />
-                                <feMergeNode in="fineNoise" />
-                            </feMerge>
-                            <feDisplacementMap id="dissolve-map" in="SourceGraphic" in2="combinedNoise" scale="0" xChannelSelector="R" yChannelSelector="G" />
-                        </filter>
-                    </defs>
-                </svg>
-            `;
-            document.body.appendChild(svgWrapper);
-        }
-
-        const dissolveMap = document.getElementById('dissolve-map');
+        const dissolveMap = document.getElementById('thanos-snap-map');
         
-        // 2. Apply filter with iOS force-composition trick
-        element.style.webkitFilter = 'url(#dissolve-filter) brightness(1.001)';
-        element.style.filter = 'url(#dissolve-filter) brightness(1.001)';
-        element.style.webkitBackfaceVisibility = 'hidden'; 
+        // 2. Apply filter to element with iOS hardware acceleration hints
+        element.style.webkitFilter = 'url(#thanos-snap-filter)';
+        element.style.filter = 'url(#thanos-snap-filter)';
         element.style.willChange = 'transform, opacity, filter';
         element.style.pointerEvents = 'none'; 
         
+        // CRITICAL iOS FIX: Safari isolates elements with backdrop-filters into separate layers,
+        // which prevents parent SVG filters from affecting them. We must disable them during animation.
+        const isolatedElements = element.querySelectorAll('*');
+        const originalStyles = new Map();
+        isolatedElements.forEach(el => {
+            const style = window.getComputedStyle(el);
+            if (style.backdropFilter !== 'none' || style.webkitBackdropFilter !== 'none') {
+                originalStyles.set(el, {
+                    backdropFilter: el.style.backdropFilter,
+                    webkitBackdropFilter: el.style.webkitBackdropFilter
+                });
+                el.style.backdropFilter = 'none';
+                el.style.webkitBackdropFilter = 'none';
+            }
+        });
+
+        
+        // Increased duration from 0.6 to 1.8 for a much smoother, visible snap effect
         const durationSeconds = 1.8; 
         const durationMs = durationSeconds * 1000;
-        const maxDisplacement = 400; 
-        const opacityChangeStart = 0.2; 
+        const maxDisplacement = 400; // Increased displacement for more "dust"
+        const opacityChangeStart = 0.2; // Starts fading out at 20%
         
         const easeOutCubic = (time) => 1 - Math.pow(1 - time, 3);
         
-        // Ensure dissolve-map scale is initialized to something non-zero to "wake up" the filter
-        if (dissolveMap) dissolveMap.setAttribute('scale', '0.1');
-
         let start = null;
 
         function tick(timestamp) {
@@ -78,7 +85,7 @@ export function animateThanosSnap(element) {
             let elementOpacity = 1;
             if (progress > opacityChangeStart) {
                 const opacityProgress = (progress - opacityChangeStart) / (1 - opacityChangeStart);
-                elementOpacity = 1 - (opacityProgress * opacityProgress); 
+                elementOpacity = 1 - (opacityProgress * opacityProgress); // slight ease-in for opacity
             }
             
             // Use translate3d for iOS hardware acceleration
@@ -89,18 +96,17 @@ export function animateThanosSnap(element) {
             if (progress < 1) {
                 requestAnimationFrame(tick);
             } else {
+                // Done! Stay dissolved (opacity 0) so the element doesn't flash back on screen.
+                // ResetChat or the caller is responsible for completely wiping the DOM and resetting styles.
                 element.style.opacity = '0';
                 element.style.pointerEvents = 'none';
-                element.style.willChange = ''; 
+                element.style.willChange = ''; // Clean up
                 element.dataset.isAnimating = 'false';
                 if (dissolveMap) dissolveMap.setAttribute('scale', '0');
                 resolve();
             }
         }
-
-        // Give iOS a tiny beat (50ms) to recognize the filter before ticking starts
-        setTimeout(() => {
-            requestAnimationFrame(tick);
-        }, 50);
+        
+        requestAnimationFrame(tick);
     });
 }
