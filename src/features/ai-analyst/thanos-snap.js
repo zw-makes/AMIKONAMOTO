@@ -41,8 +41,10 @@ export function animateThanosSnap(element) {
 
         const dissolveMap = document.getElementById('dissolve-map');
         
-        // 2. Apply filter to element
+        // 2. Apply filter to element with iOS hardware acceleration hints
+        element.style.webkitFilter = 'url(#dissolve-filter)';
         element.style.filter = 'url(#dissolve-filter)';
+        element.style.willChange = 'transform, opacity, filter';
         element.style.pointerEvents = 'none'; // disable interaction during snap
         
         // Increased duration from 0.6 to 1.8 for a much smoother, visible snap effect
@@ -74,9 +76,9 @@ export function animateThanosSnap(element) {
                 elementOpacity = 1 - (opacityProgress * opacityProgress); // slight ease-in for opacity
             }
             
-            // Translate upwards as it dissolves for that "floating away" look
-            const translateY = -(easedProgress * 100); // Drifts up by 100px
-            element.style.transform = `translateY(${translateY}px)`;
+            // Use translate3d for iOS hardware acceleration
+            const translateY = -(easedProgress * 100); 
+            element.style.transform = `translate3d(0, ${translateY}px, 0)`;
             element.style.opacity = Math.max(0, elementOpacity);
 
             if (progress < 1) {
@@ -86,6 +88,7 @@ export function animateThanosSnap(element) {
                 // ResetChat or the caller is responsible for completely wiping the DOM and resetting styles.
                 element.style.opacity = '0';
                 element.style.pointerEvents = 'none';
+                element.style.willChange = ''; // Clean up
                 element.dataset.isAnimating = 'false';
                 if (dissolveMap) dissolveMap.setAttribute('scale', '0');
                 resolve();
