@@ -78,8 +78,8 @@
 
 .chart-grid-lines {
     position: absolute;
-    left: 0;
-    right: 0; /* Full width */
+    left: 12px;
+    right: 48px; /* Balanced for Y-axis */
     top: 0;
     bottom: 20px;
     display: flex;
@@ -96,16 +96,17 @@
 
 .chart-bars {
     position: absolute;
-    left: 0;
-    right: 36px; /* Stop bars before Y-axis labels */
+    left: 12px;
+    right: 48px;
     bottom: 0;
     height: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around; /* Symmetrical spacing */
     align-items: flex-end;
     padding-bottom: 20px;
     z-index: 3;
 }
+
 
 .chart-bar-group {
     flex: 1;
@@ -123,22 +124,52 @@
 
 .chart-bar {
     width: 100%;
-    max-width: 44px;
-    min-width: 32px; /* Soft lock for small screens */
-    background: #fff; /* White bars as requested */
-    border-radius: 10px 10px 10px 10px;
-    transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    max-width: 42px;
+    min-width: 32px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 100%);
+    border-radius: 12px;
+    transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 4px 15px rgba(255, 255, 255, 0.1), 
+        inset 0 1px 1px rgba(255, 255, 255, 0.3); /* Top highligth */
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    position: relative;
+    overflow: hidden;
+    
+    /* Premium Entry Animation */
+    animation: growUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: bottom;
+}
+
+/* Glossy Shine Overlay */
+.chart-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+}
+
+@keyframes growUp {
+    from { height: 0; opacity: 0; transform: scaleY(0.4) translateY(20px); }
+    to { opacity: 1; transform: scaleY(1) translateY(0); }
 }
 
 .chart-bar.empty {
-    background: rgba(255, 255, 255, 0.03);
+    /* More "symmetrical" placeholder */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.05);
     box-shadow: none;
+    animation: none; 
 }
+
+
 
 .chart-bar:hover {
     opacity: 0.8;

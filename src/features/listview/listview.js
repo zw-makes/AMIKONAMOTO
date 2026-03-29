@@ -125,12 +125,38 @@ export function renderListView() {
     const weekSpending = [0, 0, 0, 0, 0, 0, 0];
     const weekLogos = [[], [], [], [], [], [], []];
 
-    activeSubs.forEach(s => {
+    // --- REFINED LOGIC: Sync Graph with Billing Schedule ---
+    relevantSubs.forEach(s => {
+        if (s.stopped) return; // Never show stopped in active graph
+        
         let p = parseFloat(s.price);
         if (window.getConvertedPrice && report.rates) {
             p = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, report.rates);
         }
-        const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), s.date);
+
+        // Apply same skip logic as updateStats (yearly renewals, multi-month trials, etc.)
+        let skipPrice = false;
+        
+        // Re-calculate dates locally to ensure consistency
+        const subDate = parseInt(s.date);
+        const startDateObj = s.startDate ? new Date(s.startDate) : new Date(currentDate.getFullYear(), currentDate.getMonth(), subDate);
+        
+        // If yearly, only count in its month
+        if (s.type === 'yearly') {
+            if (currentDate.getMonth() !== startDateObj.getMonth()) {
+                skipPrice = true;
+            }
+        }
+        
+        // Multi-month trials skip all but first? Or skip total? 
+        // Following updateStats logic (skipPrice = true for multi-month trials in total)
+        const isMultiMonthTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
+        if (isMultiMonthTrial) skipPrice = true;
+        
+        // If it was skipped in total spending, skip it in the graph too!
+        if (skipPrice) return;
+
+        const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), subDate);
         const dayOfWeek = dateObj.getDay();
         weekSpending[dayOfWeek] += p;
 
@@ -138,58 +164,18 @@ export function renderListView() {
         weekLogos[dayOfWeek].push({ domain, price: p, sub: s });
     });
 
+
     const maxSpend = Math.max(...weekSpending, 20);
     const chartMax = Math.ceil(maxSpend / 20) * 20;
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+    // --- SMART RENDERING: Patch existing card if possible to preserve transitions ---
+    let spendingCard = listViewContainer.querySelector('.spending-card');
     
-    listViewContainer.innerHTML = `
-        <div class="spending-card" style="animation: none;">
-            <div class="spending-header">
-                <h3>${monthName.toUpperCase()} SPENDING (${targetCurrency})</h3>
-                <div class="spending-total">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
-            </div>
-            
-            <div class="chart-container">
-                <div class="chart-grid-lines">
-                    <div class="chart-grid-line"></div>
-                    <div class="chart-grid-line"></div>
-                    <div class="chart-grid-line"></div>
-                    <div class="chart-grid-line"></div>
-                    <div class="chart-grid-line"></div>
-                </div>
-                <div class="chart-y-axis">
-                    <span>0</span>
-                    <span>${(chartMax * 0.25).toFixed(0)}</span>
-                    <span>${(chartMax * 0.5).toFixed(0)}</span>
-                    <span>${(chartMax * 0.75).toFixed(0)}</span>
-                    <span>${chartMax}</span>
-                </div>
-                <div class="chart-bars">
-                    ${weekSpending.map((amount, i) => {
-                        const height = (amount / chartMax) * 100;
-                        
-                        const topLogos = weekLogos[i]
-                            .sort((a, b) => b.price - a.price)
-                            .slice(0, 3)
-                            .map(l => `<img src="https://icon.horse/icon/${l.domain}" class="chart-mini-logo" onerror="this.style.display='none'">`)
-                            .join('');
-
-                        return `
-                        <div class="chart-bar-group">
-                            <div class="chart-bar ${amount === 0 ? 'empty' : ''}" style="height: ${Math.max(amount === 0 ? 5 : height, 5)}%"></div>
-                            <span class="chart-day-label">${days[i]}</span>
-                            <div class="chart-logos-container">
-                                ${topLogos}
-                            </div>
-                        </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-
+    // Generate the HTML for non-persistent sections
+    const latestSectionHtml = `
         <div class="latest-section">
             <div class="latest-header">
                 <h3>${monthName} Subscriptions</h3>
@@ -269,13 +255,118 @@ export function renderListView() {
                 }
             </div>
         </div>
+    `;
 
+    const brandFooterHtml = `
         <div class="brand-footer">
             <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="brand-footer-logo" alt="Logo">
             <span class="brand-footer-version">v.0.1.1</span>
         </div>
     `;
 
+    if (spendingCard) {
+        // Update Title & Total
+        const headerH3 = spendingCard.querySelector('.spending-header h3');
+        if (headerH3) headerH3.innerText = `${monthName.toUpperCase()} SPENDING (${targetCurrency})`;
+        
+        const totalDiv = spendingCard.querySelector('.spending-total');
+        if (totalDiv) totalDiv.innerText = `${targetSymbol}${monthlyTotal.toFixed(2)}`;
+
+        // Update Y Axis
+        const yAxisSpans = spendingCard.querySelectorAll('.chart-y-axis span');
+        if (yAxisSpans.length === 5) {
+            yAxisSpans[1].innerText = (chartMax * 0.25).toFixed(0);
+            yAxisSpans[2].innerText = (chartMax * 0.5).toFixed(0);
+            yAxisSpans[3].innerText = (chartMax * 0.75).toFixed(0);
+            yAxisSpans[4].innerText = chartMax;
+        }
+
+        // Update Bars & Logos
+        const barGroups = spendingCard.querySelectorAll('.chart-bar-group');
+        weekSpending.forEach((amount, i) => {
+            const group = barGroups[i];
+            if (!group) return;
+
+            const bar = group.querySelector('.chart-bar');
+            const logoContainer = group.querySelector('.chart-logos-container');
+            
+            if (bar) {
+                const height = (amount / chartMax) * 100;
+                bar.style.height = `${Math.max(amount === 0 ? 5 : height, 5)}%`;
+                bar.classList.toggle('empty', amount === 0);
+            }
+
+            if (logoContainer) {
+                const topLogos = weekLogos[i]
+                    .sort((a, b) => b.price - a.price)
+                    .slice(0, 3)
+                    .map(l => `<img src="https://icon.horse/icon/${l.domain}" class="chart-mini-logo" onerror="this.style.display='none'">`)
+                    .join('');
+                logoContainer.innerHTML = topLogos;
+            }
+        });
+
+
+        // Patch the rest of the container
+        const existingLatest = listViewContainer.querySelector('.latest-section');
+        if (existingLatest) existingLatest.outerHTML = latestSectionHtml;
+        else spendingCard.insertAdjacentHTML('afterend', latestSectionHtml);
+
+        const existingFooter = listViewContainer.querySelector('.brand-footer');
+        if (existingFooter) existingFooter.remove();
+        listViewContainer.insertAdjacentHTML('beforeend', brandFooterHtml);
+    } else {
+        const fullInnerHtml = `
+            <div class="spending-card">
+                <div class="spending-header">
+                    <h3>${monthName.toUpperCase()} SPENDING (${targetCurrency})</h3>
+                    <div class="spending-total">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-grid-lines">
+                        <div class="chart-grid-line"></div>
+                        <div class="chart-grid-line"></div>
+                        <div class="chart-grid-line"></div>
+                        <div class="chart-grid-line"></div>
+                        <div class="chart-grid-line"></div>
+                    </div>
+                    <div class="chart-y-axis">
+                        <span>0</span>
+                        <span>${(chartMax * 0.25).toFixed(0)}</span>
+                        <span>${(chartMax * 0.5).toFixed(0)}</span>
+                        <span>${(chartMax * 0.75).toFixed(0)}</span>
+                        <span>${chartMax}</span>
+                    </div>
+                    <div class="chart-bars">
+                        ${weekSpending.map((amount, i) => {
+                            const height = (amount / chartMax) * 100;
+                            
+                            const topLogos = weekLogos[i]
+                                .sort((a, b) => b.price - a.price)
+                                .slice(0, 3)
+                                .map(l => `<img src="https://icon.horse/icon/${l.domain}" class="chart-mini-logo" onerror="this.style.display='none'">`)
+                                .join('');
+
+                            return `
+                            <div class="chart-bar-group">
+                                <div class="chart-bar ${amount === 0 ? 'empty' : ''}" 
+                                     style="height: ${Math.max(amount === 0 ? 5 : height, 5)}%; animation-delay: ${i * 0.08}s;"></div>
+                                <span class="chart-day-label">${days[i]}</span>
+                                <div class="chart-logos-container">
+                                    ${topLogos}
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+            ${latestSectionHtml}
+            ${brandFooterHtml}
+        `;
+        listViewContainer.innerHTML = fullInnerHtml;
+    }
 
     setTimeout(() => {
         if (typeof window.attachSwipeEvents === 'function') {
