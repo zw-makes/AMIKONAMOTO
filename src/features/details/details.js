@@ -173,7 +173,7 @@ function createCardHTML(s, viewDate = new Date()) {
             ` : ''}
 
             <div class="detail-logo-container">
-                <img src="https://icon.horse/icon/${domain}" alt="${s.name}" onerror="this.src='https://icon.horse/icon/example.com'">
+                <img src="${domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`}" alt="${s.name}" onerror="this.src='https://icon.horse/icon/example.com'">
             </div>
             
             <h2 class="detail-sub-name">${s.name}</h2>

@@ -149,7 +149,7 @@ function renderResults(query) {
 
     list.innerHTML = filtered.map(sub => {
         const domain = getDomain(sub);
-        const logoUrl = `https://icon.horse/icon/${domain}`;
+        const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
         
         // Calculate Ended Status
         const endDate = getSubEndDate(sub);

@@ -1089,9 +1089,10 @@ button:active {
 }
 
 #platform-list li,
-#filter-platform-list li {
+#filter-platform-list li,
+#upload-custom-logo-btn {
   padding: 10px 14px;
-  font-size: 0.85rem;
+  font-size: .85rem;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -1100,7 +1101,8 @@ button:active {
   transition: var(--transition);
 }
 
-#platform-list li:hover {
+#platform-list li:hover,
+#upload-custom-logo-btn:hover {
   background: var(--surface-bg);
   color: var(--text-primary);
 }

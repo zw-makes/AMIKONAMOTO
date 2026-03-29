@@ -354,8 +354,9 @@ function renderPlatformList(filter = '') {
 
   filtered.forEach(app => {
     const li = document.createElement('li');
+    const logoUrl = app.domain.startsWith('data:image') ? app.domain : `https://icon.horse/icon/${app.domain}`;
     li.innerHTML = `
-      <img src="https://icon.horse/icon/${app.domain}" alt="${app.name}">
+      <img src="${logoUrl}" alt="${app.name}">
       <span>${app.name}</span>
     `;
     li.addEventListener('click', () => selectPlatform(app.name, app.domain));
@@ -378,13 +379,14 @@ window.updatePlatformIcon = function(domainOrUrl) {
   }
  
   let domain = domainOrUrl;
-  if (domain.startsWith('http')) {
+  if (!domain.startsWith('data:image') && domain.startsWith('http')) {
     try {
       domain = new URL(domain).hostname;
     } catch (e) { }
   }
  
-  preview.innerHTML = `<img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">`;
+  const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
+  preview.innerHTML = `<img src="${logoUrl}" style="width:100%; height:100%; object-fit:contain;">`;
 };
 
 document.getElementById('platform-trigger').addEventListener('click', (e) => {
@@ -402,7 +404,38 @@ document.getElementById('platform-search').addEventListener('input', (e) => {
   renderPlatformList(e.target.value);
 });
 
+// Custom Logo Upload Logic
+document.getElementById('upload-custom-logo-btn').addEventListener('click', () => {
+  document.getElementById('custom-logo-upload').click();
+});
+
+document.getElementById('custom-logo-upload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      document.getElementById('sub-domain').value = base64; // Use full Base64 string
+      updatePlatformIcon(base64);
+      
+      // Auto-set Name if empty
+      const nameInput = document.getElementById('sub-name');
+      if (!nameInput.value.trim()) {
+        nameInput.value = file.name.split('.')[0];
+      }
+      
+      document.getElementById('platform-dropdown').classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
 document.getElementById('sub-name').addEventListener('input', (e) => {
+  const currentDomain = document.getElementById('sub-domain').value;
+  if (currentDomain.startsWith('data:image')) {
+    // User has a custom logo, don't auto-update it
+    return;
+  }
   const val = e.target.value.trim();
 
   if (val.startsWith('http') || (val.includes('.') && val.includes('/'))) {
@@ -790,6 +823,10 @@ function getDomain(s) {
   let nameLower = s.name.toLowerCase().trim();
   let domain = s.domain;
 
+  if (domain && domain.startsWith('data:image')) {
+    return domain;
+  }
+
   if (!domain) {
     if (brandMap[nameLower]) {
       domain = brandMap[nameLower];
@@ -943,7 +980,7 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
           };
 
           let domain = getDomain(sub);
-          const logoUrl = `https://icon.horse/icon/${domain}`;
+          const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
 
           const img = document.createElement('img');
           img.src = logoUrl;
@@ -2364,7 +2401,7 @@ window.showTrialPath = function (id, e) {
         // Inject subscription icon+dot on the end cell
         if (endCell) {
           const domain = getDomain(sub);
-          const logoUrl = `https://icon.horse/icon/${domain}`;
+          const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
 
           const tempDots = document.createElement('div');
           tempDots.className = 'sub-dots-container';
@@ -3720,7 +3757,7 @@ function getSwipeTemplate(s) {
       </div>
       <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : (s.type === 'trial' ? 'carry-over-path-red' : 'carry-over-path')) : ''}" data-id="${s.id}">
         <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="cursor: pointer; border-radius: 50%;" onclick="window.showSubDetail(${s.id}, event)">
-          <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
+          <img src="${domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
         </div>
         <div class="detail-info">
           <span class="detail-name">${s.name}</span>
