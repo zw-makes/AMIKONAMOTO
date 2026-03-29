@@ -180,7 +180,7 @@ function createAIAnalystOverlay() {
     loadLastChat();
 
     const input = document.getElementById('ai-chat-input');
-    const inputField = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('send-btn');
     
     // Add selected pill zone INSIDE the wrapper for a pro inline look
     const wrapper = overlay.querySelector('.ai-input-wrapper');
@@ -191,7 +191,7 @@ function createAIAnalystOverlay() {
         wrapper.insertBefore(pillZone, wrapper.firstChild);
     }
 
-    inputField.addEventListener('keypress', (e) => {
+    input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleChatSubmission(input.value);
