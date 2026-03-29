@@ -59,6 +59,36 @@ body {
   align-items: center;
 }
 
+.brand-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 100px 0 80px 0;
+  opacity: 0.25;
+  filter: grayscale(1);
+  pointer-events: none;
+  user-select: none;
+  width: 100%;
+}
+
+.brand-footer-logo {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+}
+
+.brand-footer-version {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--text-secondary);
+  font-family: 'Roboto Mono', monospace;
+  text-transform: uppercase;
+}
+
+
+
 #app {
   width: 100%;
   height: 100%;
@@ -473,6 +503,19 @@ button:active {
 .calendar-cell.other-month {
   opacity: 0.2;
 }
+
+.calendar-cell.empty-past-day {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(255, 255, 255, 0.08) 5px,
+    rgba(255, 255, 255, 0.08) 10px
+  ) !important;
+  opacity: 0.6;
+}
+
+
 
 .cell-date {
   font-family: 'Roboto Mono', monospace;

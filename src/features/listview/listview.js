@@ -66,6 +66,8 @@ export function toggleListView(btn) {
         btn.classList.add('magic-active');
         calendarGrid.classList.add('hidden');
         if (weekdayHeader) weekdayHeader.classList.add('hidden');
+        const calFooter = document.getElementById('calendar-brand-footer');
+        if (calFooter) calFooter.classList.add('hidden');
         listViewContainer.classList.remove('hidden');
         renderListView();
     } else {
@@ -74,7 +76,10 @@ export function toggleListView(btn) {
         btn.classList.remove('magic-active');
         calendarGrid.classList.remove('hidden');
         if (weekdayHeader) weekdayHeader.classList.remove('hidden');
+        const calFooter = document.getElementById('calendar-brand-footer');
+        if (calFooter) calFooter.classList.remove('hidden');
         listViewContainer.classList.add('hidden');
+
         // Reset legend box just in case
         const legendBox = document.querySelector('.calendar-legend-box');
         if (legendBox) legendBox.classList.remove('hidden-scrolled');
@@ -264,7 +269,13 @@ export function renderListView() {
                 }
             </div>
         </div>
+
+        <div class="brand-footer">
+            <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="brand-footer-logo" alt="Logo">
+            <span class="brand-footer-version">v.0.1.1</span>
+        </div>
     `;
+
 
     setTimeout(() => {
         if (typeof window.attachSwipeEvents === 'function') {

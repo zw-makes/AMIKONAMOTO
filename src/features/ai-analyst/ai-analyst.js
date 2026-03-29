@@ -773,8 +773,19 @@ async function executeSubUpdate(payload) {
             payload.changes.stopped = payload.changes.status.toLowerCase() !== 'active';
             delete payload.changes.status; // clean up hallucinated field
         }
+
+        // --- Logic Fix: Auto-Sync Currency Symbols ---
+        // If the AI changes the currency code (e.g. to 'SAR'), find the correct symbol (e.g. '﷼')
+        if (payload.changes.currency && !payload.changes.symbol) {
+            const currencyDef = (window.CURRENCIES || []).find(c => c.code === payload.changes.currency.toUpperCase());
+            if (currencyDef) {
+                payload.changes.symbol = currencyDef.symbol;
+                console.log(`[Lion Agent] Auto-updating symbol to ${currencyDef.symbol} for ${currencyDef.code}`);
+            }
+        }
     }
     Object.assign(sub, payload.changes);
+
     
     // Save to DB
     if (window.saveToSupabase) {

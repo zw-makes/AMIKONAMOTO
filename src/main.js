@@ -14,6 +14,8 @@ import { queueOperation, getQueue } from './features/sync/syncQueue.js';
 import { initListView, toggleListView } from './features/listview/listview.js';
 import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
+import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
+
 
 // Initialize List View
 initListView();
@@ -745,8 +747,13 @@ function renderCalendar() {
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = prevMonthDays - i;
     const fullDate = new Date(year, month - 1, d);
-    createCell(d, true, false, fullDate);
+    createCell(d, true, false, fullDate, false);
   }
+
+  const todayDate = new Date();
+  const viewedDateStart = new Date(year, month, 1);
+  const todayDateStart = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+  const isPastMonth = viewedDateStart < todayDateStart;
 
   // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
@@ -754,15 +761,16 @@ function renderCalendar() {
       month === new Date().getMonth() &&
       year === new Date().getFullYear();
     const fullDate = new Date(year, month, d);
-    createCell(d, false, isToday, fullDate);
+    createCell(d, false, isToday, fullDate, isPastMonth);
   }
 
   // Next month leading days (fill up to 42 cells for 6 rows of 7)
   const remainingCells = 42 - calendarGrid.children.length;
   for (let i = 1; i <= remainingCells; i++) {
     const fullDate = new Date(year, month + 1, i);
-    createCell(i, true, false, fullDate);
+    createCell(i, true, false, fullDate, false);
   }
+
 
   updateStats();
 }
@@ -817,7 +825,7 @@ function getDomain(s) {
   return domain || 'example.com';
 }
 
-function createCell(day, isOtherMonth, isToday, fullDate) {
+function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
   const cell = document.createElement('div');
   cell.className = `calendar-cell ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
 
@@ -966,6 +974,8 @@ function createCell(day, isOtherMonth, isToday, fullDate) {
 
       cell.appendChild(dotsContainer);
       cell.appendChild(iconsContainer);
+    } else if (isPastMonth && daySubs.length === 0) {
+      cell.classList.add('empty-past-day');
     }
   }
 
@@ -1293,9 +1303,28 @@ window.showDayDetails = async function (day, subs) {
   dayDetailModal.classList.remove('hidden');
 };
 
-window.deleteSubscription = function (id, e) {
+window.deleteSubscription = async function (id, e) {
   if (e) e.stopPropagation();
-  HapticsService.heavy();
+
+  // Robust element detection: use the event target's context if available, fallback to ID
+  let element = null;
+  if (e && e.target) {
+    element = e.target.closest('.detail-item-wrapper');
+  }
+  if (!element) {
+    element = document.getElementById(`sw-wrapper-${id}`);
+  }
+
+  if (element) {
+    // 1. Snapshot the haptics early for a tactile feel
+    HapticsService.heavy();
+    
+    // 2. Perform the Thanos disintegration on the row
+    await animateThanosSnap(element);
+  } else {
+    HapticsService.heavy();
+  }
+
 
   const subToRemove = subscriptions.find(s => s.id === id);
   if (subToRemove && window.addNotification) {
@@ -1306,6 +1335,7 @@ window.deleteSubscription = function (id, e) {
       domain: subToRemove.domain
     });
   }
+
 
   subscriptions = subscriptions.filter(s => s.id !== id);
 
