@@ -15,6 +15,10 @@ let chatSessionId = null; // Current DB session ID
 let conversationMemory = []; // Last 8 messages for AI context
 window.chatHistory = chatHistory; // Expose for internal tools
 
+let promptCounter = 0; 
+const MAX_PROMPTS = 50;
+const PROMPT_RING_CIRCUMFERENCE = 2 * Math.PI * 15.5; // Updated for r=15.5
+
 let viewportResizeHandler = null;
 
 export function openAIAnalyst() {
@@ -113,15 +117,18 @@ function createAIAnalystOverlay() {
                             <button class="tool-icon-btn" id="ai-link-btn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                             </button>
-                            <button class="tool-pill-btn">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                Fast
+                             <button class="tool-pill-btn prompt-limit-pill" id="prompt-limit-pill" title="Prompt Limit">
+                                <div class="prompt-ring-wrap">
+                                    <svg class="prompt-ring-svg" width="34" height="34">
+                                        <circle class="prompt-ring-bg" cx="17" cy="17" r="15.5"></circle>
+                                        <circle id="prompt-progress-ring" class="prompt-ring-progress" cx="17" cy="17" r="15.5"></circle>
+                                    </svg>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                </div>
+                                <span class="version-label">v0.1.1</span>
                             </button>
                         </div>
                         <div class="toolbar-right">
-                            <button class="tool-icon-btn">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                            </button>
                             <button class="cute-send-btn" id="send-btn">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -414,6 +421,10 @@ async function loadLastChat() {
         }
     });
 
+    // Re-count prompts from loaded session
+    promptCounter = msgs.filter(m => m.role === 'user').length;
+    updatePromptLimitUI();
+
     // History Cleanup Pass
     const allLists = chatMessages.querySelectorAll('.ai-suggestions-list');
     const allPreviews = chatMessages.querySelectorAll('.ai-sub-preview-box');
@@ -492,10 +503,47 @@ function ResetChat() {
         messages.style.pointerEvents = '';
         messages.dataset.isAnimating = 'false';
     }
+    promptCounter = 0;
+    updatePromptLimitUI();
+}
+
+function updatePromptLimitUI() {
+    const ring = document.getElementById('prompt-progress-ring');
+    if (!ring) return;
+
+    const fraction = promptCounter / MAX_PROMPTS;
+    const offset = PROMPT_RING_CIRCUMFERENCE - (fraction * PROMPT_RING_CIRCUMFERENCE);
+    ring.style.strokeDashoffset = offset;
+
+    // Color logic
+    if (promptCounter >= MAX_PROMPTS) {
+        ring.style.stroke = 'rgb(239, 68, 68)'; 
+    } else if (promptCounter >= MAX_PROMPTS * 0.8) {
+        ring.style.stroke = 'rgb(249, 115, 22)'; 
+    } else {
+        ring.style.stroke = '#4da6ff'; 
+    }
+
+    const input = document.getElementById('ai-chat-input');
+    if (promptCounter >= MAX_PROMPTS) {
+        if (input) {
+            input.disabled = true;
+            input.placeholder = "Limit Reached";
+        }
+    } else {
+        if (input) {
+            input.disabled = false;
+            input.placeholder = "Ask Anything";
+        }
+    }
 }
 
 async function handleChatSubmission(query) {
     if (!query.trim()) return;
+    if (promptCounter >= MAX_PROMPTS) return;
+
+    promptCounter++;
+    updatePromptLimitUI();
 
     if (isFirstMessage) {
         isFirstMessage = false;
