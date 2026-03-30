@@ -1815,43 +1815,11 @@ document.getElementById('today-btn').addEventListener('click', () => {
 });
 
 document.getElementById('add-sub-btn').addEventListener('click', () => {
-  // Set default currency from settings if available
-  if (userProfile?.settings?.currency) {
-    const prefCode = userProfile.settings.currency;
-    const curr = CURRENCIES.find(c => c.code === prefCode);
-    if (curr) {
-      selectCurrency(curr.code, curr.symbol);
-    }
+  // Directly open the All Subscriptions catalog instead of the empty add modal
+  const openCatalogBtn = document.getElementById('open-all-subs-btn');
+  if (openCatalogBtn) {
+    openCatalogBtn.click();
   }
-
-  addModal.classList.remove('hidden');
-  
-  // FULL RESET for new subscription
-  subForm.reset();
-  window.editingSubId = null;
-  document.getElementById('sub-name').value = '';
-  document.getElementById('sub-price').value = '';
-  document.getElementById('sub-domain').value = '';
-  document.getElementById('sub-notes').value = '';
-  
-  document.getElementById('sub-date').value = new Date().getDate();
-
-  // Reset frequency to default: One-Time Only
-  document.getElementById('sub-type').value = 'one-time';
-  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.freq-btn[data-value="one-time"]')?.classList.add('active');
-
-  // Hide extra sections
-  document.getElementById('trial-duration-section')?.classList.add('hidden');
-  document.getElementById('monthly-options-section')?.classList.add('hidden');
-
-  // Update Visuals
-  if (window.updatePlatformIcon) window.updatePlatformIcon(null);
-  const titleH2 = addModal.querySelector('h2');
-  if (titleH2) titleH2.innerText = 'ADD SUBSCRIPTION';
-  
-  // Reset notes counter
-  updateNotesCounter();
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
