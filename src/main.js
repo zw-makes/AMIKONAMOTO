@@ -15,12 +15,15 @@ import { initListView, toggleListView } from './features/listview/listview.js';
 import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
 import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
+import { initCatalog } from './features/catalog/catalog.js';
 
 
 // Initialize List View
 initListView();
 // Initialize Filter
 initFilter();
+// Initialize Catalog
+initCatalog();
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -1445,7 +1448,7 @@ window.editSubscription = function (id) {
   // Show modal
   const addModal = document.getElementById('add-modal');
   addModal.querySelector('h2').innerHTML = `
-    <span style="font-size: 0.62rem; letter-spacing: 0.25em; opacity: 0.5; font-weight: 800; font-family: 'Roboto Mono', monospace;">EDIT</span>
+    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">EDIT</span>
     <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
   `;
   addModal.classList.remove('hidden');
@@ -1822,6 +1825,15 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
   }
 
   addModal.classList.remove('hidden');
+  
+  // FULL RESET for new subscription
+  subForm.reset();
+  window.editingSubId = null;
+  document.getElementById('sub-name').value = '';
+  document.getElementById('sub-price').value = '';
+  document.getElementById('sub-domain').value = '';
+  document.getElementById('sub-notes').value = '';
+  
   document.getElementById('sub-date').value = new Date().getDate();
 
   // Reset frequency to default: One-Time Only
@@ -1833,12 +1845,23 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
   document.getElementById('trial-duration-section')?.classList.add('hidden');
   document.getElementById('monthly-options-section')?.classList.add('hidden');
 
+  // Update Visuals
+  if (window.updatePlatformIcon) window.updatePlatformIcon(null);
+  const titleH2 = addModal.querySelector('h2');
+  if (titleH2) titleH2.innerText = 'ADD SUBSCRIPTION';
+  
   // Reset notes counter
   updateNotesCounter();
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
   addModal.classList.add('hidden');
+  // Reset form when going back/closing to ensure a clean state next time
+  setTimeout(() => {
+    subForm.reset();
+    window.editingSubId = null;
+    if (window.updatePlatformIcon) window.updatePlatformIcon(null);
+  }, 300);
 });
 
 document.getElementById('close-detail').addEventListener('click', () => {
@@ -3684,7 +3707,7 @@ window.editSubscription = function(id, e) {
 
   window.editingSubId = sub.id;
   addModal.querySelector('h2').innerHTML = `
-    <span style="font-size: 0.62rem; letter-spacing: 0.25em; opacity: 0.5; font-weight: 800; font-family: 'Roboto Mono', monospace;">EDIT</span>
+    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">EDIT</span>
     <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
   `;
   
@@ -4029,17 +4052,5 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- Add Subscription Page "All Subs" Header Button ---
-document.getElementById('open-all-subs-btn')?.addEventListener('click', () => {
-    // 1. Hide the Add Subscription page
-    const addModal = document.getElementById('add-modal');
-    if (addModal) addModal.classList.add('hidden');
-    
-    // 2. Trigger List View mode if it's not already active
-    if (typeof window.listViewActive === 'function' && !window.listViewActive()) {
-        const listBtn = document.getElementById('list-btn'); // The list view toggle button in the bottom bar
-        if (listBtn && typeof window.toggleListView === 'function') {
-            window.toggleListView(listBtn);
-        }
-    }
-});
+// --- Add Subscription Page "Catalog" Header Button ---
+// Handled in src/features/catalog/catalog.js
