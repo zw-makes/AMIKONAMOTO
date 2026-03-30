@@ -1444,7 +1444,10 @@ window.editSubscription = function (id) {
   
   // Show modal
   const addModal = document.getElementById('add-modal');
-  addModal.querySelector('h2').innerText = 'Edit Subscription';
+  addModal.querySelector('h2').innerHTML = `
+    <span style="font-size: 0.62rem; letter-spacing: 0.25em; opacity: 0.5; font-weight: 800; font-family: 'Roboto Mono', monospace;">EDIT</span>
+    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
+  `;
   addModal.classList.remove('hidden');
   
   // Close the detail views if open
@@ -2076,7 +2079,10 @@ subForm.addEventListener('submit', (e) => {
 
   // Reset form and currency
   window.editingSubId = null; // Important: Clear edit mode
-  addModal.querySelector('h2').innerText = 'Add Subscription';
+  addModal.querySelector('h2').innerHTML = `
+    <span style="font-size: 0.62rem; letter-spacing: 0.25em; opacity: 0.5; font-weight: 800; font-family: 'Roboto Mono', monospace;">ADD</span>
+    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
+  `;
   document.getElementById('sub-notes').value = '';
   updateNotesCounter();
   selectCurrency('USD', '$');
@@ -3677,7 +3683,10 @@ window.editSubscription = function(id, e) {
   if (!sub) return;
 
   window.editingSubId = sub.id;
-  addModal.querySelector('h2').innerText = 'Edit Subscription';
+  addModal.querySelector('h2').innerHTML = `
+    <span style="font-size: 0.62rem; letter-spacing: 0.25em; opacity: 0.5; font-weight: 800; font-family: 'Roboto Mono', monospace;">EDIT</span>
+    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
+  `;
   
   // Fill form
   document.getElementById('sub-name').value = sub.name;
@@ -4017,5 +4026,20 @@ document.addEventListener('click', (e) => {
     const optionsBtn = document.getElementById('header-options-btn');
     if (optionsDropdown && !optionsDropdown.classList.contains('hidden') && !optionsDropdown.contains(e.target) && !optionsBtn.contains(e.target)) {
         optionsDropdown.classList.add('hidden');
+    }
+});
+
+// --- Add Subscription Page "All Subs" Header Button ---
+document.getElementById('open-all-subs-btn')?.addEventListener('click', () => {
+    // 1. Hide the Add Subscription page
+    const addModal = document.getElementById('add-modal');
+    if (addModal) addModal.classList.add('hidden');
+    
+    // 2. Trigger List View mode if it's not already active
+    if (typeof window.listViewActive === 'function' && !window.listViewActive()) {
+        const listBtn = document.getElementById('list-btn'); // The list view toggle button in the bottom bar
+        if (listBtn && typeof window.toggleListView === 'function') {
+            window.toggleListView(listBtn);
+        }
     }
 });

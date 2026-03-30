@@ -90,19 +90,23 @@
 
 /* Octopus/Ghost icon button on the right */
 .header-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(40, 40, 40, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    color: var(--text-primary);
+    transform: translateY(-1px);
 }
 
 .ai-chat-title {
