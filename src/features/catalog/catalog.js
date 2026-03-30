@@ -72,30 +72,103 @@ export function initCatalog() {
   const openCatalogBtn = document.getElementById('open-all-subs-btn');
   const closeCatalogBtn = document.getElementById('close-catalog');
   const catalogGrid = document.getElementById('catalog-grid');
+  const searchBar = document.getElementById('catalog-search-bar');
+  const searchInput = document.getElementById('catalog-search-input');
+  const cancelSearchBtn = document.getElementById('cancel-catalog-search');
 
   if (!catalogModal || !openCatalogBtn || !catalogGrid) return;
 
   // Render Catalog
-  catalogGrid.innerHTML = CATALOG_DATA.map(cat => `
-    <div class="catalog-category">
-      <h3 class="catalog-category-title">${cat.category}</h3>
-      <div class="catalog-apps-grid">
-        ${cat.apps.map(app => `
-          <div class="catalog-app-card" onclick="window.selectCatalogApp('${app.name}', '${app.domain}')">
-            <div class="catalog-app-icon">
-              <img src="https://icon.horse/icon/${app.domain}" alt="${app.name}">
+  function render(filter = '') {
+    const filteredData = CATALOG_DATA.map(cat => {
+      const apps = cat.apps.filter(app => app.name.toLowerCase().includes(filter.toLowerCase()));
+      return { ...cat, apps };
+    }).filter(cat => cat.apps.length > 0);
+
+    if (filteredData.length === 0) {
+      catalogGrid.innerHTML = `<div class="no-results">No subscriptions found matching "${filter}"</div>`;
+      return;
+    }
+
+    catalogGrid.innerHTML = filteredData.map(cat => `
+      <div class="catalog-category">
+        <h3 class="catalog-category-title">${cat.category}</h3>
+        <div class="catalog-apps-grid">
+          ${cat.apps.map(app => `
+            <div class="catalog-app-card" onclick="window.selectCatalogApp('${app.name}', '${app.domain}')">
+              <div class="catalog-app-icon">
+                <img src="https://icon.horse/icon/${app.domain}" alt="${app.name}">
+              </div>
+              <span class="catalog-app-name">${app.name}</span>
             </div>
-            <span class="catalog-app-name">${app.name}</span>
-          </div>
-        `).join('')}
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
+
+  // Initial render
+  render();
+
+  // Search Logic
+  searchInput.addEventListener('focus', () => {
+    searchBar.classList.add('active');
+    // Ensure the top category isn't covered by search bar
+    catalogGrid.style.paddingTop = '80px';
+    // Auto-scroll catalog to top as requested
+    catalogGrid.scrollTo({ top: 0, behavior: 'smooth' });
+    // Remove the scroll lock - Let users scroll freely
+    catalogGrid.style.overflow = 'auto';
+  });
+
+  searchInput.addEventListener('blur', () => {
+    // Only remove active if empty
+    if (searchInput.value === '') {
+      searchBar.classList.remove('active');
+      catalogGrid.style.paddingTop = '0';
+    }
+  });
+
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value;
+    render(val);
+  });
+
+  cancelSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    render('');
+    searchBar.classList.remove('active');
+    catalogGrid.style.paddingTop = '0';
+    catalogGrid.style.overflow = 'auto';
+  });
+
+  // Scroll Behavior Logic (Auto-hide search bar)
+  let lastScrollY = 0;
+  catalogGrid.addEventListener('scroll', () => {
+    const currentScrollY = catalogGrid.scrollTop;
+    
+    // Only auto-hide if NOT searching (not active)
+    if (!searchBar.classList.contains('active')) {
+      // Threshold: only start hiding after minor scroll
+      if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        // Scrolling DOWN -> Hide
+        searchBar.classList.add('hidden-scrolled');
+      } else {
+        // Scrolling UP -> Show
+        searchBar.classList.remove('hidden-scrolled');
+      }
+    }
+    
+    lastScrollY = currentScrollY;
+  }, { passive: true });
 
   // Open Catalog
   openCatalogBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     catalogModal.classList.remove('hidden');
+    searchInput.value = '';
+    render('');
+    searchBar.classList.remove('hidden-scrolled');
   });
 
   // Close Catalog

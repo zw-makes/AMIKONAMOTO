@@ -176,3 +176,160 @@
 .catalog-category:nth-child(3) { animation-delay: 0.15s; }
 .catalog-category:nth-child(4) { animation-delay: 0.2s; }
 .catalog-category:nth-child(5) { animation-delay: 0.25s; }
+
+/* ── Catalog Search Bar (Premium Redesign) ────────────────── */
+.catalog-search-wrapper {
+  position: absolute;
+  bottom: calc(25px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.catalog-search-wrapper.hidden-scrolled {
+  transform: translateY(100px) scale(0.9);
+  opacity: 0;
+}
+
+.catalog-search-wrapper.active {
+  bottom: auto;
+  top: 74px; /* Perfectly tucked between the header and the categories */
+  padding: 0 20px;
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.catalog-search-container {
+  flex: 0 0 340px; /* Fixed width when inactive to keep it centered */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(35px) saturate(180%);
+  -webkit-backdrop-filter: blur(35px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50px;
+  padding: 0 20px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.catalog-search-wrapper.active .catalog-search-container {
+  flex: 1; /* Grow to fill space */
+  max-width: 320px;
+}
+
+.catalog-search-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(35px) saturate(180%);
+  -webkit-backdrop-filter: blur(35px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #fff;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  
+  /* Initial State: No space taken, hidden behind/inside the bar */
+  opacity: 0;
+  width: 0; /* KEY: Remove space when not active */
+  margin-left: 0;
+  visibility: hidden;
+  transform: translateX(-40px) scale(0.3);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  overflow: hidden; /* Prevent content from showing during width transition */
+}
+
+.catalog-search-wrapper.active .catalog-search-close-btn {
+  opacity: 1;
+  width: 54px; /* Grow to full size */
+  margin-left: 12px; /* Replaces the 'gap' to ensure perfect centering when inactive */
+  visibility: visible;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.catalog-search-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.catalog-search-container:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+.catalog-search-container svg {
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+
+.catalog-search-container:focus-within svg {
+  color: #fff;
+}
+
+.catalog-search-container input {
+  flex: 1;
+  background: none;
+  border: none;
+  height: 100%;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  outline: none;
+}
+
+.catalog-search-container input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+}
+
+#clear-catalog-search {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#clear-catalog-search:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+#clear-catalog-search.hidden {
+  display: none;
+}
+
+.no-results {
+  padding: 80px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
