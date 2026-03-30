@@ -396,12 +396,12 @@
             <!-- Trial Duration Section (Hidden by default) -->
             <div id="trial-duration-section" class="form-group hidden"
               style="margin-top: 15px; animation: slideDown 0.3s ease;">
-              <label>Trial Duration (Pick one)</label>
+              <label>Trial Duration</label>
               <div style="display: flex; gap: 10px;">
-                <!-- Custom Days Picker -->
+                <!-- Combined Duration Picker (Days + Months) -->
                 <div class="custom-dropdown dropdown-up" id="trial-days-picker" style="flex: 1;">
                   <button type="button" class="dropdown-trigger" id="trial-days-trigger">
-                    <span id="trial-days-selected">Days</span>
+                    <span id="trial-days-selected">Duration</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
@@ -409,37 +409,31 @@
                   </button>
                   <div class="dropdown-content hidden" id="trial-days-dropdown">
                     <ul id="trial-days-list">
-                      <li data-value="7">7 Days</li>
-                      <li data-value="14">14 Days</li>
-                      <li data-value="30">30 Days</li>
+                      <li data-value="7" data-type="days">7 Days</li>
+                      <li data-value="14" data-type="days">14 Days</li>
+                      <li data-value="1" data-type="months">1 Month</li>
+                      <li data-value="3" data-type="months">3 Months</li>
+                      <li data-value="6" data-type="months">6 Months</li>
+                      <li data-value="12" data-type="months">12 Months</li>
                     </ul>
                   </div>
                   <input type="hidden" id="trial-days-val" value="">
-                </div>
-
-                <!-- Custom Months Picker -->
-                <div class="custom-dropdown dropdown-up" id="trial-months-picker" style="flex: 1;">
-                  <button type="button" class="dropdown-trigger" id="trial-months-trigger">
-                    <span id="trial-months-selected">Months</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div class="dropdown-content hidden" id="trial-months-dropdown">
-                    <ul id="trial-months-list">
-                      <li data-value="1">1 Month</li>
-                      <li data-value="3">3 Months</li>
-                      <li data-value="6">6 Months</li>
-                      <li data-value="12">12 Months</li>
-                    </ul>
-                  </div>
                   <input type="hidden" id="trial-months-val" value="">
                 </div>
+
+                <!-- Free Trial Toggle Button -->
+                <button type="button" id="free-trial-btn" class="dropdown-trigger"
+                  style="flex: 1; justify-content: center; gap: 8px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                  <span style="font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;">Free Trial</span>
+                </button>
               </div>
               <p id="trial-error" class="hidden"
                 style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
-                Please select the trial frequency duration!
+                Please select the trial duration!
               </p>
             </div>
 

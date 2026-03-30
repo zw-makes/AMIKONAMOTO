@@ -486,9 +486,6 @@ document.addEventListener('click', (e) => {
   if (!document.getElementById('trial-days-picker').contains(e.target)) {
     document.getElementById('trial-days-dropdown').classList.add('hidden');
   }
-  if (!document.getElementById('trial-months-picker').contains(e.target)) {
-    document.getElementById('trial-months-dropdown').classList.add('hidden');
-  }
 });
 
 // --- Currency Exchange ---
@@ -1433,8 +1430,13 @@ window.editSubscription = function (id) {
     trialSec.classList.remove('hidden');
     document.getElementById('trial-days-val').value = sub.trialDays || '';
     document.getElementById('trial-months-val').value = sub.trialMonths || '';
-    document.getElementById('trial-days-selected').innerText = sub.trialDays ? `${sub.trialDays} Days` : 'Days';
-    document.getElementById('trial-months-selected').innerText = sub.trialMonths ? `${sub.trialMonths} Month` : 'Months';
+    if (sub.trialDays) {
+      document.getElementById('trial-days-selected').innerText = `${sub.trialDays} Days`;
+    } else if (sub.trialMonths) {
+      document.getElementById('trial-days-selected').innerText = sub.trialMonths === '1' || sub.trialMonths === 1 ? '1 Month' : `${sub.trialMonths} Months`;
+    } else {
+      document.getElementById('trial-days-selected').innerText = 'Duration';
+    }
   }
 
   // Set as editing (temp property for the form submit)
@@ -1877,42 +1879,50 @@ document.querySelectorAll('.recur-btn').forEach(btn => {
   });
 });
 
-// Trial Custom Dropdowns Logic
+// Trial Combined Duration Dropdown Logic
 document.getElementById('trial-days-trigger').addEventListener('click', (e) => {
   e.stopPropagation();
   document.getElementById('trial-days-dropdown').classList.toggle('hidden');
-  document.getElementById('trial-months-dropdown').classList.add('hidden');
 });
 
-document.getElementById('trial-months-trigger').addEventListener('click', (e) => {
-  e.stopPropagation();
-  document.getElementById('trial-months-dropdown').classList.toggle('hidden');
-  document.getElementById('trial-days-dropdown').classList.add('hidden');
-});
+document.getElementById('trial-days-list').querySelectorAll('li').forEach(li => {
+  li.addEventListener('click', () => {
+    const val = li.dataset.value;
+    const type = li.dataset.type; // 'days' or 'months'
 
-[
-  { id: 'days', trigger: 'trial-days-trigger', dropdown: 'trial-days-dropdown', list: 'trial-days-list', selected: 'trial-days-selected', val: 'trial-days-val' },
-  { id: 'months', trigger: 'trial-months-trigger', dropdown: 'trial-months-dropdown', list: 'trial-months-list', selected: 'trial-months-selected', val: 'trial-months-val' }
-].forEach(pick => {
-  const listEl = document.getElementById(pick.list);
-  const selectedEl = document.getElementById(pick.selected);
-  const valEl = document.getElementById(pick.val);
-  const dropdownEl = document.getElementById(pick.dropdown);
+    if (type === 'days') {
+      document.getElementById('trial-days-val').value = val;
+      document.getElementById('trial-months-val').value = '';
+    } else {
+      document.getElementById('trial-months-val').value = val;
+      document.getElementById('trial-days-val').value = '';
+    }
 
-  listEl.querySelectorAll('li').forEach(li => {
-    li.addEventListener('click', () => {
-      const val = li.dataset.value;
-      valEl.value = val;
-      selectedEl.innerText = li.innerText;
-      dropdownEl.classList.add('hidden');
-      document.getElementById('trial-error').classList.add('hidden');
-
-      // Clear other picker if one is selected
-      const otherId = pick.id === 'days' ? 'trial-months' : 'trial-days';
-      document.getElementById(`${otherId}-val`).value = '';
-      document.getElementById(`${otherId}-selected`).innerText = pick.id === 'days' ? 'Months' : 'Days';
-    });
+    document.getElementById('trial-days-selected').innerText = li.innerText;
+    document.getElementById('trial-days-dropdown').classList.add('hidden');
+    document.getElementById('trial-error').classList.add('hidden');
   });
+});
+
+// Free Trial Toggle Button
+const freeTrialBtn = document.getElementById('free-trial-btn');
+window._isFreeTrial = false;
+
+freeTrialBtn.addEventListener('click', () => {
+  window._isFreeTrial = !window._isFreeTrial;
+
+  if (window._isFreeTrial) {
+    freeTrialBtn.style.background = '#fff';
+    freeTrialBtn.style.color = '#1a1a1a';
+    freeTrialBtn.style.borderColor = '#fff';
+    freeTrialBtn.style.boxShadow = '0 0 14px rgba(255,255,255,0.15)';
+    document.getElementById('sub-price').value = '0';
+  } else {
+    freeTrialBtn.style.background = '';
+    freeTrialBtn.style.color = '';
+    freeTrialBtn.style.borderColor = '';
+    freeTrialBtn.style.boxShadow = '';
+  }
 });
 
 // --- Notes Character Counter Logic ---
@@ -2038,8 +2048,16 @@ subForm.addEventListener('submit', (e) => {
   subForm.reset(); // Reset form after success
   document.getElementById('trial-days-val').value = '';
   document.getElementById('trial-months-val').value = '';
-  document.getElementById('trial-days-selected').innerText = 'Days';
-  document.getElementById('trial-months-selected').innerText = 'Months';
+  document.getElementById('trial-days-selected').innerText = 'Duration';
+  // Reset Free Trial button
+  window._isFreeTrial = false;
+  const _freeBtn = document.getElementById('free-trial-btn');
+  if (_freeBtn) {
+    _freeBtn.style.background = '';
+    _freeBtn.style.borderColor = '';
+    _freeBtn.style.color = '';
+    _freeBtn.style.boxShadow = '';
+  }
   document.getElementById('sub-recurring-val').value = '';
   document.querySelectorAll('.recur-btn').forEach(b => b.classList.remove('active'));
 
@@ -3688,8 +3706,13 @@ window.editSubscription = function(id, e) {
     trialSection.classList.remove('hidden');
     document.getElementById('trial-days-val').value = sub.trialDays || '';
     document.getElementById('trial-months-val').value = sub.trialMonths || '';
-    document.getElementById('trial-days-selected').innerText = sub.trialDays ? `${sub.trialDays} Days` : 'Days';
-    document.getElementById('trial-months-selected').innerText = sub.trialMonths ? `${sub.trialMonths} Month${sub.trialMonths > 1 ? 's' : ''}` : 'Months';
+    if (sub.trialDays) {
+      document.getElementById('trial-days-selected').innerText = `${sub.trialDays} Days`;
+    } else if (sub.trialMonths) {
+      document.getElementById('trial-days-selected').innerText = sub.trialMonths === '1' || sub.trialMonths === 1 ? '1 Month' : `${sub.trialMonths} Months`;
+    } else {
+      document.getElementById('trial-days-selected').innerText = 'Duration';
+    }
   } else if (sub.type === 'monthly') {
     monthlySection.classList.remove('hidden');
     document.getElementById('sub-recurring-val').value = sub.recurring || '';
