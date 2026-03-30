@@ -285,52 +285,51 @@
       </div>
     </div>
 
-    <!-- Add Subscription Modal (Hidden by default) -->
-    <div id="add-modal" class="modal-overlay hidden">
-      <div class="modal-content glass">
-        <div class="modal-header">
-          <h2>Add Subscription</h2>
-          <button id="close-modal" class="nav-arrow"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+    <!-- Add Subscription Full-Page View -->
+    <div id="add-modal" class="add-page hidden">
+      <div class="add-page-container">
+
+        <!-- Page Header -->
+        <div class="add-page-header">
+          <button id="close-modal" class="add-page-back-btn" aria-label="Go back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
+          <h2 id="add-modal-title">Add Subscription</h2>
+          <div style="width: 44px;"></div>
         </div>
-        <form id="sub-form"
-          style="display: flex; flex-direction: column; overflow: hidden; max-height: calc(90vh - 100px);">
-          <div class="form-scroll-area"
-            style="overflow-y: auto; padding-right: 4px; padding-bottom: 20px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+
+        <!-- Scrollable Form Body -->
+        <form id="sub-form" class="add-page-form">
+          <div class="add-page-scroll">
+
             <div class="form-group">
               <label>Platform Name</label>
               <div class="platform-row">
-                <!-- Custom Platform Picker -->
                 <div class="platform-picker" id="platform-picker">
                   <button type="button" class="platform-trigger" id="platform-trigger">
                     <div id="selected-platform-icon" class="platform-icon-preview">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect width="18" height="18" x="3" y="3" rx="2" />
                         <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
                       </svg>
                     </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </button>
                   <div class="platform-dropdown hidden" id="platform-dropdown">
                     <input type="text" id="platform-search" placeholder="Search apps..." autocomplete="off">
                     <div id="upload-custom-logo-btn" style="border-bottom: 1px solid var(--border-color);">
-                        <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 4px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                        </div>
-                        <span>Upload Custom Logo</span>
+                      <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                      </div>
+                      <span>Upload Custom Logo</span>
                     </div>
                     <input type="file" id="custom-logo-upload" class="hidden" accept="image/*">
                     <ul id="platform-list"></ul>
@@ -340,16 +339,15 @@
                 <input type="hidden" id="sub-domain" value="">
               </div>
             </div>
+
             <div class="form-group">
               <label>Price</label>
               <div class="price-row">
-                <!-- Custom Currency Picker -->
                 <div class="currency-picker" id="currency-picker">
                   <button type="button" class="currency-trigger" id="currency-trigger">
                     <span id="currency-symbol">$</span>
                     <span id="currency-code">USD</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </button>
@@ -363,10 +361,12 @@
                 <input type="hidden" id="sub-currency-symbol" value="$">
               </div>
             </div>
+
             <div class="form-group">
               <label for="sub-date">Subscription Bought Day</label>
               <input type="number" id="sub-date" min="1" max="31" placeholder="15" required>
             </div>
+
             <div class="form-group">
               <label>Frequency</label>
               <div class="freq-selector" style="margin-bottom: 5px;">
@@ -437,12 +437,10 @@
               </p>
             </div>
 
-
             <!-- Notes Section -->
             <div class="form-group" style="margin-top: 10px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label for="sub-notes" style="margin-bottom: 0;">Notes <span
-                    style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
+                <label for="sub-notes" style="margin-bottom: 0;">Notes <span style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
                 <div class="notes-counter-container" style="display: flex; align-items: center; gap: 8px;">
                   <div class="progress-ring-container" style="position: relative; width: 20px; height: 20px;">
                     <svg width="20" height="20" viewBox="0 0 20 20">
@@ -455,30 +453,22 @@
                 </div>
               </div>
               <textarea id="sub-notes" placeholder="e.g. Family plan, shared with 3 people..." rows="3" maxlength="80"
-                style="
-                width: 100%;
-                background: var(--surface-bg);
-                border: 1px solid var(--border-color);
-                border-radius: var(--radius-md);
-                padding: var(--spacing-md);
-                color: var(--text-primary);
-                font-family: inherit;
-                font-size: 0.9rem;
-                resize: none;
-                line-height: 1.5;
-                transition: border-color 0.2s ease;
-                outline: none;
-              " onfocus="this.style.borderColor='rgba(255,255,255,0.25)'"
+                style="width: 100%; background: var(--surface-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--spacing-md); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; resize: none; line-height: 1.5; transition: border-color 0.2s ease; outline: none;"
+                onfocus="this.style.borderColor='rgba(255,255,255,0.25)'"
                 onblur="this.style.borderColor='var(--border-color)'"></textarea>
             </div>
-          </div> <!-- End form-scroll-area -->
-          <div
-            style="flex-shrink: 0; padding-top: 10px; background: var(--bg-color); /* Match modal bg to prevent transparent overlap */">
-            <button type="submit" class="submit-btn" style="margin-top: 5px;">Save Subscription</button>
+
+          </div><!-- End add-page-scroll -->
+
+          <!-- Sticky Save Button -->
+          <div class="add-page-footer">
+            <button type="submit" class="submit-btn" style="margin-top: 0;">Save Subscription</button>
           </div>
         </form>
+
       </div>
     </div>
+
 
     <!-- Custom Tooltip -->
     <div id="tooltip" class="tooltip hidden"></div>

@@ -2571,3 +2571,103 @@ input:checked+.slider:before {
     opacity: 0.8;
   }
 }
+
+/* Add Subscription Full Page View */
+.add-page {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #000000;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.add-page.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+.add-page-container {
+  width: 100%;
+  max-width: 500px;
+  height: 100%;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 24px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  animation: searchPageSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.add-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.add-page-header h2 {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.add-page-back-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+  flex-shrink: 0;
+}
+
+.add-page-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05); /* No rotation for back arrow */
+}
+
+.add-page-back-btn:active {
+  transform: scale(0.95);
+}
+
+.add-page-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.add-page-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: 20px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.add-page-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.add-page-footer {
+  flex-shrink: 0;
+  padding-top: 15px;
+  padding-bottom: max(env(safe-area-inset-bottom, 20px), 10px);
+  background: #000000;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
