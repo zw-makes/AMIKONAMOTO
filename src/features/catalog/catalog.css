@@ -23,6 +23,7 @@
   padding: calc(env(safe-area-inset-top, 0px) + 20px) 24px 24px 24px;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .catalog-header {
@@ -202,8 +203,8 @@
 
 .catalog-search-wrapper.active {
   bottom: auto;
-  top: 74px; /* Perfectly tucked between the header and the categories */
-  padding: 0 20px;
+  top: calc(env(safe-area-inset-top, 0px) + 70px); /* Account for safe area + header height */
+  padding: 0 24px;
   z-index: 2000;
   pointer-events: auto;
 }

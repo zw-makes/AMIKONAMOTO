@@ -205,8 +205,8 @@ export function initCatalog() {
   // Search Logic
   searchInput.addEventListener('focus', () => {
     searchBar.classList.add('active');
-    // Ensure the top category isn't covered by search bar
-    catalogGrid.style.paddingTop = '80px';
+    // Ensure the top category isn't covered by search bar - tightly matched to bar height
+    catalogGrid.style.paddingTop = '68px';
     // Auto-scroll catalog to top as requested
     catalogGrid.scrollTo({ top: 0, behavior: 'smooth' });
     // Remove the scroll lock - Let users scroll freely
