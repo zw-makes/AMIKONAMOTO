@@ -96,7 +96,7 @@
 
 .catalog-apps-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px 15px;
 }
 
@@ -106,6 +106,8 @@
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  width: 100%;
+  min-width: 0; /* Crucial for child truncation */
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -145,6 +147,7 @@
 }
 
 .catalog-app-name {
+  display: block;
   font-size: 0.75rem;
   color: var(--text-secondary);
   text-align: center;
@@ -153,6 +156,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  max-width: 100%;
   opacity: 0.6;
   transition: opacity 0.2s ease;
 }
@@ -326,10 +330,37 @@
 }
 
 .no-results {
-  padding: 80px 20px;
+  padding: 120px 20px;
   text-align: center;
   color: rgba(255, 255, 255, 0.4);
   font-family: 'Inter', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity 0.2s ease;
+}
+
+.no-results:hover {
+  opacity: 0.8;
+}
+
+.add-custom-link {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 5px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+}
+
+.no-results:hover .add-custom-link {
+  color: #fff;
+}
+
+.add-custom-link strong {
+  color: #00ff88;
+  font-weight: 600;
 }

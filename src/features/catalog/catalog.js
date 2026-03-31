@@ -162,7 +162,16 @@ export function initCatalog() {
     }).filter(cat => cat.apps.length > 0);
 
     if (filteredData.length === 0) {
-      catalogGrid.innerHTML = `<div class="no-results">No subscriptions found matching "${filter}"</div>`;
+      const escapedFilter = filter.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      const jsSanitizedFilter = filter.replace(/'/g, "\\'");
+      
+      catalogGrid.innerHTML = `
+        <div class="no-results" onclick="window.selectCatalogApp('${jsSanitizedFilter}', '')">
+          <p style="margin-bottom: 8px; font-weight: 700; color: rgba(255,255,255,0.8);">No matching found!</p>
+          <span class="add-custom-link">
+            Add a customized subscription: <strong>"${escapedFilter}"</strong>
+          </span>
+        </div>`;
       return;
     }
 
@@ -282,9 +291,13 @@ export function initCatalog() {
     // 1. Pre-fill Name & Domain while catalog is still visible (Seamless)
     form.reset();
     window.editingSubId = null; 
-    document.getElementById('sub-name').value = name;
+    const nameInput = document.getElementById('sub-name');
+    nameInput.value = name;
     document.getElementById('sub-domain').value = domain;
-    if (window.updatePlatformIcon) window.updatePlatformIcon(domain);
+    
+    // Manually trigger the input event to activate logo fetching logic in main.js
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+
     addModal.querySelector('h2').innerHTML = `ADD SUBSCRIPTION`;
 
     // 2. Immediate switch (No delay to avoid background flash)

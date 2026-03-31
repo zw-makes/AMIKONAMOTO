@@ -350,7 +350,8 @@ const popularApps = [
   { name: 'Grammarly', domain: 'grammarly.com' },
   { name: 'Medium', domain: 'medium.com' },
   { name: 'Dropbox', domain: 'dropbox.com' },
-  { name: 'Discord Nitro', domain: 'discord.com' }
+  { name: 'Discord Nitro', domain: 'discord.com' },
+  { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' }
 ];
 window.popularApps = popularApps;
 window.getDomain = getDomain;
@@ -838,7 +839,8 @@ function getDomain(s) {
     'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so',
     'twitter': 'twitter.com', 'x': 'x.com', 'meta': 'meta.com', 'facebook': 'facebook.com',
     'instagram': 'instagram.com', 'tiktok': 'tiktok.com', 'github': 'github.com',
-    'chatgpt': 'openai.com', 'openai': 'openai.com', 'cursor': 'cursor.sh'
+    'chatgpt': 'openai.com', 'openai': 'openai.com', 'cursor': 'cursor.sh',
+    'sublify': 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png'
   };
   
   let nameLower = s.name.toLowerCase().trim();
