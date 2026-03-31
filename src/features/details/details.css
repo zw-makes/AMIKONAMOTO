@@ -222,7 +222,6 @@
   height: 100%;
   object-fit: contain; /* Maintain ratio */
   border-radius: 50%; /* Force the image ITSELF to be a circle */
-  background: white; /* Optional: adds a clean background if the logo is transparent */
 }
 
 .detail-sub-name {
