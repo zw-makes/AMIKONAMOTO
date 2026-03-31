@@ -105,10 +105,30 @@ function getDomain(sub) {
         'figma': 'figma.com', 'slack': 'slack.com', 'google': 'google.com',
         'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so'
     };
+    let domain = sub.domain;
     let nameLower = sub.name.toLowerCase().trim();
-    let domain = sub.domain || brandMap[nameLower] || nameLower.replace(/\s+/g, '') + '.com';
-    if (domain.startsWith('http')) {
-        try { domain = new URL(domain).hostname; } catch (e) { }
+
+    if (domain) {
+        if (domain.startsWith('data:image')) return domain;
+        
+        // Match main.js robust direct link detector
+        const isDirect = domain.startsWith('http') && (
+            domain.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
+            domain.includes('supabase.co')
+        );
+        if (isDirect) return domain;
+    }
+
+    if (!domain) {
+        if (brandMap[nameLower]) {
+            domain = brandMap[nameLower];
+        } else {
+            domain = nameLower.replace(/\s+/g, '') + '.com';
+        }
+    } else {
+        if (domain.startsWith('http')) {
+            try { domain = new URL(domain).hostname; } catch (e) { }
+        }
     }
     return domain;
 }
@@ -149,7 +169,7 @@ function renderResults(query) {
 
     list.innerHTML = filtered.map(sub => {
         const domain = getDomain(sub);
-        const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
+        const logoUrl = window.getLogoUrl(domain);
         
         // Calculate Ended Status
         const endDate = getSubEndDate(sub);

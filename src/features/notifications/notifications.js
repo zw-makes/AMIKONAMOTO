@@ -148,7 +148,7 @@ function renderNotifications() {
         <div class="notif-item ${!n.read ? 'unread-notif' : ''}" data-id="${n.id}">
             <div class="notif-logo-container">
                 ${n.domain
-            ? `<img src="https://icon.horse/icon/${n.domain}" class="notif-logo">`
+            ? `<img src="${window.getLogoUrl(n.domain)}" class="notif-logo">`
             : `<div class="notif-icon ${n.type}">${getIcon(n.type)}</div>`
         }
             </div>

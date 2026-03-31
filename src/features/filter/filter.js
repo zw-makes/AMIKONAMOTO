@@ -124,7 +124,7 @@ function renderFilterPlatformList(filter = '') {
     filtered.forEach(app => {
         const li = document.createElement('li');
         li.innerHTML = `
-            <img src="https://icon.horse/icon/${app.domain}" style="width:20px; height:20px;">
+            <img src="${window.getLogoUrl(app.domain)}" style="width:20px; height:20px;">
             <span>${app.name}</span>
         `;
         li.addEventListener('click', () => {
@@ -144,7 +144,7 @@ function updateFilterPlatformIcon(domainOrUrl) {
         preview.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>`;
         return;
     }
-    preview.innerHTML = `<img src="https://icon.horse/icon/${domainOrUrl}" style="width:100%; height:100%; object-fit:contain;">`;
+    preview.innerHTML = `<img src="${window.getLogoUrl(domainOrUrl)}" style="width:100%; height:100%; object-fit:contain;">`;
 }
 
 // --- Currency Picker Logic ---

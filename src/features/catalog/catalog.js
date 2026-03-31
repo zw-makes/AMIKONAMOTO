@@ -10,12 +10,29 @@ const CATALOG_DATA = [
       { name: 'HBO Max', domain: 'max.com' },
       { name: 'Hulu', domain: 'hulu.com' },
       { name: 'Apple TV+', domain: 'tv.apple.com' },
-      { name: 'Amazon Prime', domain: 'amazon.com' }
+      { name: 'Amazon Prime', domain: 'amazon.com' },
+      { name: 'Paramount+', domain: 'paramountplus.com' },
+      { name: 'Peacock', domain: 'peacocktv.com' },
+      { name: 'Crunchyroll', domain: 'crunchyroll.com' },
+      { name: 'Discovery+', domain: 'discoveryplus.com' },
+      { name: 'MUBI', domain: 'mubi.com' },
+      { name: 'TIDAL', domain: 'tidal.com' },
+      { name: 'Deezer', domain: 'deezer.com' },
+      { name: 'SoundCloud Go+', domain: 'soundcloud.com' },
+      { name: 'Apple Music', domain: 'music.apple.com' },
+      { name: 'Twitch Turbo', domain: 'twitch.tv' },
+      { name: 'DAZN', domain: 'dazn.com' },
+      { name: 'F1 TV', domain: 'f1tv.formula1.com' },
+      { name: 'ESPN+', domain: 'espn.com' },
+      { name: 'CuriosityStream', domain: 'curiositystream.com' },
+      { name: 'Viaplay', domain: 'viaplay.com' },
+      { name: 'Sling TV', domain: 'sling.com' }
     ]
   },
   {
     category: 'Productivity',
     apps: [
+      { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' },
       { name: 'Notion', domain: 'notion.so' },
       { name: 'Slack', domain: 'slack.com' },
       { name: 'Google Workspace', domain: 'google.com' },
@@ -23,7 +40,21 @@ const CATALOG_DATA = [
       { name: 'Evernote', domain: 'evernote.com' },
       { name: 'Microsoft 365', domain: 'microsoft.com' },
       { name: 'Zoom', domain: 'zoom.us' },
-      { name: 'Todoist', domain: 'todoist.com' }
+      { name: 'Todoist', domain: 'todoist.com' },
+      { name: 'Trello', domain: 'trello.com' },
+      { name: 'Asana', domain: 'asana.com' },
+      { name: 'Monday.com', domain: 'monday.com' },
+      { name: 'ClickUp', domain: 'clickup.com' },
+      { name: 'Airtable', domain: 'airtable.com' },
+      { name: 'Linear', domain: 'linear.app' },
+      { name: 'Superhuman', domain: 'superhuman.com' },
+      { name: 'Calendly', domain: 'calendly.com' },
+      { name: 'Loom', domain: 'loom.com' },
+      { name: 'Miro', domain: 'miro.com' },
+      { name: 'Obsidian Sync', domain: 'obsidian.md' },
+      { name: 'Roam Research', domain: 'roamresearch.com' },
+      { name: 'Basecamp', domain: 'basecamp.com' },
+      { name: 'Microsoft Teams', domain: 'microsoft.com' }
     ]
   },
   {
@@ -36,7 +67,22 @@ const CATALOG_DATA = [
       { name: 'Dribbble', domain: 'dribbble.com' },
       { name: 'Spline', domain: 'spline.design' },
       { name: 'Framer', domain: 'framer.com' },
-      { name: 'CapCut', domain: 'capcut.com' }
+      { name: 'CapCut', domain: 'capcut.com' },
+      { name: 'Envato Elements', domain: 'envato.com' },
+      { name: 'Artlist', domain: 'artlist.io' },
+      { name: 'Epidemic Sound', domain: 'epidemicsound.com' },
+      { name: 'Skillshare', domain: 'skillshare.com' },
+      { name: 'MasterClass', domain: 'masterclass.com' },
+      { name: 'Behance', domain: 'behance.net' },
+      { name: 'Sketch', domain: 'sketch.com' },
+      { name: 'InVision', domain: 'invisionapp.com' },
+      { name: 'Balsamiq', domain: 'balsamiq.com' },
+      { name: 'Mural', domain: 'mural.co' },
+      { name: 'Webflow', domain: 'webflow.com' },
+      { name: 'Squarespace', domain: 'squarespace.com' },
+      { name: 'Wix', domain: 'wix.com' },
+      { name: 'Ghost', domain: 'ghost.org' },
+      { name: 'DALL-E', domain: 'openai.com' }
     ]
   },
   {
@@ -49,20 +95,50 @@ const CATALOG_DATA = [
       { name: 'Postman', domain: 'postman.com' },
       { name: 'DigitalOcean', domain: 'digitalocean.com' },
       { name: 'Heroku', domain: 'heroku.com' },
-      { name: 'IntelliJ IDEA', domain: 'jetbrains.com' }
+      { name: 'IntelliJ IDEA', domain: 'jetbrains.com' },
+      { name: 'Replit', domain: 'replit.com' },
+      { name: 'Railway', domain: 'railway.app' },
+      { name: 'Fly.io', domain: 'fly.io' },
+      { name: 'AWS', domain: 'amazon.com' },
+      { name: 'Google Cloud', domain: 'cloud.google.com' },
+      { name: 'Azure', domain: 'azure.microsoft.com' },
+      { name: 'Cloudflare', domain: 'cloudflare.com' },
+      { name: 'MongoDB Atlas', domain: 'mongodb.com' },
+      { name: 'PlanetScale', domain: 'planetscale.com' },
+      { name: 'GitKraken', domain: 'gitkraken.com' },
+      { name: 'Tower', domain: 'git-tower.com' },
+      { name: 'Docker Hub', domain: 'docker.com' },
+      { name: 'Sentry', domain: 'sentry.io' },
+      { name: 'Datadog', domain: 'datadoghq.com' },
+      { name: 'Bitbucket', domain: 'bitbucket.org' }
     ]
   },
   {
     category: 'AI Tools',
     apps: [
-      { name: 'ChatGPT', domain: 'openai.com' },
+      { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' },
+      { name: 'ChatGPT', domain: 'chatgpt.com' },
       { name: 'Claude', domain: 'anthropic.com' },
       { name: 'Perplexity', domain: 'perplexity.ai' },
       { name: 'Grammarly', domain: 'grammarly.com' },
       { name: 'Jasper', domain: 'jasper.ai' },
       { name: 'Copy.ai', domain: 'copy.ai' },
       { name: 'Descript', domain: 'descript.com' },
-      { name: 'Otter.ai', domain: 'otter.ai' }
+      { name: 'Otter.ai', domain: 'otter.ai' },
+      { name: 'ElevenLabs', domain: 'elevenlabs.io' },
+      { name: 'Runway', domain: 'runwayml.com' },
+      { name: 'Pika', domain: 'pika.art' },
+      { name: 'HeyGen', domain: 'heygen.com' },
+      { name: 'Gamma', domain: 'gamma.app' },
+      { name: 'Tome', domain: 'tome.app' },
+      { name: 'Leonardo.ai', domain: 'leonardo.ai' },
+      { name: 'Phind', domain: 'phind.com' },
+      { name: 'Warp', domain: 'warp.dev' },
+      { name: 'Raycast Pro', domain: 'raycast.com' },
+      { name: 'Tabnine', domain: 'tabnine.com' },
+      { name: 'GitHub Copilot', domain: 'github.com' },
+      { name: 'Poe', domain: 'poe.com' },
+      { name: 'Character.ai', domain: 'character.ai' }
     ]
   }
 ];
@@ -94,14 +170,21 @@ export function initCatalog() {
       <div class="catalog-category">
         <h3 class="catalog-category-title">${cat.category}</h3>
         <div class="catalog-apps-grid">
-          ${cat.apps.map(app => `
-            <div class="catalog-app-card" onclick="window.selectCatalogApp('${app.name}', '${app.domain}')">
-              <div class="catalog-app-icon">
-                <img src="https://icon.horse/icon/${app.domain}" alt="${app.name}">
+          ${cat.apps.map(app => {
+            const logoUrl = window.getLogoUrl(app.domain);
+            // Use an inline fallback for broken images to keep it looking premium
+            return `
+              <div class="catalog-app-card" onclick="window.selectCatalogApp('${app.name}', '${app.domain}')">
+                <div class="catalog-app-icon">
+                  <img src="${logoUrl}" alt="${app.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div class="catalog-app-icon-fallback" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-weight: 700; font-size: 1.1rem; border-radius: 12px; font-family: 'Roboto Mono', monospace;">
+                    ${app.name.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <span class="catalog-app-name">${app.name}</span>
               </div>
-              <span class="catalog-app-name">${app.name}</span>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
     `).join('');

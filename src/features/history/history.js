@@ -324,7 +324,7 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
         return `
                 <div class="detail-item ${isStopped ? 'dimmed' : ''}" style="margin:0; width:100%; box-sizing:border-box;">
                     <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
-                        <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
+                        <img src="${window.getLogoUrl(domain)}" style="width:100%; height:100%; object-fit:contain;">
                     </div>
                     <div class="detail-info">
                         <span class="detail-name">${s.name}</span>
@@ -514,7 +514,7 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
             <div class="st-item">
                 <div class="st-item-main">
                     <div class="st-item-logo">
-                        <img src="https://icon.horse/icon/${domain}" style="width:100%; height:100%; object-fit:contain;">
+                        <img src="${window.getLogoUrl(domain)}" style="width:100%; height:100%; object-fit:contain;">
                     </div>
                     <div class="st-item-meta">
                         <span class="st-item-name">${s.name}</span>

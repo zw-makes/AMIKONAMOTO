@@ -300,7 +300,7 @@ export function renderListView() {
                 const topLogos = weekLogos[i]
                     .sort((a, b) => b.price - a.price)
                     .slice(0, 3)
-                    .map(l => `<img src="${l.domain.startsWith('data:image') ? l.domain : `https://icon.horse/icon/${l.domain}`}" class="chart-mini-logo" onerror="this.style.display='none'">`)
+                    .map(l => `<img src="${window.getLogoUrl(l.domain)}" class="chart-mini-logo" onerror="this.style.display='none'">`)
                     .join('');
                 logoContainer.innerHTML = topLogos;
             }
@@ -345,7 +345,7 @@ export function renderListView() {
                             const topLogos = weekLogos[i]
                                 .sort((a, b) => b.price - a.price)
                                 .slice(0, 3)
-                                .map(l => `<img src="${l.domain.startsWith('data:image') ? l.domain : `https://icon.horse/icon/${l.domain}`}" class="chart-mini-logo" onerror="this.style.display='none'">`)
+                                  .map(l => `<img src="${window.getLogoUrl(l.domain)}" class="chart-mini-logo" onerror="this.style.display='none'">`)
                                 .join('');
 
                             return `

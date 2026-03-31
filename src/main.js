@@ -16,6 +16,29 @@ import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
 import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
 import { initCatalog } from './features/catalog/catalog.js';
+// --- Global Utilities ---
+window.getLogoUrl = function(domainOrUrl) {
+    if (!domainOrUrl) return '';
+    
+    // Check if it's already a full URL or data:image
+    const isDirect = domainOrUrl.startsWith('data:image') || (
+        domainOrUrl.startsWith('http') && (
+            domainOrUrl.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
+            domainOrUrl.includes('supabase.co')
+        )
+    );
+    
+    if (isDirect) return domainOrUrl;
+    
+    // Otherwise, assume it's a domain and use icon.horse
+    let domain = domainOrUrl;
+    if (domain.startsWith('http')) {
+        try {
+            domain = new URL(domain).hostname;
+        } catch(e) {}
+    }
+    return `https://icon.horse/icon/${domain}`;
+};
 
 
 // Initialize List View
@@ -357,7 +380,7 @@ function renderPlatformList(filter = '') {
 
   filtered.forEach(app => {
     const li = document.createElement('li');
-    const logoUrl = app.domain.startsWith('data:image') ? app.domain : `https://icon.horse/icon/${app.domain}`;
+    const logoUrl = window.getLogoUrl(app.domain);
     li.innerHTML = `
       <img src="${logoUrl}" alt="${app.name}">
       <span>${app.name}</span>
@@ -380,15 +403,7 @@ window.updatePlatformIcon = function(domainOrUrl) {
     preview.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>`;
     return;
   }
- 
-  let domain = domainOrUrl;
-  if (!domain.startsWith('data:image') && domain.startsWith('http')) {
-    try {
-      domain = new URL(domain).hostname;
-    } catch (e) { }
-  }
- 
-  const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
+  const logoUrl = window.getLogoUrl(domainOrUrl);
   preview.innerHTML = `<img src="${logoUrl}" style="width:100%; height:100%; object-fit:contain;">`;
 };
 
@@ -435,8 +450,14 @@ document.getElementById('custom-logo-upload').addEventListener('change', (e) => 
 
 document.getElementById('sub-name').addEventListener('input', (e) => {
   const currentDomain = document.getElementById('sub-domain').value;
-  if (currentDomain.startsWith('data:image')) {
-    // User has a custom logo, don't auto-update it
+  const isDirect = currentDomain.startsWith('data:image') || (
+      currentDomain.startsWith('http') && (
+          currentDomain.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
+          currentDomain.includes('supabase.co')
+      )
+  );
+  if (isDirect) {
+    // User has a custom/branded logo, don't auto-update it
     return;
   }
   const val = e.target.value.trim();
@@ -823,8 +844,15 @@ function getDomain(s) {
   let nameLower = s.name.toLowerCase().trim();
   let domain = s.domain;
 
-  if (domain && domain.startsWith('data:image')) {
-    return domain;
+  if (domain) {
+    if (domain.startsWith('data:image')) return domain;
+    
+    // Check if it's already a full direct link (Supabase logo, specific image formats)
+    const isDirect = domain.startsWith('http') && (
+        domain.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
+        domain.includes('supabase.co')
+    );
+    if (isDirect) return domain;
   }
 
   if (!domain) {
@@ -980,7 +1008,7 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
           };
 
           let domain = getDomain(sub);
-          const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
+          const logoUrl = window.getLogoUrl(domain);
 
           const img = document.createElement('img');
           img.src = logoUrl;
@@ -2415,8 +2443,7 @@ window.showTrialPath = function (id, e) {
 
         // Inject subscription icon+dot on the end cell
         if (endCell) {
-          const domain = getDomain(sub);
-          const logoUrl = domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`;
+          const logoUrl = window.getLogoUrl(getDomain(sub));
 
           const tempDots = document.createElement('div');
           tempDots.className = 'sub-dots-container';
@@ -3780,7 +3807,7 @@ function getSwipeTemplate(s) {
       </div>
       <div class="detail-item ${isStopped ? 'dimmed' : ''} ${s.isCarryOver ? (s.type === 'yearly' ? 'carry-over-path-blue' : (s.type === 'trial' ? 'carry-over-path-red' : 'carry-over-path')) : ''}" data-id="${s.id}">
         <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="cursor: pointer; border-radius: 50%;" onclick="window.showSubDetail(${s.id}, event)">
-          <img src="${domain.startsWith('data:image') ? domain : `https://icon.horse/icon/${domain}`}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
+          <img src="${window.getLogoUrl(domain)}" style="width:100%; height:100%; object-fit:contain; border-radius: 50%;">
         </div>
         <div class="detail-info">
           <span class="detail-name">${s.name}</span>
