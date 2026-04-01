@@ -239,10 +239,10 @@ jobs:
           cd build
           mkdir Payload
           mv App.app Payload/
-          zip -r AMIKONAMOTO.ipa Payload
+          zip -r Sublify.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AMIKONAMOTO-iOS-App
-          path: ios/App/build/AMIKONAMOTO.ipa
+          name: Sublify-iOS-App
+          path: ios/App/build/Sublify.ipa
