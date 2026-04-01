@@ -2601,6 +2601,14 @@ function safeSetLocalStorage(key, value) {
 }
 
 // Auth State Listener
+// --- Splash Screen Helper ---
+function hideSplash() {
+  const splash = document.getElementById('splash-screen');
+  if (!splash) return;
+  splash.classList.add('fade-out');
+  setTimeout(() => splash.classList.add('hidden'), 420);
+}
+
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log(`[Auth] Event: ${event} `);
 
@@ -2628,7 +2636,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         updateStats();
         updateTime();
         updateProfileUI();
-        showWelcomeScreen();
+        hideSplash();
+        loadSubscriptions();
         return;
       }
 
@@ -2684,9 +2693,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         const isNewUser = accountAgeMs < 2 * 60 * 1000;
 
         if (!userProfile && isNewUser) {
+          hideSplash();
           showOnboarding();
         } else {
-          showWelcomeScreen();
+          // Returning user: hide splash → go straight to main app
+          hideSplash();
+          loadSubscriptions();
         }
       }
     };
@@ -2743,6 +2755,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     currentUser = null;
     window.currentUser = null;
     userProfile = null;
+    hideSplash();
     authScreen.classList.remove('hidden');
     onboardingScreen.classList.add('hidden');
     welcomeScreen.classList.add('hidden');
