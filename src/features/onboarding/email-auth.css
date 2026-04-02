@@ -125,15 +125,24 @@
   filter: grayscale(1);
 }
 
-.email-auth-submit.error-btn-state {
-  background: #ff3b30 !important;
-  color: #fff !important;
-  transform: scale(1.02);
-  box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+.auth-error-text {
+  color: #ff3b30;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px; /* Snapped closer to button */
+  animation: errorShake 0.4s ease;
 }
 
 
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
 /* Password Strength Meter UI: SVG Circular Progress */
+
 .password-input-wrapper {
   position: relative;
   width: 100%;

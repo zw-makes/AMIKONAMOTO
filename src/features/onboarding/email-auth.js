@@ -40,9 +40,9 @@ export function initEmailAuthPage() {
         </div>
 
         <div class="form-field">
-        <label>Password (Min. 10 chars)</label>
+        <label id="password-field-label">Password</label>
         <div class="password-input-wrapper">
-          <input type="password" id="password-auth-input" placeholder="••••••••" minlength="10" required>
+          <input type="password" id="password-auth-input" placeholder="••••••••" required>
           <div class="strength-meter-container">
             <svg class="strength-svg" viewBox="0 0 36 36">
               <circle class="strength-track" cx="18" cy="18" r="16" fill="none" stroke-width="3"></circle>
@@ -52,6 +52,7 @@ export function initEmailAuthPage() {
         </div>
       </div>
 
+        <div id="auth-error-message" class="auth-error-text hidden">User Not Found</div>
         <button type="submit" id="email-auth-main-btn" class="email-auth-submit">Log In</button>
       </form>
 
@@ -85,12 +86,25 @@ export function initEmailAuthPage() {
 
   const passwordInput = document.getElementById('password-auth-input');
   const strengthCircle = document.getElementById('auth-pass-circle');
+  const strengthCircleContainer = document.querySelector('.strength-meter-container');
   const submitBtn = document.getElementById('email-auth-main-btn');
+
+  // Initial Visibility
+  if (strengthCircleContainer) strengthCircleContainer.style.display = 'none';
 
   passwordInput.addEventListener('input', () => {
     const val = passwordInput.value;
     const len = val.length;
 
+    // IF LOGIN MODE: No meter, no lockout
+    if (!isSignUpMode) {
+      strengthCircleContainer.style.display = 'none';
+      submitBtn.classList.remove('disabled-btn');
+      return;
+    }
+
+    // IF SIGNUP MODE: Show meter and enforce rules
+    strengthCircleContainer.style.display = 'flex';
     if (len === 0) {
       strengthCircle.style.strokeDashoffset = '100.5';
       strengthCircle.style.stroke = 'rgba(255,255,255,0.2)';
@@ -126,15 +140,25 @@ export function initEmailAuthPage() {
 
   // Global error listener for the button logic
   window.showAuthErrorOnButton = (message) => {
-    const originalText = submitBtn.innerText;
-    submitBtn.innerText = message || "User Not Found";
-    submitBtn.classList.add('error-btn-state');
+    const errEl = document.getElementById('auth-error-message');
+    if (!errEl) return;
+    
+    errEl.innerText = message || "User Not Found";
+    errEl.classList.remove('hidden');
     
     setTimeout(() => {
-      submitBtn.innerText = originalText;
-      submitBtn.classList.remove('error-btn-state');
-    }, 3000);
+      errEl.classList.add('hidden');
+    }, 4000); // Give them 4 seconds to read it
   };
+
+  // Clear error on any input
+  const clearError = () => {
+    const errEl = document.getElementById('auth-error-message');
+    if (errEl) errEl.classList.add('hidden');
+  };
+  passwordInput.addEventListener('input', clearError);
+  document.getElementById('email-auth-input').addEventListener('input', clearError);
+
 
   document.getElementById('email-auth-form-submit').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -164,15 +188,26 @@ function updateAuthMode() {
   const title = document.getElementById('email-auth-title-text');
   const submitBtn = document.getElementById('email-auth-main-btn');
   const toggleBtn = document.getElementById('email-auth-toggle-btn');
+  const passInput = document.getElementById('password-auth-input');
+  const passLabel = document.getElementById('password-field-label');
+  const strengthContainer = document.querySelector('.strength-meter-container');
 
   if (isSignUpMode) {
     title.innerText = "Create Account";
     submitBtn.innerText = "Sign Up";
     toggleBtn.innerHTML = "Already have an account? <span>Log In</span>";
+    passLabel.innerText = "Password (Min. 10 chars)";
+    passInput.setAttribute('minlength', '10');
+    if (strengthContainer) strengthContainer.style.display = 'flex';
+    passInput.dispatchEvent(new Event('input'));
   } else {
     title.innerText = "Welcome Back";
     submitBtn.innerText = "Log In";
     toggleBtn.innerHTML = "Don't have an account? <span>Sign Up</span>";
+    passLabel.innerText = "Password";
+    passInput.removeAttribute('minlength');
+    if (strengthContainer) strengthContainer.style.display = 'none';
+    submitBtn.classList.remove('disabled-btn');
   }
 }
 
