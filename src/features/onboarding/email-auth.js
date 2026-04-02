@@ -162,21 +162,31 @@ export function initEmailAuthPage() {
 
   document.getElementById('email-auth-form-submit').addEventListener('submit', (e) => {
     e.preventDefault();
-    if (passwordInput.value.length < 10) return;
+    if (isSignUpMode && passwordInput.value.length < 10) return;
     
     if (window.HapticsService) window.HapticsService.success();
+    
     // Connect to original main.js logic
-    const email = document.getElementById('email-auth-input').value;
-    const password = document.getElementById('password-auth-input').value;
+    const emailVal = document.getElementById('email-auth-input').value;
+    const passVal = document.getElementById('password-auth-input').value;
     
     const originalEmail = document.getElementById('auth-email');
     const originalPass = document.getElementById('auth-password');
-    if (originalEmail) originalEmail.value = email;
-    if (originalPass) originalPass.value = password;
+    const originalForm = document.getElementById('auth-form');
+    const originalToggle = document.getElementById('toggle-auth');
+
+    if (originalEmail) originalEmail.value = emailVal;
+    if (originalPass) originalPass.value = passVal;
     
-    const originalSubmit = document.getElementById('auth-form');
-    if (originalSubmit) {
-      originalSubmit.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    // Sync the mode (signup vs login) in background
+    const isCurrentlySignUp = (document.querySelector('.view-title')?.innerText === 'Create Account');
+    if (isSignUpMode !== isCurrentlySignUp && originalToggle) {
+      originalToggle.click(); // Trigger the mode switch on the hidden original form
+    }
+    
+    // Dispatch the submit
+    if (originalForm) {
+      originalForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     }
   });
 }
