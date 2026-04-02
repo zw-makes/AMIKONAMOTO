@@ -97,10 +97,12 @@ async function updateConvertedAmountAndAnimate() {
     const delay = index * 0.08;
     span.style.animationDelay = `${delay}s`;
     
-    // Trigger "selection" haptic for each word appearance
-    // We space it out slightly so it's not a buzzy mess on iOS
-    if (window.HapticsService && (index % 2 === 0)) {
-       setTimeout(() => window.HapticsService.selection(), delay * 1000);
+    // Trigger haptic for every word appearance
+    const hapticSvc = window.HapticsService || HapticsService;
+    if (hapticSvc) {
+       setTimeout(() => {
+         hapticSvc.light(); 
+       }, delay * 1000);
     }
     
     // Highlight the money as a special 3D block
