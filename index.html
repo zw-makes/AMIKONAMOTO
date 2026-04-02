@@ -20,15 +20,177 @@
 </head>
 
 <body>
-  <!-- Splash Screen (shown by default, hidden after session check) -->
-  <div id="splash-screen">
-    <img id="splash-logo" src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" alt="Sublify Logo">
-  </div>
-
   <div id="app">
+    <!-- Splash Screen (shown by default, hidden after session check) -->
+    <div id="splash-screen">
+      <img id="splash-logo" src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" alt="Sublify Logo">
+    </div>
+
     <!-- Auth / Welcome Screen -->
-    <div id="auth-screen" class="auth-screen hidden">
-      <div class="auth-container glass">
+    <div id="auth-screen" class="auth-screen hidden" style="padding: 0;">
+      
+      <!-- NEW LANDING PAGE -->
+      <div id="welcome-view" class="landing-page">
+        <!-- Space Background -->
+        <div class="space-bg">
+          <div class="stars"></div>
+          <div class="stars2"></div>
+          <div class="stars3"></div>
+          <div class="shooting-stars">
+            <div class="shooting-star ss-1"></div>
+            <div class="shooting-star ss-2"></div>
+            <div class="shooting-star ss-3"></div>
+            <div class="shooting-star ss-4"></div>
+          </div>
+        </div>
+
+        <!-- TOP: Pipeline Animation -->
+        <div class="landing-animation">
+          <svg class="pipeline-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="pipeGlowLeft" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0)" />
+                <stop offset="50%" stop-color="rgba(255, 255, 255, 0.4)" />
+                <stop offset="100%" stop-color="rgba(255, 255, 255, 0.8)" />
+              </linearGradient>
+              <linearGradient id="pipeGlowRight" x1="200" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.8)" />
+                <stop offset="50%" stop-color="rgba(255, 255, 255, 0.4)" />
+                <stop offset="100%" stop-color="rgba(255, 255, 255, 0)" />
+              </linearGradient>
+              <filter id="glowBlur" filterUnits="userSpaceOnUse" x="-50" y="-50" width="500" height="400">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            
+            <!-- Left Pipes (Unmanaged) converging to (200, 150) -->
+            <path id="pathTop" d="M 0 60 C 120 60, 140 150, 200 150" fill="none" class="pipe-path-left" />
+            <path id="pathMid" d="M 0 150 C 100 150, 100 150, 200 150" fill="none" class="pipe-path-left" />
+            <path id="pathBot" d="M 0 240 C 120 240, 140 150, 200 150" fill="none" class="pipe-path-left" />
+            
+            <!-- Right Pipes (Managed) diverging from (200, 150) -->
+            <path id="pathRightTop" d="M 200 150 C 260 150, 280 80, 400 80" fill="none" class="pipe-path-right" />
+            <path id="pathRightBot" d="M 200 150 C 260 150, 280 220, 400 220" fill="none" class="pipe-path-right" />
+
+            <!-- Animated Unmanaged Subs traversing INTO the middle -->
+            <image href="https://icon.horse/icon/netflix.com" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
+               <animateMotion dur="4.5s" repeatCount="indefinite" begin="0s">
+                  <mpath href="#pathTop" />
+               </animateMotion>
+               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="0s" />
+            </image>
+            <image href="https://icon.horse/icon/adobe.com" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
+               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3s">
+                  <mpath href="#pathMid" />
+               </animateMotion>
+               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-3s" />
+            </image>
+            <image href="https://icon.horse/icon/spotify.com" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
+               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
+                  <mpath href="#pathBot" />
+               </animateMotion>
+               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-1.5s" />
+            </image>
+
+            <!-- Animated Managed Subs traversing OUT OF the middle -->
+            <image href="https://icon.horse/icon/apple.com" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
+               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3.75s">
+                  <mpath href="#pathRightTop" />
+               </animateMotion>
+               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-3.75s" />
+            </image>
+            <image href="https://icon.horse/icon/figma.com" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
+               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
+                  <mpath href="#pathRightBot" />
+               </animateMotion>
+               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-1.5s" />
+            </image>
+          </svg>
+          
+          <!-- Center Box -->
+          <div class="center-pipeline-box">
+             <div id="thanos-symbol" class="thanos-symbol">$</div>
+          </div>
+
+          <!-- Hidden SVG Filter for Thanos Snap -->
+          <svg style="position: absolute; width: 0; height: 0;">
+            <filter id="snap-filter" x="-50%" y="-50%" width="200%" height="200%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" />
+              <feDisplacementMap id="snap-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </svg>
+
+          <script>
+            (function() {
+              const symbols = ['$', '€', '£', '¥', '₹', '₿'];
+              let currentIndex = 0;
+              const el = document.getElementById('thanos-symbol');
+              const map = document.getElementById('snap-map');
+              
+              function showNewSymbol() {
+                const duration = 400;
+                let start = null;
+                function animate(timestamp) {
+                  if (!start) start = timestamp;
+                  let progress = (timestamp - start) / duration;
+                  if (progress > 1) progress = 1;
+                  
+                  el.style.opacity = progress;
+                  el.style.transform = `scale(${0.8 + (progress * 0.2)})`;
+                  
+                  if (progress < 1) {
+                    requestAnimationFrame(animate);
+                  }
+                }
+                requestAnimationFrame(animate);
+              }
+
+              function startSnap() {
+                const duration = 1000;
+                let start = null;
+
+                function animate(timestamp) {
+                  if (!start) start = timestamp;
+                  let progress = (timestamp - start) / duration;
+                  if (progress > 1) progress = 1;
+
+                  const scale = Math.pow(progress, 2) * 150;
+                  map.setAttribute('scale', scale);
+
+                  el.style.opacity = 1 - Math.pow(progress, 3);
+                  el.style.transform = `translate3d(0, ${progress * 60}px, 0) scale(${1 + (progress * 0.2)})`;
+
+                  if (progress < 1) {
+                    requestAnimationFrame(animate);
+                  } else {
+                    currentIndex = (currentIndex + 1) % symbols.length;
+                    el.textContent = symbols[currentIndex];
+                    map.setAttribute('scale', '0');
+                    el.style.transform = 'scale(0.8)';
+                    el.style.opacity = '0';
+                    showNewSymbol();
+                  }
+                }
+                requestAnimationFrame(animate);
+              }
+
+              setInterval(startSnap, 3000);
+            })();
+          </script>
+        </div>
+        
+        <!-- BOTTOM: Content Card -->
+        <div class="landing-content">
+          <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="landing-logo-img" alt="SyncSpend Logo">
+          <h2 class="landing-title">Welcome to SyncSpend</h2>
+          <p class="landing-desc">Your simple, delightful way to track expenses.</p>
+          <button id="get-started-btn" class="landing-btn">Get Started</button>
+        </div>
+      </div>
+
+      <!-- OLD LOGIN (Hidden during landing) -->
+      <div id="login-container" class="auth-container glass hidden" style="margin: 20px;">
         <div class="auth-brand">
           <div class="brand-logo">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -40,12 +202,6 @@
           </div>
           <h1>SUBTRACK</h1>
           <p class="brand-tagline">MASTER YOUR DIGITAL FOOTPRINT</p>
-        </div>
-
-        <div id="welcome-view" class="auth-view">
-          <h2 class="welcome-title">Control your monthly <span class="glow-text">Cash Flow</span></h2>
-          <p class="welcome-desc">Track all your premium subscriptions in one beautiful, monospaced dashboard.</p>
-          <button id="get-started-btn" class="submit-btn" style="margin-top: 20px;">Get Started</button>
         </div>
 
         <div id="login-view" class="auth-view hidden">

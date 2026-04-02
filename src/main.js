@@ -2249,6 +2249,8 @@ if (getStartedBtn) {
   getStartedBtn.addEventListener('click', () => {
     welcomeView.classList.add('hidden');
     loginView.classList.remove('hidden');
+    const loginContainer = document.getElementById('login-container');
+    if (loginContainer) loginContainer.classList.remove('hidden');
   });
 }
 
@@ -2761,6 +2763,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     welcomeScreen.classList.add('hidden');
     welcomeView.classList.remove('hidden');
     loginView.classList.add('hidden');
+    const loginContainer = document.getElementById('login-container');
+    if (loginContainer) loginContainer.classList.add('hidden');
     subscriptions = [];
     renderCalendar();
   }
