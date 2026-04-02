@@ -20,31 +20,6 @@
   position: relative;
 }
 
-.believe-skip-btn {
-  position: absolute;
-  top: 15px; /* Relative to the header padding-top */
-  right: 15px;
-  background: rgba(255, 255, 255, 0.05); /* Even more subtle */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.4); /* Lower prominence */
-  padding: 4px 14px;
-  border-radius: 20px;
-  font-size: 0.75rem; /* Smaller, cleaner text */
-  font-weight: 700;
-  cursor: pointer;
-  z-index: 115;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.believe-skip-btn:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.15);
-}
-
 .believe-header h2 {
   font-family: 'Outfit', 'Inter', sans-serif;
   font-size: 1.4rem;

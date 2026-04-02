@@ -76,10 +76,36 @@ const SUBSCRIPTION_DATA = [
 
 let selectedSubs = new Set();
 let totalMonthly = 0;
+let userCurrency = 'INR';
+let userRate = 1.0;
 
-export function initBelievePage() {
+export async function initBelievePage() {
   const authScreen = document.getElementById('auth-screen');
   if (!authScreen) return;
+
+  // 1. Determine User Currency (Mirror Survey Page Logic)
+  let userCurrency = 'INR';
+  const profile = window.userProfile || {};
+  if (profile.settings?.currency) userCurrency = profile.settings.currency;
+  else {
+    const locale = navigator.language || 'en-IN';
+    if (locale.includes('US')) userCurrency = 'USD';
+    else if (locale.includes('GB')) userCurrency = 'GBP';
+    else if (locale.includes('EU') || locale.includes('FR') || locale.includes('DE') || locale.includes('ES') || locale.includes('IT')) userCurrency = 'EUR';
+  }
+
+  // Define global variables for sync
+  window.onboardingCurrency = userCurrency;
+  window.onboardingRate = 1.0;
+
+  // 2. Fetch Rates
+  try {
+    const response = await fetch('https://open.er-api.com/v6/latest/INR');
+    const data = await response.json();
+    window.onboardingRate = data.rates[userCurrency] || 1.0;
+  } catch (e) {
+    window.onboardingRate = 1.0;
+  }
 
   const believeView = document.createElement('div');
   believeView.id = 'believe-view';
@@ -90,8 +116,11 @@ export function initBelievePage() {
     let subsHTML = '';
     category.subs.forEach(sub => {
       const logoUrl = window.getLogoUrl ? window.getLogoUrl(sub.domain) : '';
+      const localPrice = sub.price * window.onboardingRate;
+      const formattedPrice = formatCurrency(localPrice, window.onboardingCurrency);
+
       subsHTML += `
-        <div class="sub-card" data-price="${sub.price}" data-id="${sub.name.replace(/\s+/g, '-')}">
+        <div class="sub-card" data-raw-price="${sub.price}" data-id="${sub.name.replace(/\s+/g, '-')}">
           <div class="sub-card-header">
             <div class="sub-icon-circle">
               <img src="${logoUrl}" alt="${sub.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -101,7 +130,7 @@ export function initBelievePage() {
             </div>
             <div class="sub-name">${sub.name}</div>
           </div>
-          <div class="sub-price-label">₹${sub.price}/mo</div>
+          <div class="sub-price-label">${formattedPrice}/mo</div>
         </div>
       `;
     });
@@ -122,7 +151,6 @@ export function initBelievePage() {
     </div>
     
     <div class="believe-header" id="believe-header-snap">
-      <button id="believe-skip-btn" class="believe-skip-btn">Skip</button>
       <h2>Tap what you're subscribed to</h2>
       <p>The <span class="glow-word">TOTAL</span> might <span class="glow-word">SURPRISE</span> you</p>
     </div>
@@ -156,17 +184,17 @@ export function initBelievePage() {
   // Interaction logic
   believeView.querySelectorAll('.sub-card').forEach(card => {
     card.addEventListener('click', () => {
-      const price = parseInt(card.dataset.price);
+      const rawPrice = parseInt(card.dataset.rawPrice);
       const id = card.dataset.id;
 
       if (selectedSubs.has(id)) {
         selectedSubs.delete(id);
-        totalMonthly -= price;
+        totalMonthly -= (rawPrice * window.onboardingRate);
         card.classList.remove('selected');
         if (window.HapticsService) window.HapticsService.light();
       } else {
         selectedSubs.add(id);
-        totalMonthly += price;
+        totalMonthly += (rawPrice * window.onboardingRate);
         card.classList.add('selected');
         if (window.HapticsService) window.HapticsService.medium();
       }
@@ -203,7 +231,7 @@ async function handleThanosSnapSequence() {
 
   // 2. Prepare Result logic
   const yearlyTotal = totalMonthly * 12;
-  const smartHeadline = getSmartHeadline(yearlyTotal);
+  const smartHeadline = getSmartHeadline(yearlyTotal / window.onboardingRate); // Compare logic stays on INR terms for accurate scaling
   
   // 3. Reveal and Animate Result
   setTimeout(() => {
@@ -211,7 +239,7 @@ async function handleThanosSnapSequence() {
     resultView.classList.add('fade-in');
     
     // Counting animation (Delayed slightly to let text start)
-    setTimeout(() => animateYearlyTotal(yearlyEl, yearlyTotal, authBtn), 500);
+    setTimeout(() => animateYearlyTotal(yearlyEl, yearlyTotal, authBtn, window.onboardingCurrency), 500);
 
     // Dynamic Narrative Animation (Word by word)
     animateResultText(smartHeadline);
@@ -252,7 +280,7 @@ async function animateResultText(text) {
   });
 }
 
-function animateYearlyTotal(yearlyEl, yearlyTotal, authBtn) {
+function animateYearlyTotal(yearlyEl, yearlyTotal, authBtn, currency) {
   let current = 0;
   const duration = 2500;
   const startTime = performance.now();
@@ -263,8 +291,8 @@ function animateYearlyTotal(yearlyEl, yearlyTotal, authBtn) {
     const progress = Math.min(elapsed / duration, 1);
     const ease = 1 - Math.pow(1 - progress, 3);
     
-    const val = Math.floor(ease * yearlyTotal);
-    yearlyEl.innerText = `₹${val.toLocaleString('en-IN')}`;
+    const val = ease * yearlyTotal;
+    yearlyEl.innerText = formatCurrency(val, currency);
 
     if (hapticSvc && Math.random() > 0.9) hapticSvc.selection();
 
@@ -281,6 +309,18 @@ function animateYearlyTotal(yearlyEl, yearlyTotal, authBtn) {
     }
   }
   requestAnimationFrame(updateCounter);
+}
+
+function formatCurrency(val, currency) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currency,
+      maximumFractionDigits: 0
+    }).format(val);
+  } catch(e) {
+    return `${currency} ${Math.floor(val).toLocaleString()}`;
+  }
 }
 
 function getSmartHeadline(total) {
