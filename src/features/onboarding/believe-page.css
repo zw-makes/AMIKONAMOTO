@@ -1,0 +1,344 @@
+/* Page 3: "Believe" Interactive Selection Page */
+.believe-page {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 110;
+  background: black;
+  color: #fff;
+  overflow: hidden;
+}
+
+.believe-header {
+  padding: calc(env(safe-area-inset-top, 20px) + 20px) 25px 15px; /* Added more top padding */
+  text-align: left; /* Shift to left alignment to match survey feel */
+  z-index: 112;
+  position: relative;
+}
+
+.believe-skip-btn {
+  position: absolute;
+  top: 15px; /* Relative to the header padding-top */
+  right: 15px;
+  background: rgba(255, 255, 255, 0.05); /* Even more subtle */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4); /* Lower prominence */
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem; /* Smaller, cleaner text */
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 115;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.believe-skip-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.believe-header h2 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.believe-header p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.believe-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 20px 140px; /* Space for fixed footer */
+  -webkit-overflow-scrolling: touch;
+}
+
+.believe-category-section {
+  margin-bottom: 30px;
+}
+
+.category-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 10px 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+}
+
+.sub-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 22px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Spread name and price */
+  transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.sub-card.selected {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(0.98);
+}
+
+.sub-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  background: #fff;
+  color: #000;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 950;
+  opacity: 1;
+}
+
+.sub-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.sub-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.sub-icon-circle img {
+  width: 65%;
+  height: 65%;
+  object-fit: contain;
+}
+
+.sub-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.sub-price-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  margin-right: 30px; /* Leave space for the checkmark */
+}
+
+.glow-word {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  font-weight: 800;
+}
+
+/* Result Reveal View */
+.believe-result-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; /* Push content to top and bottom */
+  padding: calc(env(safe-area-inset-top, 20px) + 40px) 30px calc(env(safe-area-inset-bottom, 20px) + 30px);
+  text-align: center;
+  z-index: 120;
+}
+
+.result-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center the narrative and amount vertically */
+  width: 100%;
+}
+
+.result-label {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  margin-bottom: 25px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 6px;
+}
+
+
+.word-fade {
+  opacity: 0;
+  animation: wordFadeIn 0.5s ease forwards;
+  display: inline-block;
+}
+
+@keyframes wordFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+
+.result-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+.result-subtext {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.05em;
+}
+
+.result-footer-lockup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px; /* Tighter gap between disclaimer and button */
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.privacy-note {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  max-width: 80%;
+  line-height: 1.4;
+  margin: -10px 0 5px 0; /* Negated top margin to snap it closer to the logo base */
+}
+
+.result-footer-lockup .landing-logo-img {
+  width: 140px;
+  height: 140px;
+  margin-bottom: 0; /* Remove any padding/margin below logo image */
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.15));
+}
+
+
+
+.believe-result-view.fade-in {
+  animation: resultReveal 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes resultReveal {
+  from { opacity: 0; transform: scale(0.9); filter: blur(20px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Fixed Bottom Summary */
+.believe-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 20px 40px;
+  background: linear-gradient(0deg, black 60%, transparent);
+  z-index: 111;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.total-counter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.counter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.counter-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+}
+
+.believe-next-btn {
+  background: #fff;
+  color: #000;
+  width: 100%;
+  padding: 18px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.believe-next-btn:active {
+  transform: scale(0.96);
+}
+
+.believe-next-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

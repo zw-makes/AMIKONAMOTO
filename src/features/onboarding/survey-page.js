@@ -36,14 +36,14 @@ export async function initSurveyPage() {
 
   authScreen.appendChild(surveyView);
 
+  // Setup Next button logic
   const nextBtn = document.getElementById('survey-next-btn');
   nextBtn.addEventListener('click', () => {
     if (window.HapticsService) window.HapticsService.success();
+    // Move to Believe View instead of direct login
     surveyView.classList.add('hidden');
-    const loginContainer = document.getElementById('login-container');
-    const loginView = document.getElementById('login-view');
-    if (loginContainer) loginContainer.classList.remove('hidden');
-    if (loginView) loginView.classList.remove('hidden');
+    const believeView = document.getElementById('believe-view');
+    if (believeView) believeView.classList.remove('hidden');
   });
 
   window.triggerSurveyAnimation = async () => {

@@ -17,7 +17,9 @@ import { initFilter } from './features/filter/filter.js';
 import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
 import { initCatalog } from './features/catalog/catalog.js';
 import { initSurveyPage } from './features/onboarding/survey-page.js';
+import { initBelievePage } from './features/onboarding/believe-page.js';
 import './features/onboarding/survey-page.css';
+import './features/onboarding/believe-page.css';
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
@@ -51,6 +53,8 @@ initFilter();
 initCatalog();
 // Initialize Survey
 initSurveyPage();
+// Initialize Believe
+initBelievePage();
 
 // --- World Currencies ---
 const CURRENCIES = [
