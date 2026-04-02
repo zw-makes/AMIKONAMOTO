@@ -16,6 +16,8 @@ import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
 import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
 import { initCatalog } from './features/catalog/catalog.js';
+import { initSurveyPage } from './features/onboarding/survey-page.js';
+import './features/onboarding/survey-page.css';
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
@@ -47,6 +49,8 @@ initListView();
 initFilter();
 // Initialize Catalog
 initCatalog();
+// Initialize Survey
+initSurveyPage();
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -2247,10 +2251,23 @@ const showProfileModal = async () => {
 // --- Auth Event Listeners ---
 if (getStartedBtn) {
   getStartedBtn.addEventListener('click', () => {
+    // Hide the pipeline landing
     welcomeView.classList.add('hidden');
-    loginView.classList.remove('hidden');
+    // Hide the main bottom container background (it was transparent)
+    document.querySelector('.landing-page').style.background = 'transparent';
+    
+    // Show the auth screen wrapper
+    authScreen.classList.remove('hidden');
+    
+    // BUT hide the login part and show our new SURVEY page first
+    const surveyView = document.getElementById('survey-view');
     const loginContainer = document.getElementById('login-container');
-    if (loginContainer) loginContainer.classList.remove('hidden');
+    if (surveyView) {
+      surveyView.classList.remove('hidden');
+      // Trigger the sequential word animation
+      if (window.triggerSurveyAnimation) window.triggerSurveyAnimation();
+    }
+    if (loginContainer) loginContainer.classList.add('hidden');
   });
 }
 
