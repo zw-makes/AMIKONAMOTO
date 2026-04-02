@@ -34,10 +34,33 @@ export function initEmailAuthPage() {
       <h2 class="email-auth-title" id="email-auth-title-text">Welcome Back</h2>
 
       <form class="email-auth-form" id="email-auth-form-submit">
+      <div id="signup-only-fields" class="hidden">
         <div class="form-field">
-          <label>Email Address</label>
-          <input type="email" id="email-auth-input" placeholder="name@example.com" required>
+          <label>Full Name</label>
+          <input type="text" id="auth-name-input" placeholder="Your name">
         </div>
+        
+        <div class="form-row-grid">
+          <div class="form-field">
+            <label>Gender</label>
+            <select id="auth-gender-input" class="premium-select">
+              <option value="" disabled selected>Select</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Birthday</label>
+            <input type="date" id="auth-dob-input">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Email Address</label>
+        <input type="email" id="email-auth-input" placeholder="name@example.com" required>
+      </div>
 
         <div class="form-field">
         <label id="password-field-label">Password</label>
@@ -184,6 +207,27 @@ export function initEmailAuthPage() {
       originalToggle.click(); // Trigger the mode switch on the hidden original form
     }
     
+    // IF SIGNUP: Populate the hidden onboarding fields too
+    if (isSignUpMode) {
+      const onboardName = document.getElementById('onboard-name');
+      const onboardDob = document.getElementById('onboard-dob');
+      const nameVal = document.getElementById('auth-name-input').value;
+      const dobVal = document.getElementById('auth-dob-input').value;
+      const genderVal = document.getElementById('auth-gender-input').value;
+
+      if (onboardName) onboardName.value = nameVal;
+      if (onboardDob) onboardDob.value = dobVal;
+      
+      // Select gender in hidden list
+      const genderBtns = document.querySelectorAll('.gender-btn');
+      genderBtns.forEach(btn => {
+        if (btn.dataset.value === genderVal) btn.click();
+      });
+
+      // Signal to the system that we should SKIP the onboarding popups
+      window.skipOnboardingPopups = true;
+    }
+    
     // Dispatch the submit
     if (originalForm) {
       originalForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -201,6 +245,11 @@ function updateAuthMode() {
   const passInput = document.getElementById('password-auth-input');
   const passLabel = document.getElementById('password-field-label');
   const strengthContainer = document.querySelector('.strength-meter-container');
+  const signupFields = document.getElementById('signup-only-fields');
+  
+  const nameInp = document.getElementById('auth-name-input');
+  const genderInp = document.getElementById('auth-gender-input');
+  const dobInp = document.getElementById('auth-dob-input');
 
   if (isSignUpMode) {
     title.innerText = "Create Account";
@@ -209,6 +258,12 @@ function updateAuthMode() {
     passLabel.innerText = "Password (Min. 10 chars)";
     passInput.setAttribute('minlength', '10');
     if (strengthContainer) strengthContainer.style.display = 'flex';
+    if (signupFields) signupFields.classList.remove('hidden');
+    
+    nameInp.required = true;
+    genderInp.required = true;
+    dobInp.required = true;
+    
     passInput.dispatchEvent(new Event('input'));
   } else {
     title.innerText = "Welcome Back";
@@ -217,6 +272,12 @@ function updateAuthMode() {
     passLabel.innerText = "Password";
     passInput.removeAttribute('minlength');
     if (strengthContainer) strengthContainer.style.display = 'none';
+    if (signupFields) signupFields.classList.add('hidden');
+    
+    nameInp.required = false;
+    genderInp.required = false;
+    dobInp.required = false;
+    
     submitBtn.classList.remove('disabled-btn');
   }
 }

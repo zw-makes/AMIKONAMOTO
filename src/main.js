@@ -2733,6 +2733,25 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         const accountAgeMs = Date.now() - new Date(currentUser.created_at).getTime();
         const isNewUser = accountAgeMs < 2 * 60 * 1000;
 
+        // If we just signed up and filled our profile in the email form, skip the popups!
+        if (window.skipOnboardingPopups && isNewUser) {
+          const name = document.getElementById('onboard-name')?.value;
+          const dob = document.getElementById('onboard-dob')?.value;
+          const gender = document.querySelector('.gender-btn.selected')?.dataset.value;
+
+          if (name && dob && gender) {
+            userProfile = { name, dob, gender };
+            // Save to DB in background
+            supabase.from('profiles').upsert({ id: currentUser.id, name, dob, gender }).then(() => {
+               localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+            });
+            window.skipOnboardingPopups = false;
+            hideSplash();
+            showWelcomeScreen();
+            return;
+          }
+        }
+
         if (!userProfile && isNewUser) {
           hideSplash();
           showOnboarding();
