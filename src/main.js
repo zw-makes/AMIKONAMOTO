@@ -18,8 +18,12 @@ import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
 import { initCatalog } from './features/catalog/catalog.js';
 import { initSurveyPage } from './features/onboarding/survey-page.js';
 import { initBelievePage } from './features/onboarding/believe-page.js';
+import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
+import { initEmailAuthPage, showEmailAuthPage } from './features/onboarding/email-auth.js';
 import './features/onboarding/survey-page.css';
 import './features/onboarding/believe-page.css';
+import './features/onboarding/auth-page.css';
+import './features/onboarding/email-auth.css';
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
@@ -55,6 +59,10 @@ initCatalog();
 initSurveyPage();
 // Initialize Believe
 initBelievePage();
+// Initialize New Auth
+initAuthPage();
+// Initialize Email Auth
+initEmailAuthPage();
 
 // --- World Currencies ---
 const CURRENCIES = [
@@ -2315,8 +2323,14 @@ authForm.addEventListener('submit', async (e) => {
 
   } catch (err) {
     console.error('Full Auth Error Object:', err);
-    authError.innerText = err.message || 'Network error — please check your connection';
-    authError.classList.remove('hidden');
+    
+    // Bridge to premium onboarding UI if active
+    if (window.showAuthErrorOnButton) {
+      window.showAuthErrorOnButton(err.message || 'Login Failed');
+    } else {
+      authError.innerText = err.message || 'Network error — please check your connection';
+      authError.classList.remove('hidden');
+    }
   } finally {
     authSubmitBtn.disabled = false;
     authSubmitBtn.innerText = isSignUp ? 'Sign Up' : 'Log In';

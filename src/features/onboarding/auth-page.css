@@ -1,0 +1,178 @@
+/* Auth Page Styles: Premium Space Theme */
+.auth-page {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 130;
+  background: black;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Center Branding Section */
+.auth-branding {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 30px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.auth-logo-img {
+  width: 140px;
+  height: 140px;
+  margin-bottom: 30px;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.15));
+  animation: logoPulse 4s ease-in-out infinite;
+}
+
+.auth-tagline-container {
+  min-height: 80px; /* Fixed height to allow multi-line without jumping */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
+  margin-top: -20px; /* Pull it up closer to the logo base/wave */
+}
+
+.auth-tagline {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.45;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 6px;
+}
+
+.word-fade {
+  opacity: 0;
+  animation: wordFadeIn 0.5s ease forwards;
+  display: inline-block;
+}
+
+@keyframes wordFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+
+/* Bottom Options Section */
+.auth-options {
+  flex: 1;
+  background: linear-gradient(0deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 40px 30px calc(env(safe-area-inset-bottom, 20px) + 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 2;
+}
+
+.social-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.social-btn:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.social-btn.google {
+  background: #fff;
+  color: #000;
+  border: none;
+}
+
+.social-btn.apple {
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.social-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.social-btn.apple img {
+  filter: invert(1);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 10px 0;
+  opacity: 0.4;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #fff;
+}
+
+.auth-divider span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.email-btn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.email-link {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin-top: 10px;
+}
+
+.email-link span {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}

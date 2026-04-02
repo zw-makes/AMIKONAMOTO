@@ -1,0 +1,224 @@
+/* Email Auth Page: Premium Dark Theme */
+.email-auth-page {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top, 20px) 30px env(safe-area-inset-bottom, 20px);
+  z-index: 140;
+  background: black;
+  color: #fff;
+  overflow: hidden;
+}
+
+.email-header-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding-top: 60px; /* Space for the back button */
+}
+
+.email-auth-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+
+.email-auth-logo {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 0px; /* Reduced gap as requested */
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.1));
+}
+
+
+.email-auth-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.email-auth-header p {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 30px;
+}
+
+.email-auth-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 35px;
+  text-align: center;
+}
+
+
+/* Form Styling */
+.email-auth-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  padding-left: 5px;
+}
+
+.form-field input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px 20px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.form-field input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.email-auth-submit {
+  background: #fff;
+  color: #000;
+  width: 100%;
+  padding: 18px;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.email-auth-submit.disabled-btn {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.email-auth-submit.error-btn-state {
+  background: #ff3b30 !important;
+  color: #fff !important;
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+}
+
+
+/* Password Strength Meter UI: SVG Circular Progress */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 130px; /* Space for meter and label */
+}
+
+.strength-meter-container {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.strength-svg {
+  width: 24px;
+  height: 24px;
+  transform: rotate(-90deg); /* Start fill from top */
+}
+
+.strength-track {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.strength-fill {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.19, 1, 0.22, 1), stroke 0.4s ease;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.strength-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+
+
+.email-auth-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+
+.email-auth-footer span {
+  color: #fff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.email-auth-back {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 20px) + 12px);
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px 8px 6px;
+  background: rgba(255, 255, 255, 0.08); /* Slightly brighter for visibility */
+  border-radius: 20px;
+  cursor: pointer;
+  z-index: 200; /* Move above everything else */
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  pointer-events: all; /* Explicitly allow all taps */
+}
+
+
+.email-auth-back svg {
+  width: 22px;
+  height: 22px;
+  fill: rgba(255, 255, 255, 0.8);
+}
+

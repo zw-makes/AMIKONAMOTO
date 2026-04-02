@@ -1,5 +1,6 @@
 import { HapticsService } from '../../features/haptics/haptics.js';
 import { animateThanosSnap } from '../ai-analyst/thanos-snap.js';
+import { showAuthPage } from './auth-view.js';
 
 const SUBSCRIPTION_DATA = [
   {
@@ -250,10 +251,10 @@ async function handleThanosSnapSequence() {
     if (window.HapticsService) window.HapticsService.success();
     const believeView = document.getElementById('believe-view');
     believeView.classList.add('hidden');
-    const loginContainer = document.getElementById('login-container');
-    const loginView = document.getElementById('login-view');
-    if (loginContainer) loginContainer.classList.remove('hidden');
-    if (loginView) loginView.classList.remove('hidden');
+    
+    // Instead of showing the old container, show the NEW premium auth view
+    if (window.showAuthPage) window.showAuthPage();
+    else showAuthPage();
   });
 }
 
