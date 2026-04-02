@@ -1,4 +1,4 @@
-
+import { HapticsService } from '../../features/haptics/haptics.js';
 /**
  * Initializes the onboarding survey page logic.
  */
@@ -38,6 +38,7 @@ export async function initSurveyPage() {
 
   const nextBtn = document.getElementById('survey-next-btn');
   nextBtn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.success();
     surveyView.classList.add('hidden');
     const loginContainer = document.getElementById('login-container');
     const loginView = document.getElementById('login-view');
@@ -93,8 +94,16 @@ async function updateConvertedAmountAndAnimate() {
     const span = document.createElement('span');
     span.innerText = word + ' ';
     span.className = 'word-fade';
-    span.style.animationDelay = `${index * 0.08}s`;
+    const delay = index * 0.08;
+    span.style.animationDelay = `${delay}s`;
     
+    // Trigger "selection" haptic for each word appearance
+    // We space it out slightly so it's not a buzzy mess on iOS
+    if (window.HapticsService && (index % 2 === 0)) {
+       setTimeout(() => window.HapticsService.selection(), delay * 1000);
+    }
+    
+    // Highlight the money as a special 3D block
     if (word.includes(convertedStr.replace(/[^0-9]/g, '')) || word.includes(convertedStr)) {
       span.classList.add('highlight-money');
     }

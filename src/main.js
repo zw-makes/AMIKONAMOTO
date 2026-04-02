@@ -2251,6 +2251,10 @@ const showProfileModal = async () => {
 // --- Auth Event Listeners ---
 if (getStartedBtn) {
   getStartedBtn.addEventListener('click', () => {
+    // Premium Haptic Feedback
+    if (window.HapticsService) window.HapticsService.success();
+    else HapticsService.success();
+    
     // Hide the pipeline landing
     welcomeView.classList.add('hidden');
     // Hide the main bottom container background (it was transparent)
