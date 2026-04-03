@@ -46,19 +46,51 @@
 
 
 
-.guider-calendar-preview {
+.guider-visual-switcher {
+  position: relative;
+  width: 100%;
+  transform: perspective(1000px) rotateX(10deg);
+  animation: float 6s ease-in-out infinite;
+}
+
+.guider-view-layer {
+  width: 100%;
+  transition: opacity 1s ease-in-out;
+}
+
+#guider-cal-layer {
+  position: relative;
+  z-index: 2;
+}
+
+.guider-graph-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 1;
+}
+
+.guider-view-layer.guider-transparent {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+
+.guider-calendar-preview,
+.guider-graph-preview {
   width: 100%;
   padding: 20px;
   padding-bottom: 60px; /* Space for total */
   border-radius: 24px;
   background: #0d0d0d;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transform: perspective(1000px) rotateX(10deg);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  animation: float 6s ease-in-out infinite;
   overflow: hidden;
-  position: relative;
 }
+
+
 
 
 @keyframes float {
@@ -319,3 +351,18 @@
 .guider-main-btn:active {
   transform: scale(0.98);
 }
+
+/* Fix mobile responsiveness for Graph preview */
+.guider-graph-preview .chart-bar {
+  min-width: 10px !important;
+}
+
+.guider-graph-preview .chart-bars {
+  left: 4px !important;
+  right: 44px !important;
+}
+
+.guider-graph-preview .chart-y-axis {
+  right: 0px !important;
+}
+

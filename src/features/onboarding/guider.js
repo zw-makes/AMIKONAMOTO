@@ -36,7 +36,15 @@ export async function initGuider() {
   let finalCurrency = 'INR';
   let finalTotalStr = `₹${baseTotal.toLocaleString()}`;
 
-  // Localized Currency Logic
+  // Calculate a projected yearly total for the secondary graph view
+  let yearlyBaseTotal = 0;
+  sampleSubs.forEach(s => {
+      if (s.type === 'yearly') yearlyBaseTotal += s.price;
+      else yearlyBaseTotal += (s.price * 12);
+  });
+  let yearlyTotalStr = `₹${yearlyBaseTotal.toLocaleString()}`;
+
+  // Localized Currency Logic (Real-time Exchange Rates via Locale)
   try {
     const locale = navigator.language || 'en-IN';
     if (locale.includes('US')) finalCurrency = 'USD';
@@ -52,10 +60,21 @@ export async function initGuider() {
     const rates = await fetchRates('INR');
     if (rates && rates[finalCurrency]) {
         const converted = baseTotal * rates[finalCurrency];
-        const formatter = new Intl.NumberFormat(undefined, { style: 'currency', currency: finalCurrency, maximumFractionDigits: 0 });
+        const yearlyConverted = yearlyBaseTotal * rates[finalCurrency];
+        
+        const formatter = new Intl.NumberFormat(undefined, { 
+            style: 'currency', 
+            currency: finalCurrency, 
+            maximumFractionDigits: 0 
+        });
+        
         finalTotalStr = formatter.format(converted);
+        yearlyTotalStr = formatter.format(yearlyConverted);
     }
-  } catch(e) {}
+  } catch(e) {
+      console.warn("Failed to fetch exchange rates in guider.", e);
+  }
+
 
   // Dynamic current month/year
   const now = new Date();
@@ -120,8 +139,88 @@ export async function initGuider() {
     `;
   }
 
+  // Calculate mock chart data for the Graph View
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekSpending = [0, 0, 0, 0, 0, 0, 0];
+  const weekLogos = [[], [], [], [], [], [], []];
+
+  sampleSubs.forEach(s => {
+     const dayOfWeek = new Date(currentYear, now.getMonth(), s.date).getDay();
+     weekSpending[dayOfWeek] += s.price;
+     weekLogos[dayOfWeek].push(s);
+  });
+
+  const maxSpend = Math.max(...weekSpending, 20);
+  const chartMax = Math.ceil(maxSpend / 20) * 20;
+
+  let graphBarsHTML = '';
+  weekSpending.forEach((amount, i) => {
+      const height = (amount / chartMax) * 100;
+      const topLogosHTML = weekLogos[i]
+          .sort((a, b) => b.price - a.price)
+          .slice(0, 3)
+          .map(l => `<img src="${window.getLogoUrl(l.domain)}" class="chart-mini-logo">`)
+          .join('');
+
+      graphBarsHTML += `
+      <div class="chart-bar-group">
+          <div class="chart-bar ${amount === 0 ? 'empty' : ''}" style="height: ${Math.max(amount === 0 ? 5 : height, 5)}%;"></div>
+          <span class="chart-day-label">${days[i]}</span>
+          <div class="chart-logos-container">${topLogosHTML}</div>
+      </div>
+      `;
+  });
+
+  const graphHTML = `
+      <div class="guider-graph-preview guider-view-layer guider-transparent">
+          <div class="spending-card" style="box-shadow: none !important; background: transparent !important; padding: 0 !important; border: none !important; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+
+              <div class="spending-header" style="margin-bottom: 20px;">
+                  <h3 style="font-size: 0.7rem; letter-spacing: 0.1em; color: rgba(255,255,255,0.5);">MONTHLY SPENDING</h3>
+                  <div class="spending-total" style="font-size: 1.5rem;">${finalTotalStr}</div>
+              </div>
+              <div class="chart-container" style="height: 200px; width: 100%;">
+                  <div class="chart-grid-lines">
+                      <div class="chart-grid-line"></div><div class="chart-grid-line"></div><div class="chart-grid-line"></div><div class="chart-grid-line"></div><div class="chart-grid-line"></div>
+                  </div>
+                  <div class="chart-y-axis" style="color: rgba(255,255,255,0.3);">
+                      <span>0</span>
+                      <span>${(chartMax * 0.25).toFixed(0)}</span>
+                      <span>${(chartMax * 0.5).toFixed(0)}</span>
+                      <span>${(chartMax * 0.75).toFixed(0)}</span>
+                      <span>${chartMax}</span>
+                  </div>
+                  <div class="chart-bars">
+                      ${graphBarsHTML}
+                  </div>
+              </div>
+          </div>
+          <div class="guider-calendar-total">
+             <div class="guider-cal-actions">
+               <div class="guider-icon-btn">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+               </div>
+               <div class="guider-icon-btn">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+               </div>
+               <div class="guider-icon-btn">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+               </div>
+             </div>
+             <div class="guider-total-group">
+               <span class="total-label">YEARLY TOTAL</span>
+               <span class="total-value">${yearlyTotalStr}</span>
+             </div>
+          </div>
+      </div>
+  `;
+
+
+
+
   // 3. Next month leading
   const currentCount = firstDay + daysInMonth;
+
   for (let i = 1; i <= (42 - currentCount); i++) {
       calendarHTML += `<div class="guider-calendar-cell other-month"><span class="cell-date">${i}</span></div>`;
   }
@@ -138,38 +237,44 @@ export async function initGuider() {
       <!-- Step 1: Calendar Overview -->
       <div class="guider-step active" id="guider-step-1">
         <div class="guider-visual-area">
-          <div class="guider-calendar-preview modern-glass">
-            <div class="guider-calendar-header">
-              <div class="guider-cal-chevron">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <div class="guider-visual-switcher" style="position: relative; width: 100%;">
+            <div id="guider-cal-layer" class="guider-calendar-preview modern-glass guider-view-layer">
+              <div class="guider-calendar-header">
+                <div class="guider-cal-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </div>
+                <span>${monthName} ${currentYear}</span>
+                <div class="guider-cal-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
               </div>
-              <span>${monthName} ${currentYear}</span>
-              <div class="guider-cal-chevron">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <div class="guider-calendar-grid">
+                ${calendarHTML}
+              </div>
+              <div class="guider-calendar-total">
+                 <div class="guider-cal-actions">
+                   <div class="guider-icon-btn">
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                   </div>
+                   <div class="guider-icon-btn">
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                   </div>
+                   <div class="guider-icon-btn">
+                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                   </div>
+                 </div>
+                 <div class="guider-total-group">
+                   <span class="total-label">MONTHLY TOTAL</span>
+                   <span class="total-value">${finalTotalStr}</span>
+                 </div>
               </div>
             </div>
-            <div class="guider-calendar-grid">
-              ${calendarHTML}
-            </div>
-            <div class="guider-calendar-total">
-               <div class="guider-cal-actions">
-                 <div class="guider-icon-btn">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                 </div>
-                 <div class="guider-icon-btn">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                 </div>
-                 <div class="guider-icon-btn">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                 </div>
-               </div>
-               <div class="guider-total-group">
-                 <span class="total-label">MONTHLY TOTAL</span>
-                 <span class="total-value">${finalTotalStr}</span>
-               </div>
-            </div>
+            
+            <!-- Injected graph view -->
+            ${graphHTML}
           </div>
         </div>
+
 
         <div class="guider-content">
           <div class="guider-branding">
@@ -187,13 +292,29 @@ export async function initGuider() {
 
   authScreen.appendChild(guiderView);
 
+  // Setup toggle loop logic
+  const switchInterval = setInterval(() => {
+     const calLayer = document.getElementById('guider-cal-layer');
+     const graphLayer = guiderView.querySelector('.guider-graph-preview');
+     if (calLayer && graphLayer) {
+         if (calLayer.classList.contains('guider-transparent')) {
+             calLayer.classList.remove('guider-transparent');
+             graphLayer.classList.add('guider-transparent');
+         } else {
+             calLayer.classList.add('guider-transparent');
+             graphLayer.classList.remove('guider-transparent');
+         }
+     }
+  }, 5000);
+
+
   // Skip logic: Direct to dashboard for now as it's a guide
+
   document.getElementById('guider-continue-btn').addEventListener('click', () => {
+    clearInterval(switchInterval);
     if (window.HapticsService) window.HapticsService.success();
-    
     // For now, take them to main app as this is the guider logic
     guiderView.classList.add('hidden');
-    // We would normally fire the actual Google Auth here, or take to dashboard
     if (window.loadSubscriptions) window.loadSubscriptions();
   });
 }
