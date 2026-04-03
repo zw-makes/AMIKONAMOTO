@@ -1,4 +1,6 @@
 import { HapticsService } from '../haptics/haptics.js';
+import { initGuiderStep2 } from './guider-step2.js';
+
 
 /**
  * Guider Feature: A cinematic feature tour for new users.
@@ -292,8 +294,10 @@ export async function initGuider() {
 
   authScreen.appendChild(guiderView);
 
-  // Setup toggle loop logic
-  const switchInterval = setInterval(() => {
+  // Setup toggle loop logic on global window so we can control it across steps
+  if (window.guiderInterval) clearInterval(window.guiderInterval);
+  
+  window.guiderInterval = setInterval(() => {
      const calLayer = document.getElementById('guider-cal-layer');
      const graphLayer = guiderView.querySelector('.guider-graph-preview');
      if (calLayer && graphLayer) {
@@ -311,11 +315,15 @@ export async function initGuider() {
   // Skip logic: Direct to dashboard for now as it's a guide
 
   document.getElementById('guider-continue-btn').addEventListener('click', () => {
-    clearInterval(switchInterval);
+    if (window.guiderInterval) clearInterval(window.guiderInterval);
     if (window.HapticsService) window.HapticsService.success();
-    // For now, take them to main app as this is the guider logic
-    guiderView.classList.add('hidden');
-    if (window.loadSubscriptions) window.loadSubscriptions();
+    
+    // Animate out
+    guiderView.style.opacity = '0';
+    setTimeout(() => {
+      guiderView.classList.add('hidden');
+      initGuiderStep2();
+    }, 400);
   });
 }
 
