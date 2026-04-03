@@ -25,6 +25,8 @@ export async function initSurveyPage() {
       </div>
     </div>
 
+    <button id="survey-skip-btn" class="survey-skip-btn">Skip</button>
+
     <div class="survey-container">
       <div class="survey-text-wrapper" id="survey-text-box"></div>
       <div class="survey-footer" id="survey-bottom-bar">
@@ -45,6 +47,19 @@ export async function initSurveyPage() {
     const believeView = document.getElementById('believe-view');
     if (believeView) believeView.classList.remove('hidden');
   });
+
+  // Setup Skip button logic
+  const skipBtn = document.getElementById('survey-skip-btn');
+  skipBtn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.success();
+    surveyView.classList.add('hidden');
+    
+    // Dynamically import or call showAuthPage from auth-view.js
+    import('../../features/onboarding/auth-view.js').then(m => {
+        if (m.showAuthPage) m.showAuthPage();
+    });
+  });
+
 
   window.triggerSurveyAnimation = async () => {
     // 1. Start the narrative first
