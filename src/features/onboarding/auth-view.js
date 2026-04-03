@@ -62,6 +62,16 @@ export function initAuthPage() {
 
   authScreen.appendChild(authView);
 
+  // Connect Google Auth to Guider
+  const googleBtn = authView.querySelector('.social-btn.google');
+  if (googleBtn) {
+    googleBtn.addEventListener('click', () => {
+       if (window.HapticsService) window.HapticsService.light();
+       authView.classList.add('hidden');
+       if (window.showGuider) window.showGuider();
+    });
+  }
+
   // Connect new email auth
   document.getElementById('auth-email-btn-legacy').addEventListener('click', () => {
     if (window.HapticsService) window.HapticsService.light();

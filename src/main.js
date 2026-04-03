@@ -20,10 +20,13 @@ import { initSurveyPage } from './features/onboarding/survey-page.js';
 import { initBelievePage } from './features/onboarding/believe-page.js';
 import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
 import { initEmailAuthPage, showEmailAuthPage } from './features/onboarding/email-auth.js';
+import { initGuider, showGuider } from './features/onboarding/guider.js';
 import './features/onboarding/survey-page.css';
 import './features/onboarding/believe-page.css';
 import './features/onboarding/auth-page.css';
 import './features/onboarding/email-auth.css';
+import './features/onboarding/guider.css';
+
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
@@ -63,6 +66,10 @@ initBelievePage();
 initAuthPage();
 // Initialize Email Auth
 initEmailAuthPage();
+// Initialize Guider
+initGuider();
+window.showGuider = showGuider;
+
 
 // --- World Currencies ---
 const CURRENCIES = [
