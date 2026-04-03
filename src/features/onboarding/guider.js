@@ -57,6 +57,11 @@ export async function initGuider() {
     }
   } catch(e) {}
 
+  // Dynamic current month/year
+  const now = new Date();
+  const monthName = now.toLocaleString('default', { month: 'long' }).toUpperCase();
+  const currentYear = now.getFullYear();
+
   let calendarHTML = '';
   // Mirroring main.js 42-cell logic
   // We'll simulate Oct 2026: Starts on Thursday (firstDay = 3 in 0-6 index)
@@ -135,26 +140,32 @@ export async function initGuider() {
         <div class="guider-visual-area">
           <div class="guider-calendar-preview modern-glass">
             <div class="guider-calendar-header">
-              <span>OCTOBER 2026</span>
+              <div class="guider-cal-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <span>${monthName} ${currentYear}</span>
+              <div class="guider-cal-chevron">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
             </div>
             <div class="guider-calendar-grid">
               ${calendarHTML}
             </div>
-            <div class="guider-calendar-footer">
-               <div class="guider-calendar-actions">
-                  <div class="guider-action-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  </div>
-                  <div class="guider-action-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z"/></svg>
-                  </div>
-                  <div class="guider-action-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                  </div>
+            <div class="guider-calendar-total">
+               <div class="guider-cal-actions">
+                 <div class="guider-icon-btn">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                 </div>
+                 <div class="guider-icon-btn">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                 </div>
+                 <div class="guider-icon-btn">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                 </div>
                </div>
-               <div class="guider-calendar-total">
-                  <span class="total-label">MONTHLY TOTAL</span>
-                  <span class="total-value">${finalTotalStr}</span>
+               <div class="guider-total-group">
+                 <span class="total-label">MONTHLY TOTAL</span>
+                 <span class="total-value">${finalTotalStr}</span>
                </div>
             </div>
           </div>
@@ -163,11 +174,12 @@ export async function initGuider() {
         <div class="guider-content">
           <div class="guider-branding">
              <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="guider-logo" alt="Sublify Logo">
-             <h2 class="guider-title">Master Your Schedule</h2>
-             <p class="guider-description">Never get caught off guard. Sublify maps every renewal, trial, and one-time payment into a single, cinematic calendar view.</p>
+             <h2 class="guider-title">One app. Every subscription. Zero surprises.</h2>
+             <p class="guider-description">See exactly which days money leaves your account. No more surprise charges, just a clear view of what's coming.</p>
           </div>
           
-          <button id="guider-continue-btn" class="guider-main-btn">Continue</button>
+          <button id="guider-continue-btn" class="guider-main-btn">Got it, what's next?</button>
+
         </div>
       </div>
     </div>
