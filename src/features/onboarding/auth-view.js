@@ -64,10 +64,23 @@ export function initAuthPage() {
 
   // Connect new email auth
   document.getElementById('auth-email-btn-legacy').addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.light();
     if (window.showEmailAuthPage) window.showEmailAuthPage();
     else showEmailAuthPage();
     authView.classList.add('hidden');
   });
+
+  // Connect Sign Up toggle
+  document.getElementById('auth-signup-toggle').addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.light();
+    
+    // Explicitly show the signup mode
+    if (window.showEmailAuthPage) window.showEmailAuthPage('signup');
+    else showEmailAuthPage('signup');
+    
+    authView.classList.add('hidden');
+  });
+
 
   // Cycle taglines when revealed
   startTaglineRotation();

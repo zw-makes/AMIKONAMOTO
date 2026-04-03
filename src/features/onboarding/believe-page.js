@@ -176,13 +176,23 @@ export async function initBelievePage() {
     </div>
 
     <div class="believe-footer" id="believe-footer-snap">
-      <button id="believe-next-btn" class="believe-next-btn">Show my total</button>
+      <button id="believe-next-btn" class="believe-next-btn">None of These</button>
     </div>
   `;
 
   authScreen.appendChild(believeView);
 
   // Interaction logic
+  const nextBtn = document.getElementById('believe-next-btn');
+
+  function updateNextBtnText() {
+    if (selectedSubs.size === 0) {
+      nextBtn.innerText = 'None of These';
+    } else {
+      nextBtn.innerText = 'Show my total';
+    }
+  }
+
   believeView.querySelectorAll('.sub-card').forEach(card => {
     card.addEventListener('click', () => {
       const rawPrice = parseInt(card.dataset.rawPrice);
@@ -200,13 +210,22 @@ export async function initBelievePage() {
         if (window.HapticsService) window.HapticsService.medium();
       }
 
+      updateNextBtnText();
       updateTotalDisplay();
     });
   });
 
-  document.getElementById('believe-next-btn').addEventListener('click', async () => {
+  nextBtn.addEventListener('click', async () => {
     if (window.HapticsService) window.HapticsService.success();
-    await handleThanosSnapSequence();
+    
+    if (selectedSubs.size === 0) {
+       // Just skip directly to auth
+       believeView.classList.add('hidden');
+       if (window.showAuthPage) window.showAuthPage();
+       else showAuthPage();
+    } else {
+       await handleThanosSnapSequence();
+    }
   });
 }
 

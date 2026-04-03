@@ -282,9 +282,21 @@ function updateAuthMode() {
   }
 }
 
-export function showEmailAuthPage() {
+export function setAuthMode(signUp) {
+  isSignUpMode = signUp;
+  updateAuthMode();
+}
+
+export function showEmailAuthPage(mode = 'login') {
   const emailAuthView = document.getElementById('email-auth-view');
   if (emailAuthView) {
+    if (mode === 'signup') {
+      isSignUpMode = true;
+      updateAuthMode();
+    } else if (mode === 'login') {
+      isSignUpMode = false;
+      updateAuthMode();
+    }
     emailAuthView.classList.remove('hidden');
   }
 }
