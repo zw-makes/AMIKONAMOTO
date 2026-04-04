@@ -9,10 +9,26 @@ export const NativeNotifications = {
      * Request permissions from the user
      * Must be called before scheduling anything
      */
+    /**
+     * QUIET CHECK: Check current status without showing the iOS pop-up
+     */
+    async checkPermissions() {
+        try {
+            const status = await LocalNotifications.checkPermissions();
+            return status.display === 'granted';
+        } catch (e) {
+            return false;
+        }
+    },
+
+    /**
+     * LOUD REQUEST: Show the actual iOS/System pop-up
+     * Only call this when we want the prompt to appear!
+     */
     async requestPermissions() {
         try {
             const status = await LocalNotifications.requestPermissions();
-            console.log('[NativeNotif] Permission status:', status);
+            console.log('[NativeNotif] Permission requested:', status);
             return status.display === 'granted';
         } catch (e) {
             console.error('[NativeNotif] Failed to request permissions:', e);
@@ -72,7 +88,7 @@ export const NativeNotifications = {
     async scheduleReminders(reminders) {
         if (reminders.length === 0) return;
 
-        const hasPermission = await this.requestPermissions();
+        const hasPermission = await this.checkPermissions();
         if (!hasPermission) return;
 
         try {

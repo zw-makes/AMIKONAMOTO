@@ -4113,12 +4113,13 @@ function updateReminders() {
   }
 
   // ── Stage 1: Smart daily reminders (separate module, zero risk to existing logic) ──
-  scheduleDailyReminders(subscriptions, settings).then(count => {
+  scheduleDailyReminders(window.subscriptions || [], settings).then(count => {
     if (count > 0) {
-      console.log(`[DailyReminder] ${count} daily reminder(s) queued alongside subscription alerts.`);
+      console.log(`[DailyReminder] ${count} daily reminder(s) queued.`);
     }
   });
 }
+window.updateReminders = updateReminders;
 
 
 // --- Feature Init ---

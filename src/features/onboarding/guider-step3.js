@@ -109,6 +109,21 @@ export function initGuiderStep3() {
     view.classList.add('visible');
   });
 
+  // ──── iOS/System Notification Permission Trigger ──── 
+  // We trigger the ACTUAL system pop-up right when user sees this page
+  setTimeout(async () => {
+    if (window.NativeNotifications) {
+      const granted = await window.NativeNotifications.requestPermissions();
+      if (granted) {
+          console.log('[Guider] User granted notifications! Scheduling alerts...');
+          // Trigger the app's internal notification logic immediately (from main.js)
+          if (typeof window.updateReminders === 'function') {
+              window.updateReminders();
+          }
+      }
+    }
+  }, 1200); // Show pop-up slightly after the slide appears for better flow
+
   // Start sequence shortly after view appears
   setTimeout(() => addNotifSequential(0), 400);
 

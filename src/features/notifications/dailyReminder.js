@@ -170,10 +170,10 @@ function buildMessage(subscriptions, dayOffset) {
  */
 export async function scheduleDailyReminders(subscriptions, settings) {
   try {
-    // ── Guard: check permissions ──────────────────────────────────────────
-    const status = await LocalNotifications.requestPermissions();
-    if (status.display !== 'granted') {
-      console.log('[DailyReminder] Permission not granted — skipping daily reminders.');
+    // ── Guard: check permissions (QUIET CHECK - don't show pop-up yet!) ─────────────────────────────
+    const hasPermission = await window.NativeNotifications.checkPermissions();
+    if (!hasPermission) {
+      console.log('[DailyReminder] No existing permission — skipping silent schedule.');
       return 0;
     }
 
