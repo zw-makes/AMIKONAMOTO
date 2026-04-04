@@ -26,6 +26,14 @@
       <img id="splash-logo" src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" alt="Sublify Logo">
     </div>
 
+    <!-- Auth Loading / Transition Screen -->
+    <div id="auth-loading-screen" class="hidden">
+      <div class="auth-loading-content">
+        <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="loading-logo" alt="Sublify Logo">
+        <h2 class="loading-text">WELCOME TO SUBLIFY</h2>
+      </div>
+    </div>
+
     <!-- Auth / Welcome Screen -->
     <div id="auth-screen" class="auth-screen hidden" style="padding: 0;">
       
@@ -296,7 +304,9 @@
       </div>
     </div>
 
-    <!-- Top Status Bar -->
+    <!-- Main App Container (Hidden during Auth/Onboarding) -->
+    <div id="app-container" class="hidden">
+      <!-- Top Status Bar -->
     <div class="status-bar">
       <div class="status-left">
         <div id="status-terminal" class="status-terminal">
@@ -445,6 +455,7 @@
           <span id="total-amount" class="total-amount">$0.00</span>
         </div>
       </div>
+    </div>
     </div>
 
     <!-- Add Subscription Full-Page View -->

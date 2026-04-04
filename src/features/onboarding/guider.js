@@ -285,7 +285,7 @@ export async function initGuider() {
              <p class="guider-description">See exactly which days money leaves your account. No more surprise charges, just a clear view of what's coming.</p>
           </div>
           
-          <button id="guider-continue-btn" class="guider-main-btn">Got it, what's next?</button>
+          <button id="guider-continue-btn" class="guider-main-btn">GOT IT!</button>
 
         </div>
       </div>
@@ -332,7 +332,23 @@ export async function initGuider() {
  */
 export function showGuider() {
   const guiderView = document.getElementById('guider-view');
+  const authScreen = document.getElementById('auth-screen');
+  const authViewNew = document.getElementById('auth-view-new');
+  const emailAuthView = document.getElementById('email-auth-view');
+
   if (guiderView) {
+    // 1. Hide the standard auth views to ensure they don't peek through
+    if (authViewNew) authViewNew.classList.add('hidden');
+    if (emailAuthView) emailAuthView.classList.add('hidden');
+
+    // 2. Ensure parent auth-screen is visible
+    if (authScreen) authScreen.classList.remove('hidden');
+
+    // 3. Hide the auth-loading-screen (transition bridge)
+    const loadingScreen = document.getElementById('auth-loading-screen');
+    if (loadingScreen) loadingScreen.classList.add('hidden');
+
+    // 4. Reveal the guider
     guiderView.classList.remove('hidden');
   }
 }

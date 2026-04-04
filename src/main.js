@@ -2658,14 +2658,18 @@ function hideSplash() {
 }
 
 supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log(`[Auth] Event: ${event} `);
+  console.log(`[Auth] Event: ${event}`);
 
   if (session) {
     currentUser = session.user;
     window.currentUser = session.user;
     console.log(`[Auth] Session active for: ${currentUser.email} `);
 
-    // 1. IMMEDIATELY hide login screen—don't wait for profile.
+    // 1. Show the transition screen IMMEDIATELY
+    const loadingScreen = document.getElementById('auth-loading-screen');
+    if (loadingScreen) loadingScreen.classList.remove('hidden');
+    
+    // Also hide the auth screen so it doesn't stay behind the loader
     authScreen.classList.add('hidden');
 
     // 2. Background task to load profile
@@ -2694,7 +2698,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         // Safety timeout for profile fetch (5 seconds)
         const profilePromise = supabase
           .from('profiles')
-          .select('name, gender, dob, avatar_url, settings')
+          .select('name, gender, dob, avatar_url, settings, onboarding_completed')
           .eq('id', currentUser.id)
           .single();
 
@@ -2708,63 +2712,65 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           console.log('[Auth] Profile fetched successfully.');
           userProfile = profile;
           safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+        } else if (error && (error.code === 'PGRST116' || error.code === '406')) {
+          // New User case: Try to catch data from the signup form before defaulting
+          console.log('[Auth] New user detected — capturing registration data...');
+          
+          const signupName = document.getElementById('auth-name-input')?.value || 
+                             document.getElementById('onboard-name')?.value || 
+                             currentUser.user_metadata?.full_name || 
+                             'New Creator';
+                             
+          const signupDob = document.getElementById('auth-dob-input')?.value || 
+                            document.getElementById('onboard-dob')?.value || 
+                            null;
+
+          userProfile = {
+            name: signupName,
+            onboarding_completed: false,
+            dob: signupDob || null, // Atomic null for Postgres
+            gender: 'other',
+            settings: { theme: 'dark', notifications: true, paid_history: {} }
+          };
+          
+          // Create the record immediately so the Guider has something to work with
+          await supabase.from('profiles').upsert({ id: currentUser.id, ...userProfile });
+          safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
         } else {
-          console.warn('[Auth] No profile in Supabase, checking local cache...');
+          // Network error or timeout: NEVER overwrite with defaults!
+          console.warn('[Auth] DB connection lag. Using cache.');
           const saved = localStorage.getItem(`profile_${currentUser.id}`);
           if (saved) userProfile = JSON.parse(saved);
         }
 
-        // Apply theme immediately after profile is loaded
-        if (userProfile?.settings?.theme) {
-          applyTheme(userProfile.settings.theme === 'dark');
-        }
-
-        // --- Sync Starred Dates from DB to UI ---
-        if (userProfile?.settings?.starred_dates) {
-          const starredDates = userProfile.settings.starred_dates;
-          localStorage.setItem('starred_dates', JSON.stringify(starredDates));
-          renderCalendar(); // Re-render to show the stars
-        }
-
-        // Ensure UI reflects latest settings
+        // Apply theme/starred dates
+        if (userProfile?.settings?.theme) applyTheme(userProfile.settings.theme === 'dark');
         updateStats();
         updateTime();
+
       } catch (err) {
-        console.error('[Auth] Profile fetch failed/timed out:', err.message);
+        console.error('[Auth] Loading sequence error:', err.message);
         const saved = localStorage.getItem(`profile_${currentUser.id}`);
         if (saved) userProfile = JSON.parse(saved);
       } finally {
-        // Always try to update UI and show welcome, even if fetch failed
         updateProfileUI();
 
         const accountAgeMs = Date.now() - new Date(currentUser.created_at).getTime();
-        const isNewUser = accountAgeMs < 2 * 60 * 1000;
+        const isFreshSignup = Math.abs(accountAgeMs) < 3 * 60 * 1000;
+        
+        // Priority check: Use NEW atomic database column
+        const isAlreadyDone = userProfile?.onboarding_completed === true;
 
-        // If we just signed up and filled our profile in the email form, skip the popups!
-        if (window.skipOnboardingPopups && isNewUser) {
-          const name = document.getElementById('onboard-name')?.value;
-          const dob = document.getElementById('onboard-dob')?.value;
-          const gender = document.querySelector('.gender-btn.selected')?.dataset.value;
-
-          if (name && dob && gender) {
-            userProfile = { name, dob, gender };
-            // Save to DB in background
-            supabase.from('profiles').upsert({ id: currentUser.id, name, dob, gender }).then(() => {
-               localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
-            });
-            window.skipOnboardingPopups = false;
-            hideSplash();
-            showWelcomeScreen();
-            return;
-          }
-        }
-
-        if (!userProfile && isNewUser) {
+        if (isFreshSignup && !isAlreadyDone) {
+          console.log('[Auth] Launching Guider tour...');
           hideSplash();
-          showOnboarding();
+          if (window.showGuider) window.showGuider(); else showOnboarding();
         } else {
-          // Returning user: hide splash → go straight to main app
           hideSplash();
+          const loadingScreen = document.getElementById('auth-loading-screen');
+          if (loadingScreen) loadingScreen.classList.add('hidden');
+          const appCont = document.getElementById('app-container');
+          if (appCont) appCont.classList.remove('hidden');
           loadSubscriptions();
         }
       }
@@ -3723,6 +3729,9 @@ settingsForm.addEventListener('submit', async (e) => {
 
     showToast('Settings saved successfully! 🎉');
 
+    // Convert empty string to null for Postgres DATE compatibility
+    const safeDob = updatedDob || null;
+
     // Then attempt cloud sync
     const { error } = await supabase
       .from('profiles')
@@ -3730,8 +3739,9 @@ settingsForm.addEventListener('submit', async (e) => {
         id: currentUser.id,
         name: updatedName,
         gender: updatedGender,
-        dob: updatedDob,
-        avatar_url: userProfile.avatar_url // Save Base64 or URL
+        dob: safeDob, // Send null instead of ""
+        avatar_url: userProfile.avatar_url, // Save Base64 or URL
+        onboarding_completed: true // Ensure flag is set on manual save too
       });
 
     if (error) throw error;
@@ -3741,8 +3751,9 @@ settingsForm.addEventListener('submit', async (e) => {
     queueOperation('upsert_profile', {
         name: updatedName,
         gender: updatedGender,
-        dob: updatedDob,
-        avatar_url: userProfile.avatar_url
+        dob: updatedDob || null, // Atomic safety for queue as well
+        avatar_url: userProfile.avatar_url,
+        onboarding_completed: true
     });
   } finally {
     submitBtn.disabled = false;

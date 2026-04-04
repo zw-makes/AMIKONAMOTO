@@ -97,7 +97,7 @@ export function initGuiderStep2() {
           
           <div class="guider-actions" style="display: flex; gap: 12px; width: 100%; margin-top: auto;">
               <button id="guider-back-btn" class="guider-main-btn" style="flex: 1; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);">Previous</button>
-              <button id="guider-finish-btn" class="guider-main-btn" style="flex: 1;">Got it!!</button>
+              <button id="guider-finish-btn" class="guider-main-btn" style="flex: 1;">GOT IT!</button>
           </div>
         </div>
       </div>
@@ -184,13 +184,10 @@ export function initGuiderStep2() {
     
     setTimeout(() => {
       view.remove();
-      authScreen.classList.add('hidden');
-      document.getElementById('app-container').classList.remove('hidden');
-      
-      // Init real app payload
-      if (window.initApp) {
-          window.initApp();
-      }
+      // Use dynamic import or have it global
+      import('./guider-step3.js').then(module => {
+        module.initGuiderStep3();
+      });
     }, 400);
   });
 }

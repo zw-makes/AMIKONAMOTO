@@ -1,3 +1,4 @@
+import { supabase } from '../../supabase.js';
 import { showEmailAuthPage } from './email-auth.js';
 
 const TAGLINES = [
@@ -62,13 +63,43 @@ export function initAuthPage() {
 
   authScreen.appendChild(authView);
 
-  // Connect Google Auth to Guider
+  // Connect Google Auth
   const googleBtn = authView.querySelector('.social-btn.google');
   if (googleBtn) {
-    googleBtn.addEventListener('click', () => {
+    googleBtn.addEventListener('click', async () => {
        if (window.HapticsService) window.HapticsService.light();
-       authView.classList.add('hidden');
-       if (window.showGuider) window.showGuider();
+       
+       const { error } = await supabase.auth.signInWithOAuth({
+         provider: 'google',
+         options: {
+           redirectTo: window.location.origin
+         }
+       });
+
+       if (error) {
+         console.error('[OAuth] Google Error:', error.message);
+         if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(error.message);
+       }
+    });
+  }
+
+  // Connect Apple Auth
+  const appleBtn = authView.querySelector('.social-btn.apple');
+  if (appleBtn) {
+    appleBtn.addEventListener('click', async () => {
+       if (window.HapticsService) window.HapticsService.light();
+       
+       const { error } = await supabase.auth.signInWithOAuth({
+         provider: 'apple',
+         options: {
+           redirectTo: window.location.origin
+         }
+       });
+
+       if (error) {
+         console.error('[OAuth] Apple Error:', error.message);
+         if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(error.message);
+       }
     });
   }
 

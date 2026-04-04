@@ -1,0 +1,114 @@
+@import "../notifications/notifications.css";
+
+.guider-step3-view {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.guider-step3-view.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.guider-notif-stack {
+  position: relative;
+  width: calc(100% + 40px); /* Extend slightly beyond container padding */
+  max-width: 500px;
+  margin-left: -20px;
+  margin-right: -20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px;
+  z-index: 10;
+  perspective: 1000px;
+}
+
+/* Custom animation for guider entrance */
+.guider-notif-anim {
+  transform: translateY(20px) scale(0.9);
+  opacity: 0;
+  animation: notifSlideInGuider 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes notifSlideInGuider {
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Disable hover and click effects for the guider preview */
+.guider-notif-stack .notif-item {
+  cursor: default !important;
+  pointer-events: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transform: none;
+  animation-iteration-count: 0;
+  color: #ffffff !important; /* Ensure text is purely white/gray */
+}
+
+/* Specific accent override: Kill any green from successful notifs if they appear */
+.guider-notif-stack {
+  position: relative;
+  width: calc(100% + 40px);
+  max-width: 500px;
+  margin-left: -20px;
+  margin-right: -20px;
+  height: 380px; /* Force height for exactly 3 items */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 5px 16px;
+  z-index: 10;
+  perspective: 1000px;
+  overflow: hidden; /* This kills the 4th item glitch immediately! */
+  mask-image: linear-gradient(to bottom, white 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, white 80%, transparent 100%);
+}
+
+/* Sequencing: Items enter from the top and push others down */
+.guider-notif-anim {
+  opacity: 0;
+  transform: translateY(-40px) scale(0.9);
+  animation: notifPushIn 0.7s cubic-bezier(0.19, 1, 0.22, 1) forwards !important;
+}
+
+@keyframes notifPushIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+    max-height: 0;
+    margin-bottom: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 120px;
+    margin-bottom: 16px;
+  }
+}
+
+.guider-notif-out {
+  opacity: 0 !important;
+  transform: translateY(40px) scale(0.9) !important;
+  max-height: 0 !important;
+  margin-bottom: 0 !important;
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1) !important;
+}
+
+.notif-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(30px);
+}
