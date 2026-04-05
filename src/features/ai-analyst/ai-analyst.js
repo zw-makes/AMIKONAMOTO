@@ -66,7 +66,7 @@ function createAIAnalystOverlay() {
     overlay.id = 'ai-analyst-overlay';
     overlay.className = 'ai-analyst-overlay hidden';
 
-    const logoUrl = "https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png";
+    const logoUrl = "/sublify-logo.png";
 
     overlay.innerHTML = `
         <div class="ai-analyst-container">

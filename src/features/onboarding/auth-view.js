@@ -31,7 +31,7 @@ export function initAuthPage() {
     </div>
 
     <div class="auth-branding">
-      <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="auth-logo-img" alt="Sublify Logo">
+      <img src="/sublify-logo.png" class="auth-logo-img" alt="Sublify Logo">
       
       <div class="auth-tagline-container">
         <p id="auth-rotating-tagline" class="auth-tagline"></p>

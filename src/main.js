@@ -26,6 +26,7 @@ import './features/onboarding/believe-page.css';
 import './features/onboarding/auth-page.css';
 import './features/onboarding/email-auth.css';
 import './features/onboarding/guider.css';
+import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
 
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
@@ -41,13 +42,20 @@ window.getLogoUrl = function(domainOrUrl) {
     
     if (isDirect) return domainOrUrl;
     
-    // Otherwise, assume it's a domain and use icon.horse
+    // Normalise to bare domain
     let domain = domainOrUrl;
     if (domain.startsWith('http')) {
         try {
             domain = new URL(domain).hostname;
         } catch(e) {}
     }
+
+    // ✅ Check local bundled logos first (always works offline)
+    if (LOCAL_LOGOS[domain]) {
+        return LOCAL_LOGOS[domain];
+    }
+
+    // Fallback: remote icon.horse (requires internet)
     return `https://icon.horse/icon/${domain}`;
 };
 
@@ -374,7 +382,7 @@ const popularApps = [
   { name: 'Medium', domain: 'medium.com' },
   { name: 'Dropbox', domain: 'dropbox.com' },
   { name: 'Discord Nitro', domain: 'discord.com' },
-  { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' }
+  { name: 'SUBLIFY', domain: '/sublify-logo.png' }
 ];
 window.popularApps = popularApps;
 window.getDomain = getDomain;
@@ -863,7 +871,7 @@ function getDomain(s) {
     'twitter': 'twitter.com', 'x': 'x.com', 'meta': 'meta.com', 'facebook': 'facebook.com',
     'instagram': 'instagram.com', 'tiktok': 'tiktok.com', 'github': 'github.com',
     'chatgpt': 'openai.com', 'openai': 'openai.com', 'cursor': 'cursor.sh',
-    'sublify': 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png'
+    'sublify': '/sublify-logo.png'
   };
   
   let nameLower = s.name.toLowerCase().trim();

@@ -169,7 +169,7 @@ export async function initBelievePage() {
       </div>
       
       <div class="result-footer-lockup" id="believe-result-footer">
-        <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="landing-logo-img" alt="Sublify Logo">
+        <img src="/sublify-logo.png" class="landing-logo-img" alt="Sublify Logo">
         <div class="privacy-note">Your data is end-to-end encrypted and never used to train AI models.</div>
         <button id="believe-auth-btn" class="believe-next-btn">Start Free. AI Handles the Rest.</button>
       </div>

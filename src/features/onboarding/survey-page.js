@@ -30,7 +30,7 @@ export async function initSurveyPage() {
     <div class="survey-container">
       <div class="survey-text-wrapper" id="survey-text-box"></div>
       <div class="survey-footer" id="survey-bottom-bar">
-        <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="landing-logo-img" alt="Sublify Logo">
+        <img src="/sublify-logo.png" class="landing-logo-img" alt="Sublify Logo">
         <button id="survey-next-btn" class="survey-btn">don't believe?</button>
       </div>
     </div>

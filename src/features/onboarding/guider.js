@@ -280,7 +280,7 @@ export async function initGuider() {
 
         <div class="guider-content">
           <div class="guider-branding">
-             <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="guider-logo" alt="Sublify Logo">
+             <img src="/sublify-logo.png" class="guider-logo" alt="Sublify Logo">
              <h2 class="guider-title">One app. Every subscription. Zero surprises.</h2>
              <p class="guider-description">See exactly which days money leaves your account. No more surprise charges, just a clear view of what's coming.</p>
           </div>

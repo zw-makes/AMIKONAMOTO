@@ -90,7 +90,7 @@ export function initGuiderStep2() {
 
         <div class="guider-content">
           <div class="guider-branding">
-             <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="guider-logo" alt="Sublify Logo">
+             <img src="/sublify-logo.png" class="guider-logo" alt="Sublify Logo">
              <h2 class="guider-title">Your AI. Your data. Full stop.</h2>
              <p class="guider-description">Stop thinking about it. We got it. 100% private, zero AI training on your data. Life's too full for subscription stress.</p>
           </div>
