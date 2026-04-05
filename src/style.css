@@ -1027,12 +1027,21 @@ button:active {
 .form-group input,
 .form-group select {
   width: 100%;
+  box-sizing: border-box !important;
+  max-width: 100%;
   background: var(--surface-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   color: var(--text-primary);
   font-family: inherit;
+}
+
+/* Fix iOS Safari Date Input Overflow Bug globally */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
 }
 
 .form-group input[type='number']::-webkit-inner-spin-button,
@@ -2064,6 +2073,8 @@ button:active {
 #app-settings-modal input,
 #app-settings-modal select {
   width: 100%;
+  box-sizing: border-box !important;
+  max-width: 100%;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -2072,6 +2083,14 @@ button:active {
   font-family: var(--font-main);
   font-size: 0.9rem;
   transition: all 0.2s ease;
+}
+
+/* Fix iOS Safari Date Input Overflow Bug */
+#settings-modal input[type="date"],
+#app-settings-modal input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px; /* Ensure tap target is large enough on iOS */
 }
 
 #settings-modal input:focus,
