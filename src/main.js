@@ -613,24 +613,32 @@ window.loadSubscriptions = loadSubscriptions;
 async function loadSubscriptions() {
   if (!currentUser) return;
 
-  // Show loading state in footer immediately
   const footTotal = document.getElementById('total-amount');
   if (footTotal) footTotal.innerText = 'Loading...';
 
-  if (!navigator.onLine) {
-    console.log('[Offline] Loading subscriptions instantly from cache.');
-    subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+  // 1. OFFLINE-FIRST OPTIMISTIC LOAD: Always render what's in local storage first!
+  const cached = localStorage.getItem('subscriptions');
+  if (cached) {
+    subscriptions = JSON.parse(cached);
     renderCalendar();
     updateStats();
+  } else {
+    subscriptions = [];
+  }
+
+  // If literally offline mode, stop here.
+  if (!navigator.onLine) {
+    console.log('[Offline] Using local subscriptions cache.');
+    if (footTotal && subscriptions.length > 0) footTotal.innerText = 'Offline Mode';
     return;
   }
 
+  // 2. BACKGROUND SYNC with a timeout
   try {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', currentUser.id);
-
+    const subPromise = supabase.from('subscriptions').select('*').eq('user_id', currentUser.id);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+    
+    const { data, error } = await Promise.race([subPromise, timeoutPromise]);
     if (error) throw error;
 
     if (data && data.length > 0) {
@@ -664,13 +672,11 @@ async function loadSubscriptions() {
 
     // Auto-generate reminders only on fresh loads
     updateReminders();
+    renderCalendar();
+    updateStats();
   } catch (err) {
-    console.error('Error loading subscriptions:', err.message);
-    subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+    console.warn('[Sync] Subscriptions sync delayed/failed:', err.message);
   }
-
-  renderCalendar();
-  updateStats();
 }
 
 window.saveToSupabase = saveToSupabase;
@@ -2735,11 +2741,14 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
     // 2. Background task to load profile
     const loadProfile = async () => {
-      // Offline-first load check
-      if (!navigator.onLine) {
-        console.log('[Offline] Using cached profile.');
-        const saved = localStorage.getItem(`profile_${currentUser.id}`);
-        if (saved) userProfile = JSON.parse(saved);
+      let hasCache = false;
+      
+      // 1. INSTANT CACHE BOOT: Tear down the loading screens immediately if we have a cache
+      const saved = localStorage.getItem(`profile_${currentUser.id}`);
+      if (saved) {
+        hasCache = true;
+        console.log('[Offline-First] Booting instantly from cache...');
+        userProfile = JSON.parse(saved);
         
         if (userProfile?.settings?.theme) applyTheme(userProfile.settings.theme === 'dark');
         if (userProfile?.settings?.starred_dates) {
@@ -2749,14 +2758,31 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         updateStats();
         updateTime();
         updateProfileUI();
+        
+        // Remove Splash and Loading Screens instantly
         hideSplash();
+        const loadingScreen = document.getElementById('auth-loading-screen');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+        const appCont = document.getElementById('app-container');
+        if (appCont) appCont.classList.remove('hidden');
+      }
+
+      if (!navigator.onLine) {
+        console.log('[Offline] Using cached profile.');
+        if (!hasCache) {
+          hideSplash();
+          const loadingScreen = document.getElementById('auth-loading-screen');
+          if (loadingScreen) loadingScreen.classList.add('hidden');
+          const appCont = document.getElementById('app-container');
+          if (appCont) appCont.classList.remove('hidden');
+        }
         loadSubscriptions();
         return;
       }
 
+      // 2. SYNC IN BACKGROUND: Fetch from Supabase
       try {
-        console.log('[Auth] Fetching profile from Supabase...');
-        // Safety timeout for profile fetch (5 seconds)
+        console.log('[Auth] Syncing profile from Supabase in background...');
         const profilePromise = supabase
           .from('profiles')
           .select('name, gender, dob, avatar_url, settings, onboarding_completed')
@@ -2770,11 +2796,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
 
         if (profile) {
-          console.log('[Auth] Profile fetched successfully.');
+          console.log('[Auth] Profile synced successfully.');
           userProfile = profile;
           safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
         } else if (error && (error.code === 'PGRST116' || error.code === '406')) {
-          // New User case: Try to catch data from the signup form before defaulting
           console.log('[Auth] New user detected — capturing registration data...');
           
           const signupName = document.getElementById('auth-name-input')?.value || 
@@ -2802,21 +2827,16 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           await supabase.from('profiles').upsert({ id: currentUser.id, ...userProfile });
           safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
         } else {
-          // Network error or timeout: NEVER overwrite with defaults!
-          console.warn('[Auth] DB connection lag. Using cache.');
-          const saved = localStorage.getItem(`profile_${currentUser.id}`);
-          if (saved) userProfile = JSON.parse(saved);
+          console.warn('[Auth] DB connection lag. Sync failed, relying on cache.');
         }
 
-        // Apply theme/starred dates
+        // Apply theme/starred dates silently
         if (userProfile?.settings?.theme) applyTheme(userProfile.settings.theme === 'dark');
         updateStats();
         updateTime();
 
       } catch (err) {
-        console.error('[Auth] Loading sequence error:', err.message);
-        const saved = localStorage.getItem(`profile_${currentUser.id}`);
-        if (saved) userProfile = JSON.parse(saved);
+        console.warn('[Auth] Background sync delayed:', err.message);
       } finally {
         updateProfileUI();
 
@@ -2829,6 +2849,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (isFreshSignup && !isAlreadyDone) {
           console.log('[Auth] Launching Guider tour...');
           hideSplash();
+          const loadingScreen = document.getElementById('auth-loading-screen');
+          if (loadingScreen) loadingScreen.classList.add('hidden');
+          const appCont = document.getElementById('app-container');
+          if (appCont) appCont.classList.add('hidden'); // Guarantee hidden for Guider
+          
           if (window.showGuider) window.showGuider(); else showOnboarding();
         } else {
           hideSplash();
@@ -2836,6 +2861,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           if (loadingScreen) loadingScreen.classList.add('hidden');
           const appCont = document.getElementById('app-container');
           if (appCont) appCont.classList.remove('hidden');
+          
+          // Load subscriptions (it has its own cache-first logic)
           loadSubscriptions();
         }
       }
