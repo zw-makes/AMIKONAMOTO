@@ -40,12 +40,12 @@ export function initAuthPage() {
 
     <div class="auth-options">
       <button class="social-btn google">
-        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google">
+        <img src="/logos/google-brand.png" alt="Google">
         Continue with Google
       </button>
 
       <button class="social-btn apple">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
+        <img src="/logos/apple-brand.svg" alt="Apple">
         Continue with Apple
       </button>
 

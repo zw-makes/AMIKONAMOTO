@@ -28,7 +28,7 @@ export function initEmailAuthPage() {
 
     <div class="email-header-content">
       <div class="email-auth-header">
-        <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="email-auth-logo" alt="Sublify Logo">
+        <img src="/sublify-logo.png" class="email-auth-logo" alt="Sublify Logo">
       </div>
 
       <h2 class="email-auth-title" id="email-auth-title-text">Welcome Back</h2>
