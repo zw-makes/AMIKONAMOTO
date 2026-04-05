@@ -2658,12 +2658,65 @@ function safeSetLocalStorage(key, value) {
 
 // Auth State Listener
 // --- Splash Screen Helper ---
+let splashHidden = false;
 function hideSplash() {
+  if (splashHidden) return;
+  splashHidden = true;
   const splash = document.getElementById('splash-screen');
   if (!splash) return;
   splash.classList.add('fade-out');
   setTimeout(() => splash.classList.add('hidden'), 420);
 }
+
+// === OFFLINE BOOT FAILSAFE ===
+// If the device is connected to WiFi but has no actual internet, Supabase's internal 
+// fetch request to refresh an expired token can hang indefinitely, locking the app.
+// This kicks in after 3 seconds to unfreeze the UI and force load the cached offline state.
+setTimeout(() => {
+  if (!splashHidden) {
+    console.warn('[Offline Failsafe] Supabase initialization hung. Forcing offline boot...');
+    
+    // Attempt to manually recover user session bypassing the hung provider
+    const sessionCookie = localStorage.getItem('sb-ptueakygbjohifkscplk-auth-token'); 
+    
+    if (sessionCookie) {
+      try {
+        const parsed = JSON.parse(sessionCookie);
+        if (parsed?.user) {
+           currentUser = parsed.user;
+           window.currentUser = parsed.user;
+           
+           const savedProf = localStorage.getItem(`profile_${currentUser.id}`);
+           if (savedProf) {
+             userProfile = JSON.parse(savedProf);
+             if (userProfile?.settings?.theme) applyTheme(userProfile.settings.theme === 'dark');
+             if (userProfile?.settings?.starred_dates) {
+               localStorage.setItem('starred_dates', JSON.stringify(userProfile.settings.starred_dates));
+             }
+           }
+           
+           hideSplash();
+           const loadingScreen = document.getElementById('auth-loading-screen');
+           if (loadingScreen) loadingScreen.classList.add('hidden');
+           
+           const appCont = document.getElementById('app-container');
+           if (appCont) appCont.classList.remove('hidden');
+           
+           updateProfileUI();
+           loadSubscriptions();
+           return;
+        }
+      } catch (e) {
+        console.warn('[Offline Failsafe] Could not parse local session:', e.message);
+      }
+    }
+    
+    // Force show login screen if no cached offline user data
+    hideSplash();
+    authScreen.classList.remove('hidden');
+  }
+}, 3000);
+
 
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log(`[Auth] Event: ${event}`);
@@ -2733,11 +2786,15 @@ supabase.auth.onAuthStateChange(async (event, session) => {
                             document.getElementById('onboard-dob')?.value || 
                             null;
 
+          const signupGender = document.getElementById('auth-gender-input')?.value ||
+                               document.querySelector('.gender-btn.selected')?.dataset?.value ||
+                               'other';
+
           userProfile = {
             name: signupName,
             onboarding_completed: false,
             dob: signupDob || null, // Atomic null for Postgres
-            gender: 'other',
+            gender: signupGender,
             settings: { theme: 'dark', notifications: true, paid_history: {} }
           };
           
