@@ -1,4 +1,7 @@
 import { HapticsService } from '../../features/haptics/haptics.js';
+
+let hapticTimeouts = [];
+
 /**
  * Initializes the onboarding survey page logic.
  */
@@ -41,6 +44,8 @@ export async function initSurveyPage() {
   // Setup Next button logic
   const nextBtn = document.getElementById('survey-next-btn');
   nextBtn.addEventListener('click', () => {
+    hapticTimeouts.forEach(clearTimeout);
+    hapticTimeouts = [];
     if (window.HapticsService) window.HapticsService.success();
     // Move to Believe View instead of direct login
     surveyView.classList.add('hidden');
@@ -51,6 +56,8 @@ export async function initSurveyPage() {
   // Setup Skip button logic
   const skipBtn = document.getElementById('survey-skip-btn');
   skipBtn.addEventListener('click', () => {
+    hapticTimeouts.forEach(clearTimeout);
+    hapticTimeouts = [];
     if (window.HapticsService) window.HapticsService.success();
     surveyView.classList.add('hidden');
     
@@ -77,6 +84,9 @@ async function updateConvertedAmountAndAnimate() {
   const container = document.getElementById('survey-text-box');
   if (!container) return;
   container.innerHTML = '';
+  
+  hapticTimeouts.forEach(clearTimeout);
+  hapticTimeouts = [];
 
   const rawINR = 120000;
   let convertedStr = '₹1,20,000+';
@@ -115,9 +125,10 @@ async function updateConvertedAmountAndAnimate() {
     // Trigger haptic for every word appearance
     const hapticSvc = window.HapticsService || HapticsService;
     if (hapticSvc) {
-       setTimeout(() => {
+       const tId = setTimeout(() => {
          hapticSvc.light(); 
        }, delay * 1000);
+       hapticTimeouts.push(tId);
     }
     
     // Highlight the money as a special 3D block

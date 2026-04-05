@@ -37,7 +37,7 @@ export function initEmailAuthPage() {
       <div id="signup-only-fields" class="hidden">
         <div class="form-field">
           <label>Full Name</label>
-          <input type="text" id="auth-name-input" placeholder="Your name">
+          <input type="text" id="auth-name-input" placeholder="Your name" maxlength="30">
         </div>
         
         <div class="form-row-grid">
