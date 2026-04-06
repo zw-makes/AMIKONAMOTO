@@ -553,9 +553,7 @@ async function fetchExchangeRates(base = 'USD') {
   if (!exchangeRatesCache[base]) {
     const stored = localStorage.getItem(storageKey);
     if (stored) {
-      try {
-        exchangeRatesCache[base] = JSON.parse(stored);
-      } catch (e) {}
+      try { exchangeRatesCache[base] = JSON.parse(stored); } catch (e) {}
     }
   }
 
@@ -569,33 +567,60 @@ async function fetchExchangeRates(base = 'USD') {
     const response = await fetch(`https://open.er-api.com/v6/latest/${base}`);
     const data = await response.json();
     if (data.result === 'success') {
-      exchangeRatesCache[base] = {
-        rates: data.rates,
-        timestamp: now
-      };
-      // Save newly fetched rates to permanent offline storage
+      exchangeRatesCache[base] = { rates: data.rates, timestamp: now };
       localStorage.setItem(storageKey, JSON.stringify(exchangeRatesCache[base]));
       return data.rates;
     }
   } catch (err) {
-    console.warn(`[Offline] Failed to fetch live exchange rates for ${base}. Relying on local storage fallback.`, err);
+    console.warn(`[Offline] Live fetch failed for ${base}.`);
   }
 
-  // 4. Offline Fallback: If fetch failed, return stale cached rates (no matter how old they are)
-  if (exchangeRatesCache[base]) {
-      console.log(`[Offline Fallback] Using older saved exchange rates for ${base}.`);
-      return exchangeRatesCache[base].rates;
+  // 4. Offline Best-Effort Fallback: 
+  // If we have THE specific base even if it's old, use it.
+  if (exchangeRatesCache[base]) return exchangeRatesCache[base].rates;
+
+  // 5. UNIVERSAL SYNTHETIC FALLBACK:
+  // If requested base is missing (e.g. user offline and switched to NZD but only have INR cache),
+  // search ALL local storage for ANY rates cache and mathematically derive the missing base rates.
+  console.log(`[Offline Logic] Searching Universal Fallback for ${base}...`);
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('sublify_exchange_rates_')) {
+      try {
+        const otherBase = key.replace('sublify_exchange_rates_', '');
+        const data = JSON.parse(localStorage.getItem(key));
+        if (data && data.rates && data.rates[base]) {
+          console.log(`[Offline Sync] Reconstructing ${base} rates from ${otherBase} cache!`);
+          const pivotRate = data.rates[base]; // Value of 1 otherBase in base
+          const reconstructed = {};
+          // If 1 USD = 80 INR, and we want INR base, then 1 INR = 1/80 USD.
+          // TargetRate = (USD/Target) / (USD/Base)
+          for (const [curr, rate] of Object.entries(data.rates)) {
+            reconstructed[curr] = rate / pivotRate;
+          }
+          exchangeRatesCache[base] = { rates: reconstructed, timestamp: data.timestamp };
+          return reconstructed;
+        }
+      } catch (e) {}
+    }
   }
 
   return null;
 }
 
 function getConvertedPrice(price, fromCurrency, targetCurrency, rates) {
-  if (!rates || Object.keys(rates).length === 0) return price;
+  if (!rates) return price;
   const from = fromCurrency || 'USD';
   if (from === targetCurrency) return price;
-  const rate = rates[from] || 1;
-  return price / rate;
+  
+  // If the rates object is directly the from-to link
+  if (typeof rates === 'number') return price * rates;
+  
+  // Standard extraction from rates object
+  const rate = rates[from];
+  if (rate !== undefined) return price / rate;
+  
+  return price;
 }
 window.fetchExchangeRates = fetchExchangeRates;
 window.getConvertedPrice = getConvertedPrice;

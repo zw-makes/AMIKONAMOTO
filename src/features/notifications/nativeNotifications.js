@@ -43,7 +43,7 @@ export const NativeNotifications = {
         const hasPermission = await this.requestPermissions();
         
         if (!hasPermission) {
-            alert('Please enable notifications in your iPhone settings to test this feature!');
+            alert('Please enable notifications in your settings to test this feature!');
             return;
         }
 
@@ -53,9 +53,14 @@ export const NativeNotifications = {
                     {
                         title: "🚀 Test Notification",
                         body: "If you see this, the native notification engine is working! Sublify is ready for live alerts.",
-                        id: Math.floor(Math.random() * 100000),
+                        id: Math.floor(Date.now() / 1000),
                         schedule: { at: new Date(Date.now() + 1000) },
                         sound: null,
+                        smallIcon: "res://icon", // Standard Capacitor resource reference
+                        largeIcon: "res://icon",
+                        attachments: [
+                            { id: 'logo', url: 'public/sublify-logo.png' } // For iOS rich notifications
+                        ]
                     }
                 ]
             });
@@ -101,6 +106,11 @@ export const NativeNotifications = {
                 body: r.body,
                 schedule: { at: r.date },
                 sound: null,
+                smallIcon: "res://icon",
+                largeIcon: "res://icon",
+                attachments: [
+                    { id: 'logo', url: 'public/sublify-logo.png' }
+                ]
             }));
 
             await LocalNotifications.schedule({ notifications });
