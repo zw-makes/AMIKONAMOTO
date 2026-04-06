@@ -98,7 +98,7 @@ function updateActiveDot(index) {
 }
 
 function createCardHTML(s, viewDate = new Date()) {
-    const domain = s.domain || 'example.com';
+    const domain = window.getDomain ? window.getDomain(s) : (s.domain || 'example.com');
     const price = `${s.symbol || '$'}${s.price.toFixed(2)}`;
     
     // Real world today

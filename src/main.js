@@ -33,14 +33,15 @@ window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
     
     // Check if it's already a full URL or data:image
-    const isDirect = domainOrUrl.startsWith('data:image') || (
+    if (domainOrUrl.startsWith('data:image') || (
         domainOrUrl.startsWith('http') && (
             domainOrUrl.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
             domainOrUrl.includes('supabase.co')
         )
-    );
+    )) return domainOrUrl;
     
-    if (isDirect) return domainOrUrl;
+    // Support local paths
+    if (domainOrUrl.startsWith('/')) return domainOrUrl;
     
     // Normalise to bare domain
     let domain = domainOrUrl;
@@ -53,6 +54,12 @@ window.getLogoUrl = function(domainOrUrl) {
     // ✅ Check local bundled logos first (always works offline)
     if (LOCAL_LOGOS[domain]) {
         return LOCAL_LOGOS[domain];
+    }
+    
+    // Robust brand mapping check for Sublify family
+    const lower = domain.toLowerCase();
+    if (lower.includes('sublify') || lower.includes('syncspend') || lower.includes('subtrack')) {
+        return '/sublify-logo.png';
     }
 
     // Fallback: remote icon.horse (requires internet)
@@ -915,6 +922,7 @@ function renderCalendar() {
   updateStats();
 }
 
+window.getDomain = getDomain;
 function getDomain(s) {
   const brandMap = {
     'netflix': 'netflix.com', 'spotify': 'spotify.com', 'amazon': 'amazon.com',
@@ -925,11 +933,16 @@ function getDomain(s) {
     'twitter': 'twitter.com', 'x': 'x.com', 'meta': 'meta.com', 'facebook': 'facebook.com',
     'instagram': 'instagram.com', 'tiktok': 'tiktok.com', 'github': 'github.com',
     'chatgpt': 'openai.com', 'openai': 'openai.com', 'cursor': 'cursor.sh',
-    'sublify': '/sublify-logo.png'
+    'sublify': 'sublify.com', 'syncspend': 'sublify.com', 'subtrack': 'sublify.com'
   };
   
-  let nameLower = s.name.toLowerCase().trim();
+  let nameLower = (s.name || '').toLowerCase().trim();
   let domain = s.domain;
+
+  // Absolute Priority for Sublify Family
+  if (nameLower.includes('sublify') || nameLower.includes('syncspend') || nameLower.includes('subtrack')) {
+    return 'sublify.com';
+  }
 
   if (domain) {
     if (domain.startsWith('data:image')) return domain;

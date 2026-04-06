@@ -24,6 +24,7 @@ export const LOCAL_LOGOS = {
   'grammarly.com': '/logos/grammarly.com.png',
   'discord.com': '/logos/discord.com.png',
   'hotstar.com': '/logos/hotstar.com.png',
+  'sublify.com': '/sublify-logo.png',
   // Manually mapped (icon.horse download failed, using fallback)
   'chatgpt.com': '/logos/notion.so.png',
   'openai.com': '/logos/notion.so.png',

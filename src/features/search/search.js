@@ -97,42 +97,6 @@ function updateSearchState(query) {
     }
 }
 
-function getDomain(sub) {
-    const brandMap = {
-        'netflix': 'netflix.com', 'spotify': 'spotify.com', 'amazon': 'amazon.com',
-        'prime': 'amazon.com', 'youtube': 'youtube.com', 'apple': 'apple.com',
-        'disney': 'disneyplus.com', 'hulu': 'hulu.com', 'adobe': 'adobe.com',
-        'figma': 'figma.com', 'slack': 'slack.com', 'google': 'google.com',
-        'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so'
-    };
-    let domain = sub.domain;
-    let nameLower = sub.name.toLowerCase().trim();
-
-    if (domain) {
-        if (domain.startsWith('data:image')) return domain;
-        
-        // Match main.js robust direct link detector
-        const isDirect = domain.startsWith('http') && (
-            domain.match(/\.(jpeg|jpg|gif|png|webp|svg|ico|bmp)/i) || 
-            domain.includes('supabase.co')
-        );
-        if (isDirect) return domain;
-    }
-
-    if (!domain) {
-        if (brandMap[nameLower]) {
-            domain = brandMap[nameLower];
-        } else {
-            domain = nameLower.replace(/\s+/g, '') + '.com';
-        }
-    } else {
-        if (domain.startsWith('http')) {
-            try { domain = new URL(domain).hostname; } catch (e) { }
-        }
-    }
-    return domain;
-}
-
 function getSubEndDate(sub) {
     const start = new Date(sub.startDate);
     let end = null;
@@ -168,7 +132,7 @@ function renderResults(query) {
     today.setHours(0, 0, 0, 0);
 
     list.innerHTML = filtered.map(sub => {
-        const domain = getDomain(sub);
+        const domain = window.getDomain ? window.getDomain(sub) : sub.domain;
         const logoUrl = window.getLogoUrl(domain);
         
         // Calculate Ended Status

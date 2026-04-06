@@ -32,7 +32,7 @@ const CATALOG_DATA = [
   {
     category: 'Productivity',
     apps: [
-      { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' },
+      { name: 'SUBLIFY', domain: 'sublify.com' },
       { name: 'Notion', domain: 'notion.so' },
       { name: 'Slack', domain: 'slack.com' },
       { name: 'Google Workspace', domain: 'google.com' },
@@ -116,7 +116,7 @@ const CATALOG_DATA = [
   {
     category: 'AI Tools',
     apps: [
-      { name: 'SUBLIFY', domain: 'https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png' },
+      { name: 'SUBLIFY', domain: 'sublify.com' },
       { name: 'ChatGPT', domain: 'chatgpt.com' },
       { name: 'Claude', domain: 'anthropic.com' },
       { name: 'Perplexity', domain: 'perplexity.ai' },

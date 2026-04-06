@@ -86,19 +86,6 @@ export function toggleListView(btn) {
     }
 }
 
-function getSubDomain(sub) {
-    const brandMap = {
-        'netflix': 'netflix.com', 'spotify': 'spotify.com', 'amazon': 'amazon.com',
-        'prime': 'amazon.com', 'youtube': 'youtube.com', 'apple': 'apple.com',
-        'disney': 'disneyplus.com', 'hulu': 'hulu.com', 'adobe': 'adobe.com',
-        'figma': 'figma.com', 'slack': 'slack.com', 'google': 'google.com',
-        'hbo': 'max.com', 'canva': 'canva.com', 'notion': 'notion.so'
-    };
-    let nameLower = (sub.name || '').toLowerCase().trim();
-    let domain = sub.domain || brandMap[nameLower] || nameLower.replace(/\s+/g, '') + '.com';
-    return domain;
-}
-
 export function renderListView() {
     if (!listViewContainer || !listViewActive) return;
 
@@ -160,7 +147,7 @@ export function renderListView() {
         const dayOfWeek = dateObj.getDay();
         weekSpending[dayOfWeek] += p;
 
-        const domain = getSubDomain(s);
+        const domain = window.getDomain ? window.getDomain(s) : (s.domain || 'example.com');
         weekLogos[dayOfWeek].push({ domain, price: p, sub: s });
     });
 
@@ -259,7 +246,7 @@ export function renderListView() {
 
     const brandFooterHtml = `
         <div class="brand-footer">
-            <img src="https://ptueakygbjohifkscplk.supabase.co/storage/v1/object/public/LOGOS/ChatGPT%20Image%20Mar%2017,%202026,%2010_36_13%20PM.png" class="brand-footer-logo" alt="Logo">
+            <img src="/sublify-logo.png" class="brand-footer-logo" alt="Logo">
             <span class="brand-footer-version">v.0.1.1</span>
         </div>
     `;

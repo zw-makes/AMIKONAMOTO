@@ -899,7 +899,7 @@ function renderSelectedSubPill() {
     zone.className = 'ai-selected-pill-zone show';
     zone.innerHTML = `
         <div class="ai-selected-pill" onclick="window.deselectSub(event)" style="cursor: pointer;">
-            <img src="${window.getLogoUrl(selectedSub.domain)}" class="pill-logo">
+            <img src="${window.getLogoUrl(window.getDomain ? window.getDomain(selectedSub) : (selectedSub.domain || ''))}" class="pill-logo">
         </div>
     `;
 }
@@ -1210,7 +1210,7 @@ function renderSubscriptionPreview(container, ids, contextText = '') {
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="width: 32px; height: 32px; background: #111; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ffffff0a;">
-                            <img src="${window.getLogoUrl(domain)}" style="width:70%; height:70%; object-fit:contain;">
+                            <img src="${window.getLogoUrl(window.getDomain ? window.getDomain(s) : (s.domain || ''))}" style="width:70%; height:70%; object-fit:contain;">
                         </div>
                         <div class="detail-info">
                             <span class="detail-name" style="font-weight: 600; font-size: 0.85rem; color: #fff;">${s.name}</span>
@@ -1260,7 +1260,7 @@ function addMessage(sender, text, attachedSub = null) {
     if (sender === 'user' && attachedSub) {
         subBadge = `
             <div class="user-sub-badge">
-                <img src="${window.getLogoUrl(attachedSub.domain)}" class="tiny-logo">
+                <img src="${window.getLogoUrl(window.getDomain ? window.getDomain(attachedSub) : attachedSub.domain)}" class="tiny-logo">
             </div>
         `;
     }
@@ -1319,7 +1319,7 @@ window.refreshAllPreviews = function() {
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div class="detail-logo ${isPaid ? 'paid-logo' : ''}" style="width: 32px; height: 32px; background: #111; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ffffff0a;">
-                                    <img src="${window.getLogoUrl(domain)}" style="width:70%; height:70%; object-fit:contain;">
+                                    <img src="${window.getLogoUrl(window.getDomain ? window.getDomain(s) : (s.domain || ''))}" style="width:70%; height:70%; object-fit:contain;">
                                 </div>
                                 <div class="detail-info">
                                     <span class="detail-name" style="font-weight: 600; font-size: 0.85rem; color: #fff;">${s.name}</span>
@@ -1368,7 +1368,7 @@ function showSubPicker(filter = '') {
     let listHtml = filteredSubs.map(s => {
         return `
             <div class="shutter-item" onclick="window.confirmPickerSelect(${s.id}, event)">
-                <img src="${window.getLogoUrl(s.domain)}" class="shutter-logo">
+                <img src="${window.getLogoUrl(window.getDomain ? window.getDomain(s) : s.domain)}" class="shutter-logo">
                 <div class="shutter-name">${s.name}</div>
             </div>
         `;
