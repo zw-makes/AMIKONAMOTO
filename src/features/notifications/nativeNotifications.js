@@ -56,11 +56,6 @@ export const NativeNotifications = {
                         id: Math.floor(Date.now() / 1000),
                         schedule: { at: new Date(Date.now() + 1000) },
                         sound: null,
-                        smallIcon: "res://icon", // Standard Capacitor resource reference
-                        largeIcon: "res://icon",
-                        attachments: [
-                            { id: 'logo', url: 'public/sublify-logo.png' } // For iOS rich notifications
-                        ]
                     }
                 ]
             });
@@ -106,11 +101,6 @@ export const NativeNotifications = {
                 body: r.body,
                 schedule: { at: r.date },
                 sound: null,
-                smallIcon: "res://icon",
-                largeIcon: "res://icon",
-                attachments: [
-                    { id: 'logo', url: 'public/sublify-logo.png' }
-                ]
             }));
 
             await LocalNotifications.schedule({ notifications });
