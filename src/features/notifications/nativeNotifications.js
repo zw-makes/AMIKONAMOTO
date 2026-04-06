@@ -52,9 +52,9 @@ export const NativeNotifications = {
                 notifications: [
                     {
                         title: "🚀 Test Notification",
-                        body: "If you see this, the iOS Bridge is working perfectly! SubTrack is ready for native alerts.",
+                        body: "If you see this, the native notification engine is working! Sublify is ready for live alerts.",
                         id: Math.floor(Math.random() * 100000),
-                        schedule: { at: new Date(Date.now() + 1000) }, // Back to 1s for better UX now that it works
+                        schedule: { at: new Date(Date.now() + 1000) },
                         sound: null,
                     }
                 ]

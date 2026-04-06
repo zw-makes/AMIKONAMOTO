@@ -547,10 +547,24 @@ document.addEventListener('click', (e) => {
 // --- Currency Exchange ---
 async function fetchExchangeRates(base = 'USD') {
   const now = Date.now();
+  const storageKey = 'sublify_exchange_rates_' + base;
+  
+  // 1. Try to populate memory cache from local storage if memory is empty
+  if (!exchangeRatesCache[base]) {
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        exchangeRatesCache[base] = JSON.parse(stored);
+      } catch (e) {}
+    }
+  }
+
+  // 2. Return cached rates if they are fresh (< 1 hour old)
   if (exchangeRatesCache[base] && (now - exchangeRatesCache[base].timestamp < 3600000)) {
     return exchangeRatesCache[base].rates;
   }
 
+  // 3. Attempt to fetch live rates
   try {
     const response = await fetch(`https://open.er-api.com/v6/latest/${base}`);
     const data = await response.json();
@@ -559,11 +573,20 @@ async function fetchExchangeRates(base = 'USD') {
         rates: data.rates,
         timestamp: now
       };
+      // Save newly fetched rates to permanent offline storage
+      localStorage.setItem(storageKey, JSON.stringify(exchangeRatesCache[base]));
       return data.rates;
     }
   } catch (err) {
-    console.error(`Failed to fetch exchange rates for ${base}:`, err);
+    console.warn(`[Offline] Failed to fetch live exchange rates for ${base}. Relying on local storage fallback.`, err);
   }
+
+  // 4. Offline Fallback: If fetch failed, return stale cached rates (no matter how old they are)
+  if (exchangeRatesCache[base]) {
+      console.log(`[Offline Fallback] Using older saved exchange rates for ${base}.`);
+      return exchangeRatesCache[base].rates;
+  }
+
   return null;
 }
 
