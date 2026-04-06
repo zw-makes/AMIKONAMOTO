@@ -279,6 +279,7 @@ export function initCatalog() {
       window.editingSubId = null;
       if (window.updatePlatformIcon) window.updatePlatformIcon(null);
       addModal.querySelector('h2').innerHTML = `ADD SUBSCRIPTION`;
+      if (window.setFormDefaultCurrency) window.setFormDefaultCurrency();
       addModal.classList.remove('hidden');
     });
   }
@@ -299,6 +300,7 @@ export function initCatalog() {
     nameInput.dispatchEvent(new Event('input', { bubbles: true }));
 
     addModal.querySelector('h2').innerHTML = `ADD SUBSCRIPTION`;
+    if (window.setFormDefaultCurrency) window.setFormDefaultCurrency();
 
     // 2. Immediate switch (No delay to avoid background flash)
     addModal.classList.remove('hidden');

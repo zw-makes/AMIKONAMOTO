@@ -135,6 +135,21 @@ const CURRENCIES = [
   { code: 'PEN', symbol: 'S/.', name: 'Peruvian Sol' },
 ];
 window.CURRENCIES = CURRENCIES;
+window.setFormDefaultCurrency = function() {
+    const settings = userProfile?.settings || {};
+    const defaultCurrency = settings.currency || 'USD';
+    const currObj = CURRENCIES.find(c => c.code === defaultCurrency) || CURRENCIES[0];
+    
+    const subCurrency = document.getElementById('sub-currency');
+    const subSymbol = document.getElementById('sub-currency-symbol');
+    const uiSymbol = document.getElementById('currency-symbol');
+    const uiCode = document.getElementById('currency-code');
+    
+    if (subCurrency) subCurrency.value = currObj.code;
+    if (subSymbol) subSymbol.value = currObj.symbol;
+    if (uiSymbol) uiSymbol.textContent = currObj.symbol;
+    if (uiCode) uiCode.textContent = currObj.code;
+};
 
 // --- Time Zones ---
 const TIMEZONES = [
@@ -1902,7 +1917,12 @@ async function updateStats() {
     finalSymbol = activeSubs[0].symbol || '$';
   }
 
-  totalAmountEl.innerText = `${finalSymbol}${monthlyTotal.toFixed(2)}`;
+  let totalStr = monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const digitOnly = totalStr.replace(/[^0-9]/g, '');
+  if (digitOnly.length > 10) {
+      totalStr = digitOnly.substring(0, 9) + '+';
+  }
+  totalAmountEl.innerText = `${finalSymbol}${totalStr}`;
 
   // Store globally for List View Sync
   window.lastReport = {
@@ -1955,6 +1975,7 @@ document.getElementById('close-modal').addEventListener('click', () => {
   // Reset form when going back/closing to ensure a clean state next time
   setTimeout(() => {
     subForm.reset();
+    if (window.setFormDefaultCurrency) window.setFormDefaultCurrency();
     window.editingSubId = null;
     if (window.updatePlatformIcon) window.updatePlatformIcon(null);
   }, 300);
@@ -2168,6 +2189,7 @@ subForm.addEventListener('submit', (e) => {
   document.getElementById('trial-duration-section').classList.add('hidden');
   document.getElementById('monthly-options-section').classList.add('hidden');
   subForm.reset(); // Reset form after success
+  if (window.setFormDefaultCurrency) window.setFormDefaultCurrency();
   document.getElementById('trial-days-val').value = '';
   document.getElementById('trial-months-val').value = '';
   document.getElementById('trial-days-selected').innerText = 'Duration';
@@ -3833,8 +3855,16 @@ window.selectAvatar = function (url) {
 };
 
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
+  if (!window.navigator.onLine) {
+    document.getElementById('offline-modal').classList.remove('hidden');
+    return;
+  }
   avatarModal.classList.remove('hidden');
   renderAvatars();
+});
+
+document.getElementById('close-offline-modal').addEventListener('click', () => {
+  document.getElementById('offline-modal').classList.add('hidden');
 });
 
 closeAvatarModalBtn.addEventListener('click', () => {
