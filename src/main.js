@@ -19,7 +19,7 @@ import { initCatalog } from './features/catalog/catalog.js';
 import { initSurveyPage } from './features/onboarding/survey-page.js';
 import { initBelievePage } from './features/onboarding/believe-page.js';
 import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
-import { initEmailAuthPage, showEmailAuthPage } from './features/onboarding/email-auth.js';
+import { initEmailAuthPage, showEmailAuthPage, showOtpVerification } from './features/onboarding/email-auth.js';
 import { initGuider, showGuider } from './features/onboarding/guider.js';
 import './features/onboarding/survey-page.css';
 import './features/onboarding/believe-page.css';
@@ -2420,9 +2420,14 @@ authForm.addEventListener('submit', async (e) => {
 
     if (result.error) throw result.error;
 
-    if (isSignUp && !result.data.session) {
-      authError.innerText = "Check your email for the confirmation link!";
-      authError.classList.remove('hidden');
+    if (isSignUp && result.data.user && !result.data.session) {
+      // Transition to OTP Screen
+      if (typeof showOtpVerification === 'function') {
+        showOtpVerification(email);
+      } else {
+        authError.innerText = "Check your email for the verification code!";
+        authError.classList.remove('hidden');
+      }
     }
 
   } catch (err) {
@@ -2878,12 +2883,15 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
         const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
 
+        // --- CRITICAL GUARD: Only create a Profile record IF the user is confirmed ---
+        const isConfirmed = !!currentUser.email_confirmed_at || !!currentUser.phone_confirmed_at;
+
         if (profile) {
           console.log('[Auth] Profile synced successfully.');
           userProfile = profile;
           safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
-        } else if (error && (error.code === 'PGRST116' || error.code === '406')) {
-          console.log('[Auth] New user detected — capturing registration data...');
+        } else if (isConfirmed && error && (error.code === 'PGRST116' || error.code === '406')) {
+          console.log('[Auth] New confirmed user detected — capturing registration data...');
           
           const signupName = document.getElementById('auth-name-input')?.value || 
                              document.getElementById('onboard-name')?.value || 

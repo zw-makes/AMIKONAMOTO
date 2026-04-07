@@ -79,7 +79,29 @@ export function initEmailAuthPage() {
         <button type="submit" id="email-auth-main-btn" class="email-auth-submit">Log In</button>
       </form>
 
-      <div class="email-auth-footer">
+      <!-- OTP Verification View (Initially Hidden) -->
+      <div id="otp-verification-view" class="hidden">
+        <p class="otp-instruction" id="otp-instruction-text">
+          Enter the 6-digit code sent to<br><strong id="otp-email-display">your email</strong>
+        </p>
+        
+        <div class="otp-input-group" id="otp-input-group">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+          <input type="number" maxlength="1" class="otp-digit" pattern="\d*" inputmode="numeric">
+        </div>
+
+        <button id="otp-verify-btn" class="email-auth-submit">Verify Code</button>
+        
+        <div class="otp-resend">
+          Didn't receive code? <span id="otp-resend-btn">Resend</span>
+        </div>
+      </div>
+
+      <div class="email-auth-footer" id="email-auth-footer-container">
         <span id="email-auth-toggle-btn">Don't have an account? Sign Up</span>
       </div>
     </div>
@@ -233,6 +255,156 @@ export function initEmailAuthPage() {
       originalForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     }
   });
+
+  // --- OTP Specific Logic ---
+  const otpGroup = document.getElementById('otp-input-group');
+  const otpInputs = otpGroup.querySelectorAll('.otp-digit');
+  const otpVerifyBtn = document.getElementById('otp-verify-btn');
+  const otpResendBtn = document.getElementById('otp-resend-btn');
+
+  // Multi-input focus management
+  otpInputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+      if (input.value.length > 1) input.value = input.value.slice(-1);
+      
+      if (input.value && index < otpInputs.length - 1) {
+        otpInputs[index + 1].focus();
+      }
+      
+      // Auto-trigger verify if complete
+      const code = Array.from(otpInputs).map(i => i.value).join('');
+      if (code.length === 6) {
+        otpVerifyBtn.click();
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && index > 0) {
+        otpInputs[index - 1].focus();
+      }
+    });
+  });
+
+  otpVerifyBtn.onclick = async () => {
+    const code = Array.from(otpInputs).map(i => i.value).join('');
+    if (code.length !== 6) return;
+
+    otpVerifyBtn.disabled = true;
+    otpVerifyBtn.innerText = "VERIFYING...";
+    
+    const email = document.getElementById('otp-email-display').innerText;
+
+    try {
+      const { error } = await window.supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'signup'
+      });
+
+      if (error) throw error;
+      
+      // Success! The session will change and main.js listener will handle the rest
+      if (window.HapticsService) window.HapticsService.success();
+      
+    } catch (err) {
+      console.error('OTP Verification Error:', err.message);
+      if (window.HapticsService) window.HapticsService.error();
+      
+      // Flash error on the boxes
+      otpInputs.forEach(i => {
+        i.style.borderColor = "#ff3b30";
+        i.style.color = "#ff3b30";
+        setTimeout(() => {
+          i.style.borderColor = "";
+          i.style.color = "";
+          i.value = "";
+        }, 1500);
+      });
+      otpInputs[0].focus();
+      
+    } finally {
+      otpVerifyBtn.disabled = false;
+      otpVerifyBtn.innerText = "VERIFY CODE";
+    }
+  };
+
+  otpResendBtn.onclick = async () => {
+    const email = document.getElementById('otp-email-display').innerText;
+    try {
+      const { error } = await window.supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+      if (error) throw error;
+      
+      otpResendBtn.innerText = "SENT!";
+      setTimeout(() => { 
+        startOtpResendTimer();
+      }, 1000);
+    } catch (e) {
+      console.error('Resend failed:', e.message);
+    }
+  };
+}
+
+let otpResendInterval = null;
+
+function startOtpResendTimer() {
+  const btn = document.getElementById('otp-resend-btn');
+  if (!btn) return;
+
+  if (otpResendInterval) clearInterval(otpResendInterval);
+  
+  let seconds = 60;
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '0.5';
+  btn.innerText = `Resend in ${seconds}s`;
+
+  otpResendInterval = setInterval(() => {
+    seconds--;
+    btn.innerText = `Resend in ${seconds}s`;
+
+    if (seconds <= 0) {
+      clearInterval(otpResendInterval);
+      btn.innerText = "Resend";
+      btn.style.pointerEvents = 'all';
+      btn.style.opacity = '1';
+    }
+  }, 1000);
+}
+
+
+/**
+ * Transitions the view to the OTP input screen
+ */
+export function showOtpVerification(email) {
+  const authForm = document.getElementById('email-auth-form-submit');
+  const otpView = document.getElementById('otp-verification-view');
+  const title = document.getElementById('email-auth-title-text');
+  const footer = document.getElementById('email-auth-footer-container');
+  const emailDisplay = document.getElementById('otp-email-display');
+  const otpInputs = document.querySelectorAll('.otp-digit');
+
+  if (!authForm || !otpView) return;
+
+  // Update State
+  title.innerText = "Verify Email";
+  emailDisplay.innerText = email;
+  
+  // Hide Login/Signup Form
+  authForm.classList.add('hidden');
+  footer.classList.add('hidden');
+  
+  // Show Verification View
+  otpView.classList.remove('hidden');
+  
+  // Auto focus first box
+  setTimeout(() => {
+    otpInputs[0].focus();
+  }, 400);
+
+  // Start the 60s cooldown timer
+  startOtpResendTimer();
 }
 
 
