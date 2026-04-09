@@ -63,7 +63,10 @@ export function initEmailAuthPage() {
       </div>
 
         <div class="form-field">
-        <label id="password-field-label">Password</label>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <label id="password-field-label">Password</label>
+          <span id="email-auth-forgot-btn" style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-decoration: underline; cursor: pointer; font-weight: 600;">Forgot Password?</span>
+        </div>
         <div class="password-input-wrapper">
           <input type="password" id="password-auth-input" placeholder="••••••••" required>
           <div class="strength-meter-container">
@@ -120,6 +123,34 @@ export function initEmailAuthPage() {
       const authViewNew = document.getElementById('auth-view-new');
       if (authViewNew) authViewNew.classList.remove('hidden');
     };
+  }
+
+  const forgotBtn = document.getElementById('email-auth-forgot-btn');
+  if (forgotBtn) {
+    forgotBtn.addEventListener('click', async () => {
+      const emailVal = document.getElementById('email-auth-input').value.trim();
+      if (!emailVal) {
+        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton("Please enter your email first", false);
+        return;
+      }
+      
+      const submitBtn = document.getElementById('email-auth-main-btn');
+      if (submitBtn) {
+        submitBtn.innerText = "SENDING LINK...";
+        submitBtn.style.opacity = "0.7";
+        submitBtn.disabled = true;
+      }
+      
+      try {
+        const { error } = await window.supabase.auth.resetPasswordForEmail(emailVal);
+        if (error) throw error;
+        
+        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton("Reset link sent! Check your inbox.", true);
+        
+      } catch (err) {
+        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(err.message || "Failed to send reset link", false);
+      }
+    });
   }
 
   const toggleBtn = document.getElementById('email-auth-toggle-btn');
@@ -184,11 +215,19 @@ export function initEmailAuthPage() {
   });
 
   // Global error listener for the button logic
-  window.showAuthErrorOnButton = (message) => {
+  window.showAuthErrorOnButton = (message, isSuccess = false) => {
     const errEl = document.getElementById('auth-error-message');
+    const submitBtn = document.getElementById('email-auth-main-btn');
+    if (submitBtn) {
+      submitBtn.innerText = isSignUpMode ? "Sign Up" : "Log In";
+      submitBtn.style.opacity = "1";
+      submitBtn.disabled = false;
+    }
+
     if (!errEl) return;
     
     errEl.innerText = message || "User Not Found";
+    errEl.style.color = isSuccess ? "#50fa7b" : "#ff3b30";
     errEl.classList.remove('hidden');
     
     setTimeout(() => {
@@ -210,6 +249,13 @@ export function initEmailAuthPage() {
     if (isSignUpMode && passwordInput.value.length < 10) return;
     
     if (window.HapticsService) window.HapticsService.success();
+    
+    const submitBtn = document.getElementById('email-auth-main-btn');
+    if (submitBtn) {
+      submitBtn.innerText = "PROCESSING...";
+      submitBtn.style.opacity = "0.7";
+      submitBtn.disabled = true;
+    }
     
     // Connect to original main.js logic
     const emailVal = document.getElementById('email-auth-input').value;
@@ -328,23 +374,62 @@ export function initEmailAuthPage() {
     }
   };
 
-  otpResendBtn.onclick = async () => {
-    const email = document.getElementById('otp-email-display').innerText;
-    try {
-      const { error } = await window.supabase.auth.resend({
-        type: 'signup',
-        email: email
-      });
-      if (error) throw error;
+  if (otpResendBtn) {
+    otpResendBtn.onclick = async () => {
+      // Prevent double clicks if already sending or in timer
+      if (otpResendBtn.style.pointerEvents === 'none') return;
       
-      otpResendBtn.innerText = "SENT!";
-      setTimeout(() => { 
-        startOtpResendTimer();
-      }, 1000);
-    } catch (e) {
-      console.error('Resend failed:', e.message);
-    }
-  };
+      const email = document.getElementById('otp-email-display').innerText.trim();
+      if (!email || email === 'your email') {
+          console.error('Invalid email for resend');
+          return;
+      }
+
+      try {
+        const originalText = otpResendBtn.innerText;
+        otpResendBtn.innerText = "SENDING...";
+        otpResendBtn.style.opacity = "0.7";
+        otpResendBtn.style.pointerEvents = "none";
+
+        const { error } = await window.supabase.auth.resend({
+          type: 'signup',
+          email: email
+        });
+
+        if (error) throw error;
+        
+        // Use global notification if available
+        if (window.addNotification) {
+          window.addNotification({
+            title: "Code Resent",
+            text: "A new verification code has been sent to your email.",
+            type: "success"
+          });
+        }
+
+        otpResendBtn.innerText = "SENT!";
+        otpResendBtn.style.color = "#00ff88"; // Success color
+        
+        setTimeout(() => { 
+          otpResendBtn.style.color = ""; // Reset color
+          startOtpResendTimer();
+        }, 1500);
+      } catch (e) {
+        console.error('Resend failed:', e.message);
+        otpResendBtn.innerText = "Resend";
+        otpResendBtn.style.opacity = "1";
+        otpResendBtn.style.pointerEvents = "all";
+        
+        if (window.addNotification) {
+          window.addNotification({
+            title: "Resend Failed",
+            text: e.message || "Could not resend code. Please try again.",
+            type: "error"
+          });
+        }
+      }
+    };
+  }
 }
 
 let otpResendInterval = null;
@@ -385,23 +470,47 @@ export function showOtpVerification(email) {
   const emailDisplay = document.getElementById('otp-email-display');
   const otpInputs = document.querySelectorAll('.otp-digit');
 
+  const submitBtn = document.getElementById('email-auth-main-btn');
+  if (submitBtn) {
+    submitBtn.innerText = "Sign Up";
+    submitBtn.style.opacity = "1";
+    submitBtn.disabled = false;
+  }
+
   if (!authForm || !otpView) return;
 
   // Update State
   title.innerText = "Verify Email";
   emailDisplay.innerText = email;
   
-  // Hide Login/Signup Form
-  authForm.classList.add('hidden');
-  footer.classList.add('hidden');
+  // Hide Login/Signup Form via smooth fade out
+  authForm.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+  authForm.style.opacity = '0';
+  authForm.style.transform = 'scale(0.97)';
+  footer.style.transition = 'opacity 0.2s ease';
+  footer.style.opacity = '0';
   
-  // Show Verification View
-  otpView.classList.remove('hidden');
-  
-  // Auto focus first box
   setTimeout(() => {
+    authForm.classList.add('hidden');
+    footer.classList.add('hidden');
+    
+    // Clean up inline styles
+    authForm.style.opacity = '';
+    authForm.style.transform = '';
+    footer.style.opacity = '';
+
+    // Show Verification View smoothly
+    otpView.classList.remove('hidden');
+    
+    // Force DOM reflow to restart animation reliably
+    void otpView.offsetWidth;
+    otpView.style.animation = 'none';
+    void otpView.offsetWidth;
+    otpView.style.animation = 'fadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards';
+    
+    // Focus first box
     otpInputs[0].focus();
-  }, 400);
+  }, 250);
 
   // Start the 60s cooldown timer
   startOtpResendTimer();
@@ -418,6 +527,7 @@ function updateAuthMode() {
   const passLabel = document.getElementById('password-field-label');
   const strengthContainer = document.querySelector('.strength-meter-container');
   const signupFields = document.getElementById('signup-only-fields');
+  const forgotBtn = document.getElementById('email-auth-forgot-btn');
   
   const nameInp = document.getElementById('auth-name-input');
   const genderInp = document.getElementById('auth-gender-input');
@@ -431,6 +541,7 @@ function updateAuthMode() {
     passInput.setAttribute('minlength', '10');
     if (strengthContainer) strengthContainer.style.display = 'flex';
     if (signupFields) signupFields.classList.remove('hidden');
+    if (forgotBtn) forgotBtn.style.display = 'none';
     
     nameInp.required = true;
     genderInp.required = true;
@@ -445,6 +556,7 @@ function updateAuthMode() {
     passInput.removeAttribute('minlength');
     if (strengthContainer) strengthContainer.style.display = 'none';
     if (signupFields) signupFields.classList.add('hidden');
+    if (forgotBtn) forgotBtn.style.display = 'inline';
     
     nameInp.required = false;
     genderInp.required = false;

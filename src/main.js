@@ -2414,6 +2414,10 @@ authForm.addEventListener('submit', async (e) => {
     let result;
     if (isSignUp) {
       result = await supabase.auth.signUp({ email, password });
+      // When a user already exists, Supabase returns a user object but with an empty identities array.
+      if (result.data?.user?.identities && result.data.user.identities.length === 0) {
+        throw new Error('An account with this email already exists! Please login.');
+      }
     } else {
       result = await supabase.auth.signInWithPassword({ email, password });
     }
@@ -3819,6 +3823,52 @@ function updateProfileUI() {
 }
 
 accountSettingsBtn.addEventListener('click', () => window.showAccountSettings());
+
+const updatePassBtn = document.getElementById('settings-update-pass-btn');
+if (updatePassBtn) {
+  updatePassBtn.addEventListener('click', async () => {
+    const newPass = document.getElementById('settings-new-password').value;
+    const msgEl = document.getElementById('settings-pass-msg');
+    
+    if (newPass.length < 10) {
+      msgEl.innerText = "Password must be at least 10 characters";
+      msgEl.style.color = "var(--accent-red)";
+      msgEl.classList.remove('hidden');
+      return;
+    }
+
+    updatePassBtn.innerText = "UPDATING...";
+    updatePassBtn.style.opacity = "0.7";
+    updatePassBtn.disabled = true;
+
+    try {
+      const { error } = await window.supabase.auth.updateUser({ password: newPass });
+      if (error) throw error;
+      
+      msgEl.innerText = "Password updated successfully! ✅";
+      msgEl.style.color = "#50fa7b";
+      msgEl.classList.remove('hidden');
+      document.getElementById('settings-new-password').value = "";
+      
+      if (window.HapticsService) window.HapticsService.success();
+      
+      setTimeout(() => {
+        msgEl.classList.add('hidden');
+      }, 4000);
+      
+    } catch (err) {
+      console.error("Password update error:", err);
+      msgEl.innerText = err.message || "Failed to update password";
+      msgEl.style.color = "var(--accent-red)";
+      msgEl.classList.remove('hidden');
+      if (window.HapticsService) window.HapticsService.error();
+    } finally {
+      updatePassBtn.innerText = "Update Password";
+      updatePassBtn.style.opacity = "1";
+      updatePassBtn.disabled = false;
+    }
+  });
+}
 document.getElementById('test-native-notif-btn')?.addEventListener('click', () => {
     NativeNotifications.sendTestNotification();
     showToast('Scheduling test notification... 🔔');
@@ -3953,7 +4003,7 @@ settingsForm.addEventListener('submit', async (e) => {
 });
 
 // --- UI Helpers ---
-function showToast(message, type = 'success') {
+window.showToast = function(message, type = 'success') {
   // Remove existing toasts if any
   const existing = document.querySelector('.toast');
   if (existing) existing.remove();
