@@ -185,18 +185,18 @@ button:active {
 }
 
 #splash-logo {
-  width: min(280px, 80vw); /* Responsive scale to match the native iOS splash perfectly */
+  width: 85%;
+  max-width: 320px;
   height: auto;
-  aspect-ratio: 1;
   object-fit: contain;
-  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.15));
-  animation: splash-breathe 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: splash-breathe 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.05));
 }
 
 @keyframes splash-breathe {
-  0%   { transform: scale(1);    opacity: 0.9; }
-  50%  { transform: scale(1.08); opacity: 1;    }
-  100% { transform: scale(1);    opacity: 0.9; }
+  0%   { transform: scale(1);    opacity: 0.85; }
+  50%  { transform: scale(1.04); opacity: 1;    }
+  100% { transform: scale(1);    opacity: 0.85; }
 }
 
 /* Scrollbar styling */
