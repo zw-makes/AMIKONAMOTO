@@ -2437,6 +2437,19 @@ authForm.addEventListener('submit', async (e) => {
   } catch (err) {
     console.error('Full Auth Error Object:', err);
     
+    // --- Handle unconfirmed users gracefully ---
+    if (err.message && (err.message.toLowerCase().includes('email not confirmed') || err.message.toLowerCase().includes('not confirmed'))) {
+      try {
+        await supabase.auth.resend({ type: 'signup', email });
+        if (typeof showOtpVerification === 'function') {
+          showOtpVerification(email);
+          return; // Stop and wait for OTP verification
+        }
+      } catch (resendErr) {
+        console.error('Failed to auto-resend OTP:', resendErr);
+      }
+    }
+
     // Bridge to premium onboarding UI if active
     if (window.showAuthErrorOnButton) {
       window.showAuthErrorOnButton(err.message || 'Login Failed');

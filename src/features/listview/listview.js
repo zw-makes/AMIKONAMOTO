@@ -247,7 +247,7 @@ export function renderListView() {
     const brandFooterHtml = `
         <div class="brand-footer">
             <img src="/sublify-logo.png" class="brand-footer-logo" alt="Logo">
-            <span class="brand-footer-version">v.0.1.1</span>
+            <span class="brand-footer-version">v1.2.9</span>
         </div>
     `;
 
