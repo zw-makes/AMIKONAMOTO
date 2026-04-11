@@ -3,7 +3,7 @@
        so we match the Legend Box width exactly */
     margin-left: -16px;
     margin-right: -16px;
-    padding: 24px 16px 300px 16px;
+    padding: 24px 16px 80px 16px;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -251,14 +251,14 @@
 
 /* Custom Safe Area for List View */
 .list-view-container {
-    padding-bottom: 280px !important; /* Extra space to see things scroll behind glass */
+    padding-bottom: 80px !important; /* Extra space to see things scroll behind glass */
 }
 
 @media (max-width: 500px) {
     .list-view-container {
         margin-left: -16px;
         margin-right: -16px;
-        padding: 20px 16px 300px 16px;
+        padding: 20px 16px 80px 16px;
     }
     .spending-card {
         padding: 24px 12px;

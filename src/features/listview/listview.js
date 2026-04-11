@@ -36,19 +36,26 @@ export function initListView() {
     let lastScrollY = 0;
     const legendBox = document.querySelector('.calendar-legend-box');
 
+    let isScrolling = false;
     parent.addEventListener('scroll', () => {
-        // Only trigger scroll hiding if list view is active
-        if (!listViewActive || !legendBox) return;
-
-        const currentScrollY = parent.scrollTop;
-
-        // Hide on scroll down, show on scroll up
-        if (currentScrollY > lastScrollY && currentScrollY > 50) {
-            legendBox.classList.add('hidden-scrolled');
-        } else {
-            legendBox.classList.remove('hidden-scrolled');
-        }
-        lastScrollY = currentScrollY;
+        if (!listViewActive || !legendBox || isScrolling) return;
+        
+        isScrolling = true;
+        requestAnimationFrame(() => {
+            const currentScrollY = parent.scrollTop;
+            const diff = currentScrollY - lastScrollY;
+            
+            // Only toggle if we've scrolled more than 5px to avoid sensitivity jank
+            if (Math.abs(diff) > 5) {
+                if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                    legendBox.classList.add('hidden-scrolled');
+                } else if (currentScrollY < lastScrollY) {
+                    legendBox.classList.remove('hidden-scrolled');
+                }
+                lastScrollY = currentScrollY;
+            }
+            isScrolling = false;
+        });
     }, { passive: true });
 }
 

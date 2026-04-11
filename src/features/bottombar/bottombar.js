@@ -105,9 +105,28 @@ export function initBottomBar() {
                 openSearchModal();
             } else if (action === 'list-btn') {
                 if (typeof window.toggleListView === 'function') {
+                    // Turn off Star Mode if active before switching to List View
+                    if (starModeActive) {
+                        const starBtn = document.getElementById('star-btn');
+                        if (starBtn) toggleStarMode(starBtn);
+                    }
                     window.toggleListView(btn);
+                    
+                    // Toggle star-btn's disabled state visually
+                    const starBtn = document.getElementById('star-btn');
+                    if (starBtn && window.listViewActive) {
+                        if (window.listViewActive()) {
+                            starBtn.classList.add('disabled');
+                        } else {
+                            starBtn.classList.remove('disabled');
+                        }
+                    }
                 }
             } else if (action === 'star-btn') {
+                // Disable Star Mode in List View as per request
+                if (window.listViewActive && window.listViewActive()) {
+                    return;
+                }
                 toggleStarMode(btn);
             } else if (action === 'ai-btn') {
                 // AI Assistant / Insights
@@ -194,6 +213,12 @@ export function initBottomBar() {
             container.style.fontSize = `${fontSize}px`;
         }
     });
+
+    // Initial state check for star-btn
+    if (window.listViewActive && window.listViewActive()) {
+        const starBtn = document.getElementById('star-btn');
+        if (starBtn) starBtn.classList.add('disabled');
+    }
 
     observer.observe(container);
 }
