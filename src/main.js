@@ -2773,15 +2773,26 @@ function safeSetLocalStorage(key, value) {
 // Auth State Listener
 // --- Splash Screen Helper ---
 let splashHidden = false;
-function hideSplash() {
+function hideSplash(force = false) {
   if (splashHidden) return;
   
   const now = Date.now();
   const diff = now - appStartTime;
   const minDuration = 1200; // 1.2s to see the full logo entrance
   
+  // If user is NOT logged in or we need it gone "now", just hide it instantly
+  if (force) {
+    splashHidden = true;
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      splash.style.transition = 'none';
+      splash.classList.add('hidden');
+    }
+    return;
+  }
+
   if (diff < minDuration) {
-    setTimeout(hideSplash, minDuration - diff);
+    setTimeout(() => hideSplash(false), minDuration - diff);
     return;
   }
 
@@ -3042,7 +3053,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     currentUser = null;
     window.currentUser = null;
     userProfile = null;
-    hideSplash();
+    hideSplash(true); // Don't show loading screen if user is not logged in!
     authScreen.classList.remove('hidden');
     onboardingScreen.classList.add('hidden');
     welcomeScreen.classList.add('hidden');

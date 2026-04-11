@@ -2,6 +2,58 @@
 <html lang="en">
 
 <head>
+  <style>
+    /* UNIVERSAL ANTI-FLASH SYSTEM */
+    html, body { 
+      background: #000000 !important; 
+      margin: 0 !important; 
+      padding: 0 !important; 
+      overflow: hidden !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* Force all logo instances to stay 140px even if CSS hasn't loaded */
+    #splash-logo, .loading-logo, .landing-logo-img, .brand-footer-logo {
+      width: 140px !important;
+      height: 140px !important;
+      object-fit: contain !important;
+      display: block !important;
+      margin: 0 auto !important;
+    }
+
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 1;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #splash-screen.fade-out {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    #splash-logo {
+      background-image: url('/sublify-logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0;
+      transform: scale(0.9);
+      animation: logo-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    }
+
+    @keyframes logo-entrance {
+      0% { opacity: 0; transform: scale(0.85) translateY(10px); filter: blur(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    }
+  </style>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport"
@@ -17,69 +69,19 @@
   <link rel="stylesheet" href="/src/features/filter/filter.css">
   <link rel="stylesheet" href="/src/features/catalog/catalog.css">
   <title>Sublify - Subscription Manager</title>
-  <style>
-    /* CRITICAL: Splash Screen Styling (Inlined to prevent "Full Size" Flash) */
-    #splash-screen {
-      position: absolute;
-      inset: 0;
-      background: #000000;
-      z-index: 9999;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 0;
-      animation: splash-fade-in 0.6s forwards;
-    }
-
-    @keyframes splash-fade-in {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #splash-screen.fade-out {
-      opacity: 0 !important;
-      pointer-events: none;
-    }
-
-    #splash-logo {
-      width: 140px;
-      height: 140px;
-      object-fit: contain;
-      opacity: 0;
-      transform: scale(0.9);
-      animation: logo-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes logo-entrance {
-      0% { 
-        opacity: 0; 
-        transform: scale(0.85) translateY(10px); 
-        filter: blur(10px);
-      }
-      100% { 
-        opacity: 1; 
-        transform: scale(1) translateY(0); 
-        filter: blur(0);
-      }
-    }
-
-    /* Hidden utilities to prevent flashes */
-    .hidden { display: none !important; }
-  </style>
 </head>
 
 <body>
   <div id="app">
     <!-- Splash Screen (shown by default, hidden after session check) -->
     <div id="splash-screen">
-      <img id="splash-logo" src="/sublify-logo.png" alt="Sublify Logo" width="140" height="140">
+      <div id="splash-logo"></div>
     </div>
 
     <!-- Auth Loading / Transition Screen -->
     <div id="auth-loading-screen" class="hidden">
       <div class="auth-loading-content">
-        <img src="/sublify-logo.png" class="loading-logo" alt="Sublify Logo">
+        <img src="/sublify-logo.png" class="loading-logo" alt="Sublify Logo" width="140" height="140">
         <h2 class="loading-text">WELCOME TO SUBLIFY</h2>
       </div>
     </div>
@@ -240,7 +242,7 @@
         
         <!-- BOTTOM: Content Card -->
         <div class="landing-content">
-          <img src="/sublify-logo.png" class="landing-logo-img" alt="Sublify Logo">
+          <img src="/sublify-logo.png" class="landing-logo-img" alt="Sublify Logo" width="140" height="140">
           <h2 class="landing-title">Meet Sublify</h2>
           <p class="landing-desc">See where your money goes and let Sublify AI help you take control of every subscription.</p>
           <button id="get-started-btn" class="landing-btn">lets get on the track</button>
