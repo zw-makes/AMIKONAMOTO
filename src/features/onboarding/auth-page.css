@@ -205,16 +205,20 @@
 }
 
 .loading-logo {
-  width: 85%;
-  max-width: 320px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.05));
-  animation: splash-breathe 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.2));
+  animation: loadingLogoPulse 2s ease-in-out infinite;
 }
 
 .loading-text {
-  display: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.4em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  text-indent: 0.4em;
 }
 
 @keyframes loadingLogoPulse {

@@ -28,6 +28,9 @@ import './features/onboarding/email-auth.css';
 import './features/onboarding/guider.css';
 import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
 
+// --- Global Start Time (Min 1.2s splash) ---
+const appStartTime = Date.now();
+
 // --- Global Utilities ---
 window.getLogoUrl = function(domainOrUrl) {
     if (!domainOrUrl) return '';
@@ -2772,11 +2775,22 @@ function safeSetLocalStorage(key, value) {
 let splashHidden = false;
 function hideSplash() {
   if (splashHidden) return;
+  
+  const now = Date.now();
+  const diff = now - appStartTime;
+  const minDuration = 1200; // 1.2s to see the full logo entrance
+  
+  if (diff < minDuration) {
+    setTimeout(hideSplash, minDuration - diff);
+    return;
+  }
+
   splashHidden = true;
   const splash = document.getElementById('splash-screen');
   if (!splash) return;
+  
   splash.classList.add('fade-out');
-  setTimeout(() => splash.classList.add('hidden'), 420);
+  setTimeout(() => splash.classList.add('hidden'), 820);
 }
 
 // === OFFLINE BOOT FAILSAFE ===
