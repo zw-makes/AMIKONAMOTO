@@ -1748,8 +1748,9 @@ input[type="date"] {
   background: #1a1a1a;
 }
 
+/* Removed hover effect to keep UI consistent */
 .detail-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #1a1a1a;
 }
 
 .detail-logo {

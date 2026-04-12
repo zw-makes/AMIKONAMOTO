@@ -1751,8 +1751,12 @@ function attachSwipeEvents() {
     const onStart = (e) => {
       startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       isDragging = true;
-      hasStartedSwipe = false; // Reset swipe detection
+      hasStartedSwipe = false;
       item.style.transition = 'none';
+      
+      // Elevate the item slightly for a "picked up" feel
+      item.style.boxShadow = '0 10px 25px rgba(0,0,0,0.4)';
+      item.style.zIndex = '10';
 
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onEnd);
@@ -1763,43 +1767,46 @@ function attachSwipeEvents() {
     const onMove = (e) => {
       if (!isDragging) return;
       currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      const walk = currentX - startX;
+      const walk = (currentX - startX);
 
-      // STRICT GATE: Do not do anything until we cross the threshold
       if (!hasStartedSwipe) {
         if (Math.abs(walk) > threshold) {
           hasStartedSwipe = true;
-          HapticsService.selection(); // Taptic feel when the items "unlock" for swiping
+          HapticsService.selection();
+          item.style.transform = `scale(1.02)`; // Subtle scale up when swipe starts
         } else {
-          return; // Still just a potential tap
+          return;
         }
       }
 
-      // If we are here, it's a real swipe
       const wrapper = item.parentElement;
       const del = wrapper.querySelector('.delete');
       const stp = wrapper.querySelector('.stop');
       const frq = wrapper.querySelector('.freq');
+      const paidBtn = wrapper.querySelector('.paid');
 
-      const maxRight = 105;
-      const maxLeft = 105;
-      const translate = Math.max(-maxLeft, Math.min(maxRight, walk > 0 ? walk - threshold : walk + threshold));
+      // MAGNETIC ELASTICITY: If we go past the snap point, we add resistance
+      const hardLimit = 110;
+      let translate = walk > 0 ? walk - threshold : walk + threshold;
+      
+      if (Math.abs(translate) > hardLimit) {
+        const overflow = Math.abs(translate) - hardLimit;
+        translate = (translate > 0 ? 1 : -1) * (hardLimit + (overflow * 0.3)); // 70% damping
+      }
 
+      // Action Opacity mapping
       if (translate > 0) {
         if (del) del.style.opacity = Math.min(translate / 60, 1);
         if (stp) stp.style.opacity = Math.min(translate / 60, 1);
-        if (frq) frq.style.opacity = 0;
+        if (frq) frq.style.opacity = '0';
       } else {
         if (frq) frq.style.opacity = Math.min(-translate / 60, 1);
-        const paidBtn = wrapper.querySelector('.paid');
         if (paidBtn) paidBtn.style.opacity = Math.min(-translate / 60, 1);
-        if (del) del.style.opacity = 0;
-        if (stp) stp.style.opacity = 0;
+        if (del) del.style.opacity = '0';
+        if (stp) stp.style.opacity = '0';
       }
 
-      item.style.transform = `translateX(${translate}px)`;
-      
-      // Prevent scrolling once we've decided it's a swipe
+      item.style.transform = `translateX(${translate}px) scale(1.02)`;
       if (e.cancelable) e.preventDefault();
     };
 
@@ -1812,24 +1819,31 @@ function attachSwipeEvents() {
       window.removeEventListener('touchmove', onMove);
       window.removeEventListener('touchend', onEnd);
 
+      // Reset elevation
+      item.style.boxShadow = 'none';
+      item.style.zIndex = '2';
+
       if (!hasStartedSwipe) {
-        // It was just a tap, the click listener on the logo will fire naturally
-        item.style.transform = 'translateX(0)';
+        item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        item.style.transform = 'translateX(0) scale(1)';
         return;
       }
 
       const walk = currentX - startX;
-      item.style.transition = 'transform 0.5s cubic-bezier(0.19, 1, 0.22, 1)';
+      // MAGNETIC SPRING SNAP: Fast and bouncy
+      item.style.transition = 'transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
       const wrapper = item.parentElement;
 
       if (walk > 50) {
-        item.style.transform = `translateX(${maxTranslateX}px)`;
+        item.style.transform = `translateX(${maxTranslateX}px) scale(1)`;
+        HapticsService.impact('light');
       } else if (walk < -50) {
-        item.style.transform = `translateX(${-maxTranslateX}px)`;
+        item.style.transform = `translateX(${-maxTranslateX}px) scale(1)`;
+        HapticsService.impact('light');
       } else {
-        item.style.transform = `translateX(0)`;
-        if (wrapper.querySelector('.delete')) wrapper.querySelector('.delete').style.opacity = 0;
-        if (wrapper.querySelector('.stop')) wrapper.querySelector('.stop').style.opacity = 0;
+        item.style.transform = `translateX(0) scale(1)`;
+        const actions = wrapper.querySelectorAll('.swipe-action');
+        actions.forEach(a => a.style.opacity = '0');
       }
     };
 
