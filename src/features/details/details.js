@@ -3,6 +3,7 @@ import './details.css';
 let currentSub = null;
 const modalId = 'subscription-details-modal';
 let currentDaySubs = []; // Track all subs for swiping
+let currentViewDate = new Date();
 
 /**
  * Initializes the modal HTML if it doesn't exist
@@ -34,14 +35,39 @@ function initModal() {
                 </button>
             </div>
 
+            <!-- Pagination Dots -->
+            <div class="detail-dots" id="detail-dots"></div>
+
             <!-- Main Content with Scroll Track -->
             <div class="detail-main-content">
                 <div class="detail-scroll-track" id="detail-scroll-track">
                     <!-- Cards injected here -->
                 </div>
+            </div>
 
-                <!-- Pagination Dots -->
-                <div class="detail-dots" id="detail-dots"></div>
+            <!-- Action Buttons (Restored to Bottom) -->
+            <div class="detail-footer-actions">
+                <button class="footer-action-btn footer-cancel-btn" id="sub-detail-cancel">
+                    Stop
+                </button>
+                <button class="footer-action-btn footer-paid-btn" id="sub-detail-paid">
+                    Pay
+                </button>
+            </div>
+
+            <!-- Frequency Dots Section -->
+            <div class="detail-frequency-section">
+                <div class="frequency-header">
+                    <span>USAGE FREQUENCY</span>
+                    <span id="frequency-month-label">APRIL</span>
+                </div>
+                <div class="frequency-dots-grid" id="frequency-dots-grid">
+                    <!-- Dots injected here -->
+                </div>
+                <div class="frequency-footer">
+                    <span id="frequency-year">2025</span>
+                    <span id="frequency-days-left">0 DAYS LEFT</span>
+                </div>
             </div>
         </div>
 
@@ -77,17 +103,165 @@ function initModal() {
         }
     };
 
-    // Sync Dots with Scroll
+    // Sync Dots & Buttons with Scroll (Optimized to prevent lag)
     const track = document.getElementById('detail-scroll-track');
+    let lastSnappedIndex = -1;
+    let scrollTimeout = null;
+
     track.addEventListener('scroll', () => {
-        const index = Math.round(track.scrollLeft / 360); // 340 width + 20 margin
-        updateActiveDot(index);
+        const rawIndex = track.scrollLeft / 360; 
+        const snappedIndex = Math.round(rawIndex);
         
-        // Update currentSub globally so Edit button works for the visible card
-        if (currentDaySubs[index]) {
-            currentSub = currentDaySubs[index];
-        }
+        // 1. Light update: Only update the pagination dots immediately (Safe for scroll performance)
+        updateActiveDot(snappedIndex);
+        
+        // 2. Heavy update: Wait for the scroll to SETTLE before rendering dots
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            if (snappedIndex !== lastSnappedIndex && currentDaySubs[snappedIndex]) {
+                lastSnappedIndex = snappedIndex;
+                currentSub = currentDaySubs[snappedIndex];
+                
+                // Now it's safe to render the heavy usage grid
+                updateFooterButtons(currentSub);
+            }
+        }, 100); // 100ms wait after last scroll movement
     }, { passive: true });
+
+    // Footer Button Listeners
+    document.getElementById('sub-detail-cancel').onclick = (e) => {
+        if (currentSub && window.stopSubscription) {
+            window.stopSubscription(currentSub.id, e);
+            // Live update: refresh buttons, dots, and card status
+            updateFooterButtons(currentSub);
+            refreshCardInPlace(currentSub);
+            
+            // Re-sync with the main UI
+            if (window.renderDashboard) window.renderDashboard();
+            if (window.renderCalendar) window.renderCalendar();
+        }
+    };
+    document.getElementById('sub-detail-paid').onclick = (e) => {
+        if (currentSub && window.togglePaidStatus) {
+            window.togglePaidStatus(currentSub.id, e);
+            // Live update: refresh buttons, dots, and card status
+            updateFooterButtons(currentSub);
+            refreshCardInPlace(currentSub);
+
+            // Re-sync with the main UI
+            if (window.renderDashboard) window.renderDashboard();
+            if (window.renderCalendar) window.renderCalendar();
+        }
+    };
+}
+
+function refreshCardInPlace(sub) {
+    const card = document.querySelector(`.detail-premium-card[data-sub-id="${sub.id}"]`);
+    if (!card) return;
+    
+    // Temporarily store the scroll position if needed, but since it's inside the horizontal track
+    // replacing outerHTML of one element in flex row should be fine.
+    // We use the same viewDate used when the modal was opened.
+    const newCardHTML = createCardHTML(sub, currentViewDate);
+    
+    // We update inner content to avoid losing the element reference if possible, 
+    // but outerHTML is most reliable for a full refresh.
+    const temp = document.createElement('div');
+    temp.innerHTML = newCardHTML;
+    const newCard = temp.firstElementChild;
+    
+    card.parentNode.replaceChild(newCard, card);
+}
+
+function updateFooterButtons(sub) {
+    const cancelBtn = document.getElementById('sub-detail-cancel');
+    const paidBtn = document.getElementById('sub-detail-paid');
+    if (!cancelBtn || !paidBtn) return;
+
+    const isStopped = sub.stopped;
+    const isPaid = window.isSubPaid ? window.isSubPaid(sub, new Date()) : false;
+
+    cancelBtn.innerText = isStopped ? 'Restart' : 'Stop';
+    cancelBtn.classList.toggle('is-stopped', isStopped);
+    
+    paidBtn.innerText = isPaid ? 'PAID' : 'PAY';
+    paidBtn.classList.toggle('is-paid', isPaid);
+
+    // Update Frequency Dots
+    renderFrequencyDots(sub);
+}
+
+function renderFrequencyDots(sub) {
+    const grid = document.getElementById('frequency-dots-grid');
+    const label = document.getElementById('frequency-month-label');
+    const yearLabel = document.getElementById('frequency-year');
+    const daysLeftLabel = document.getElementById('frequency-days-left');
+    if (!grid || !label) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    label.innerText = today.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+    if (yearLabel) yearLabel.innerText = currentYear;
+    
+    // Calculate days left in billing period or month
+    const { end } = getSubCalculatedDates(sub);
+    const isEnded = end && today > end;
+    let daysLeft = 0;
+    
+    if (isEnded) {
+        if (daysLeftLabel) daysLeftLabel.innerText = `COMPLETED`;
+    } else if (end && end > today) {
+        const diff = end.getTime() - today.getTime();
+        daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        if (daysLeftLabel) daysLeftLabel.innerText = `${daysLeft} DAYS LEFT`;
+    } else {
+        daysLeft = daysInMonth - currentDay;
+        if (daysLeftLabel) daysLeftLabel.innerText = `${daysLeft} DAYS LEFT`;
+    }
+
+    grid.innerHTML = '';
+    
+    // Get sub start date
+    const subStartDate = new Date(sub.startDate);
+    subStartDate.setHours(0, 0, 0, 0);
+
+    // Calculate total days to show using the already calculated 'end' date
+    let totalDots = 31; // Default to current month
+    if (end) {
+        // If it's a trial or has an end date, show the FULL duration
+        const diffSpan = end.getTime() - subStartDate.getTime();
+        const totalSpanDays = Math.ceil(diffSpan / (1000 * 60 * 60 * 24));
+        
+        // Sanity check: don't show less than 30 or more than 366
+        totalDots = Math.max(30, Math.min(366, totalSpanDays));
+    }
+
+    for (let dayOffset = 0; dayOffset < totalDots; dayOffset++) {
+        const dot = document.createElement('div');
+        dot.className = 'freq-dot';
+        
+        const date = new Date(subStartDate);
+        date.setDate(subStartDate.getDate() + dayOffset);
+        date.setHours(0, 0, 0, 0);
+
+        const isPastOrToday = date <= today;
+        const isWithinActiveLife = date <= (end || new Date(8640000000000000));
+        const isNotStopped = !sub.stopped;
+
+        if (isWithinActiveLife && isNotStopped && (isPastOrToday || isEnded)) {
+            dot.classList.add('dot-filled'); // Active/Used day
+            if (isEnded) dot.style.opacity = '0.35'; // "Paled color" for completed plan
+        } else {
+            dot.classList.add('dot-dimmed'); // Future or inactive day
+        }
+        
+        grid.appendChild(dot);
+    }
 }
 
 function updateActiveDot(index) {
@@ -109,6 +283,7 @@ function createCardHTML(s, viewDate = new Date()) {
     const { end } = getSubCalculatedDates(s);
     const isEnded = end && today > end;
 
+    const isPaid = window.isSubPaid ? window.isSubPaid(s, viewDate) : false;
     const statusClass = s.stopped ? 'status-stopped' : (isEnded ? 'status-ended' : 'status-active');
     const statusText = s.stopped ? 'Stopped' : (isEnded ? 'Ended' : 'Active');
 
@@ -258,6 +433,7 @@ export function showSubscriptionDetails(sub, daySubs = [], viewDate = new Date()
     if (!sub) return;
     currentSub = sub;
     currentDaySubs = daySubs;
+    currentViewDate = viewDate;
     initModal();
 
     const modal = document.getElementById(modalId);
@@ -268,6 +444,9 @@ export function showSubscriptionDetails(sub, daySubs = [], viewDate = new Date()
 
     // Render Dots
     renderDots(sub, daySubs);
+    
+    // Initial Button State
+    updateFooterButtons(sub);
 
     modal.classList.remove('hidden');
 
@@ -296,7 +475,7 @@ function renderDots(activeSub, daySubs) {
     daySubs.forEach(s => {
         const dot = document.createElement('div');
         dot.className = `detail-dot ${s.id === activeSub.id ? 'active' : ''}`;
-        dot.onclick = () => showSubscriptionDetails(s, daySubs);
+        dot.onclick = () => showSubscriptionDetails(s, daySubs, currentViewDate);
         dotsContainer.appendChild(dot);
     });
 }

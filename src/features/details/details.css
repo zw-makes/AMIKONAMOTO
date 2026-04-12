@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: var(--bg-color); /* Match app theme background */
+  background: #000000 !important;
 }
 
 .detail-view-content {
@@ -13,12 +13,14 @@
   max-width: 450px; /* Match pricing page reference */
   height: 100%;
   max-height: 100vh;
-  background: var(--bg-color);
+  background: #000000 !important;
   display: flex;
   flex-direction: column;
   padding: 0;
   position: relative;
-  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-y: auto; /* ENABLE VERTICAL SCROLL */
+  -webkit-overflow-scrolling: touch;
   animation: pageSlideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   box-sizing: border-box;
 }
@@ -121,10 +123,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Start from top to allow scroll */
   flex: 1;
   position: relative;
-  overflow: hidden;
+  width: 100%;
 }
 
 /* Horizontal Scroll Track (Like Pricing Page) */
@@ -138,7 +140,7 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: auto; /* For manual grabbing feel */
-    padding: 80px 0 60px; /* Space for logo and dots */
+    padding: 20px 0; /* Identical 20px gap top and bottom */
 }
 
 .detail-scroll-track::-webkit-scrollbar {
@@ -159,6 +161,7 @@
   height: 480px; 
   flex-shrink: 0; /* Important for scroll track */
   scroll-snap-align: center;
+  scroll-snap-stop: always; /* Force snap on every card (Fixes iOS stuck issue) */
   margin: 0 10px; /* Gap between cards */
   background: rgba(25, 25, 25, 0.4);
   backdrop-filter: blur(40px) saturate(150%);
@@ -211,7 +214,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
   overflow: hidden; /* Ensure anything inside stays circular */
@@ -279,13 +282,13 @@
   color: var(--accent-green);
 }
 
-/* Pagination Dots (Like Pricing Page) */
+/* Pagination Dots (Moved to Top) */
 .detail-dots {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 30px;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    margin-top: 10px;
+    margin-bottom: 0;
     z-index: 10;
 }
 
@@ -482,3 +485,154 @@
 .full-note-text::-webkit-scrollbar {
     display: none;
 }
+
+/* Action Buttons (Aligned to Bottom) */
+.detail-footer-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px calc(env(safe-area-inset-bottom, 20px) + 20px);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.footer-action-btn {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px; /* More modern rounded square vibe */
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    min-width: 110px;
+    position: relative;
+    overflow: hidden;
+}
+
+.footer-action-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.footer-action-btn:active {
+    transform: scale(0.95);
+}
+
+.footer-cancel-btn {
+    color: #ff5555 !important;
+    background: rgba(255, 85, 85, 0.08);
+    border-color: rgba(255, 85, 85, 0.15);
+}
+
+.footer-cancel-btn:hover {
+    background: rgba(255, 85, 85, 0.12);
+    border-color: rgba(255, 85, 85, 0.3);
+    box-shadow: 0 4px 20px rgba(255, 85, 85, 0.15);
+}
+
+.footer-paid-btn {
+    color: #50fa7b !important;
+    background: rgba(80, 250, 123, 0.08);
+    border-color: rgba(80, 250, 123, 0.15);
+}
+
+.footer-paid-btn:hover {
+    background: rgba(80, 250, 123, 0.12);
+    border-color: rgba(80, 250, 123, 0.3);
+    box-shadow: 0 4px 20px rgba(80, 250, 123, 0.15);
+}
+
+.footer-paid-btn.is-paid {
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.02);
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Frequency Dots Section (Contribution Graph Style) */
+.detail-frequency-section {
+    padding: 10px 24px 30px;
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 10px;
+    min-height: 160px; /* Prevents card jumping during swipe */
+}
+
+.frequency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.frequency-header span:first-child {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+#frequency-month-label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    opacity: 0.6;
+}
+
+.frequency-dots-grid {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr); /* 11 columns to fill width nicely (3 rows total) */
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 25px;
+    padding-top: 10px;
+}
+
+.freq-dot {
+    width: 100%;
+    aspect-ratio: 1/1;
+    max-width: 18px; /* Balanced size */
+    border-radius: 2px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dot-filled {
+    background: #ffffff !important;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+.dot-dimmed {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.frequency-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.frequency-footer span {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+/* End of styles */
