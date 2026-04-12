@@ -97,7 +97,7 @@ export function initHistory() {
                 mode: 'monthly',
                 subs: monthlySubs,
                 title: `Monthly Subscription Report - ${monthName}`,
-                fileName: `SubTrack_History_${monthName.replace(' ', '_')}`
+                fileName: `Sublify_History_${monthName.replace(' ', '_')}`
             };
             exportModal.classList.remove('hidden');
         };
@@ -352,7 +352,7 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
                 mode: 'daily',
                 subs: subs,
                 title: `Daily Subscription Report - Day ${day}`,
-                fileName: `SubTrack_History_${historyDate.getFullYear()}_${historyDate.getMonth() + 1}_Day_${day}`
+                fileName: `Sublify_History_${historyDate.getFullYear()}_${historyDate.getMonth() + 1}_Day_${day}`
             };
             document.getElementById('export-choice-modal').classList.remove('hidden');
         };
@@ -605,7 +605,7 @@ async function shareFileOnMobile(base64Data, fileName, contentType) {
 
         await Share.share({
             title: fileName,
-            text: `SubTrack Report: ${fileName}`,
+            text: `Sublify Report: ${fileName}`,
             url: result.uri,
             dialogTitle: 'Save Report'
         });

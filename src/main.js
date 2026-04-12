@@ -27,6 +27,7 @@ import './features/onboarding/auth-page.css';
 import './features/onboarding/email-auth.css';
 import './features/onboarding/guider.css';
 import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
+import { initPullToRefresh } from './features/refresh/refresh.js';
 
 // --- Global Start Time (Min 1.2s splash) ---
 const appStartTime = Date.now();
@@ -87,6 +88,9 @@ initEmailAuthPage();
 // Initialize Guider
 initGuider();
 window.showGuider = showGuider;
+
+// Initialize Pull to Refresh (Calendar & List View root)
+initPullToRefresh();
 
 
 // --- World Currencies ---
@@ -3260,41 +3264,21 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
   // --- GET RELEVANT SUBSCRIPTIONS FOR THIS MONTH ---
   const relevantSubs = getDisplaySubscriptions().filter(s => isSubRelevantToMonth(s, currentDate));
 
-  // Determine what counts towards numerical totals (exclude carry-overs)
-  const summedSubs = relevantSubs.filter(s => {
-    const { start: startDateObj, end: endDateObj } = getSubDates(s);
-    const viewStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const totalCount = relevantSubs.length;
+  const activeCount = relevantSubs.filter(s => !s.stopped).length;
+  const stoppedCount = relevantSubs.filter(s => s.stopped).length;
+  const paidCount = relevantSubs.filter(s => !s.stopped && window.isSubPaid(s, currentDate)).length;
+  const unpaidCount = relevantSubs.filter(s => !s.stopped && !window.isSubPaid(s, currentDate)).length;
 
-    // 1. Exclude strictly past ended subs
-    if (endDateObj && endDateObj < viewStart) return false;
-
-    // 2. Exclude carry-overs (started in past, ends now or future, not yearly)
-    if (startDateObj < viewStart && endDateObj && s.type !== 'yearly') return false;
-
-    // 3. Yearly plans only count in their renewal month
-    if (s.type === 'yearly') {
-      if (currentDate.getMonth() !== startDateObj.getMonth()) return false;
-    }
-
-    return true;
-  });
-
-  const activeCount = summedSubs.filter(s => !s.stopped).length;
-  const stoppedCount = summedSubs.filter(s => s.stopped).length;
-  const paidCount = summedSubs.filter(s => !s.stopped && s.paid).length;
-  const unpaidCount = summedSubs.filter(s => !s.stopped && !s.paid).length;
-
-  const boughtCount = summedSubs.filter(s => {
+  const boughtCount = relevantSubs.filter(s => {
     const { start } = getSubDates(s);
     return start.getMonth() === currentDate.getMonth() && start.getFullYear() === currentDate.getFullYear();
   }).length;
 
-  const endsCount = summedSubs.filter(s => {
+  const endsCount = relevantSubs.filter(s => {
     const { end } = getSubDates(s);
     return end && end.getMonth() === currentDate.getMonth() && end.getFullYear() === currentDate.getFullYear();
   }).length;
-
-  const totalCount = summedSubs.length;
 
   summary.innerHTML = `
     <span class="${filter === 'all' ? 'filter-active' : ''}" onclick="showMonthlyBreakdown('all')">${totalCount} TOTAL</span> /

@@ -361,6 +361,9 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  z-index: 100; /* Higher than refresh indicator */
+  background: var(--bg-color); /* Mask the indicator when it's behind */
 }
 
 .header-left {
