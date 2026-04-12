@@ -607,6 +607,16 @@ button:active {
   padding: 1px;
 }
 
+/* "+N more" overflow badge in calendar */
+.calendar-extra-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff; /* Pure white */
+  letter-spacing: -0.5px;
+  /* Removed background and border so it doesn't look like a logo */
+}
+
 @keyframes pop-in {
   from {
     transform: scale(0);

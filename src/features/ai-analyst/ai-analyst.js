@@ -98,13 +98,31 @@ function createAIAnalystOverlay() {
 
             <footer class="ai-footer">
                 <div class="ai-suggestions-row" id="suggestions-row">
-                    <button class="suggestion-pill blue" onclick="document.getElementById('ai-chat-input').value='Analyze my spending'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                        Try AI Analyst
+                    <button class="suggestion-pill sovereign-pill" onclick="document.getElementById('close-ai-btn').click(); document.getElementById('pricing-modal').classList.remove('hidden');">
+                        <img src="/sublify-logo.png" alt="Sublify" class="sovereign-logo" />
+                        <div class="sovereign-text">
+                            <span>Upgrade to</span>
+                            <strong>Sovereign</strong>
+                        </div>
                     </button>
-                    <button class="suggestion-pill" onclick="document.getElementById('ai-chat-input').value='Show my active subscriptions'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                        List Subs
+                    <button class="suggestion-pill" onclick="document.getElementById('ai-chat-input').value='Analyze my subs'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
+                        <div class="analyze-stack">
+                            <div class="analyze-stack-icon" style="z-index: 3;"><img src="${window.getLogoUrl('netflix.com')}" onerror="this.style.display='none'"></div>
+                            <div class="analyze-stack-icon" style="z-index: 2;"><img src="${window.getLogoUrl('spotify.com')}" onerror="this.style.display='none'"></div>
+                            <div class="analyze-stack-icon" style="z-index: 1;"><img src="${window.getLogoUrl('apple.com')}" onerror="this.style.display='none'"></div>
+                        </div>
+                        Analyze my subs
+                    </button>
+                    <button class="suggestion-pill" onclick="document.getElementById('ai-chat-input').value='Compare Spotify & Apple Music'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
+                        <div class="analyze-stack">
+                            <div class="analyze-stack-icon" style="z-index: 2;"><img src="${window.getLogoUrl('spotify.com')}" onerror="this.style.display='none'"></div>
+                            <div class="analyze-stack-icon" style="z-index: 1;"><img src="${window.getLogoUrl('apple.com')}" onerror="this.style.display='none'"></div>
+                        </div>
+                        Compare Spotify & Apple Music
+                    </button>
+                    <button class="suggestion-pill" onclick="document.getElementById('ai-chat-input').value='Analyze my spending'; document.getElementById('ai-chat-input').dispatchEvent(new KeyboardEvent('keypress', {'key':'Enter'}));">
+                        <span style="font-size: 1.15rem; transform: scale(1.1); margin-right: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">💰</span>
+                        Analyze my spending
                     </button>
                 </div>
 
@@ -228,6 +246,7 @@ function showNewChatConfirm() {
     overlay.innerHTML = `
         <div class="new-chat-confirm-box">
             <h3>Start New Chat?</h3>
+            <p class="new-chat-disclaimer">Sublify AI can make mistakes. Check important info.</p>
             <div class="new-chat-confirm-actions">
                 <button class="confirm-ok-btn" onclick="window.confirmNewChat()">Yes</button>
                 <button class="confirm-cancel-btn" onclick="document.getElementById('new-chat-confirm-overlay').remove()">Cancel</button>
@@ -678,13 +697,13 @@ async function handleAiActions(text) {
             const action = JSON.parse(jsonStr);
             const type = action.type?.toUpperCase();
 
-            console.log(`[Lion Agent] Sequentially executing action: ${type}`, action.payload);
+            console.log(`[Audit Agent] Sequentially executing action: ${type}`, action.payload);
 
             // Safety Check: Verify payload ID matches selection
             // We only apply this check to destructive/modifying actions
             if (['UPDATE_SUB', 'TOGGLE_PAID', 'DELETE_SUB'].includes(type)) {
                 if (action.payload && action.payload.id && selectedSub && action.payload.id != selectedSub.id) {
-                    console.warn(`[Lion Agent] BLOCKED mismatched ID action. Payload: ${action.payload.id}, Selected: ${selectedSub.id}`);
+                    console.warn(`[Audit Agent] BLOCKED mismatched ID action. Payload: ${action.payload.id}, Selected: ${selectedSub.id}`);
                     continue; // Skip this specific mismatched action but continue with others
                 }
             }
@@ -729,10 +748,10 @@ async function handleAiActions(text) {
                     await window.undoLastAiAction();
                     break;
                 default:
-                    console.warn(`[Lion Agent] Unknown action type: ${type}`);
+                    console.warn(`[Audit Agent] Unknown action type: ${type}`);
             }
         } catch (e) {
-            console.error('[Lion Agent] Single action execution failed:', e);
+            console.error('[Audit Agent] Single action execution failed:', e);
         }
     }
 
@@ -780,7 +799,7 @@ async function executeSubUpdate(payload) {
             const currencyDef = (window.CURRENCIES || []).find(c => c.code === payload.changes.currency.toUpperCase());
             if (currencyDef) {
                 payload.changes.symbol = currencyDef.symbol;
-                console.log(`[Lion Agent] Auto-updating symbol to ${currencyDef.symbol} for ${currencyDef.code}`);
+                console.log(`[Audit Agent] Auto-updating symbol to ${currencyDef.symbol} for ${currencyDef.code}`);
             }
         }
     }
@@ -833,9 +852,9 @@ async function verifyDbSync(subId) {
             if (idx !== -1) window.subscriptions[idx] = data;
         }
 
-        console.log(`[Lion Sync] Verified Sub ID ${subId} successfully.`);
+        console.log(`[Audit Sync] Verified Sub ID ${subId} successfully.`);
     } catch (e) {
-        console.error(`[Lion Sync] Verification failed for Sub ID ${subId}:`, e.message);
+        console.error(`[Audit Sync] Verification failed for Sub ID ${subId}:`, e.message);
     } finally {
         // Remove spinner after verified (or failed)
         cards.forEach(c => c.classList.remove('verifying'));
@@ -847,7 +866,6 @@ function showUndoToast(name, verb = 'Updated') {
     toast.className = 'ai-undo-toast';
     toast.innerHTML = `
         <span>${verb} ${name} successfully!</span>
-        <button onclick="window.undoLastAiAction(this)">UNDO</button>
     `;
     document.body.appendChild(toast);
     setTimeout(() => toast.classList.add('show'), 100);

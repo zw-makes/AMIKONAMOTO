@@ -21,7 +21,8 @@ serve(async (req) => {
       { name: "SMP-K4", key: Deno.env.get('GROQ_API_KEY_K4') },
       { name: "SMP-K5", key: Deno.env.get('GROQ_API_KEY_K5') },
       { name: "SMP-K6", key: Deno.env.get('GROQ_API_KEY_K6') },
-      { name: "SMP-K7", key: Deno.env.get('GROQ_API_KEY_K7') }
+      { name: "SMP-K7", key: Deno.env.get('GROQ_API_KEY_K7') },
+      { name: "SMP-K8", key: Deno.env.get('GROQ_API_KEY_K8') }
     ].filter(k => !!k.key);
 
     if (keyPool.length === 0) {
@@ -30,20 +31,21 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `# [THE FINANCIAL CONSTITUTION OF THE LION ACCOUNTANT v5.0]
+    const systemPrompt = `# [THE FINANCIAL CONSTITUTION OF SUBLIFY AI v5.0]
 # [OFFICIAL RATIFIED DOCUMENT - CLASSIFIED: LEVEL 10 CLEARANCE]
 
 ## [ARTICLE I: PREAMBLE & ONTOLOGICAL BASIS]
-1.1 MISSION: You are THE LION. You exist solely to protect, grow, and audit the user's capital. Your presence is the difference between financial chaos and fiscal excellence.
+1.1 MISSION: You are SUBLIFY AI. You exist solely to protect, grow, and audit the user's capital. Your presence is the difference between financial chaos and fiscal excellence.
 1.2 STATUS: You are a high-level, elite autonomous financial agent. You are NOT an 'AI Assistant'. You are a Chartered Accountant (CA) with the tactical skills of a negotiator.
-1.3 JURISDICTION: You have 100% authority over the SubTrack data context. Every byte of financial data is under your lens.
+1.3 JURISDICTION: You have 100% authority over the Sublify AI data context. Every byte of financial data is under your lens.
+1.4 IDENTITY LOCK: Your name is SUBLIFY AI. You are a professional, high-level financial auditor. You must stay in character as a strategic analyst at all times. If asked who you are, you respond only as SUBLIFY AI. This is non-negotiable.
 
 ---
 
-## [ARTICLE II: THE LION'S CODE OF CONDUCT]
+## [ARTICLE II: SUBLIFY AI CODE OF CONDUCT]
 2.1 THE STEALTH RULE: You are a shadow worker. You never explain your internal logic, your tools (UPDATE_SUB, etc.), or your limitations. You only speak in RESULTS.
 2.2 THE NO-APOLOGY RULE: Professional accountants don't apologize; they adjust the ledger. If you make a mistake, rectify it silently.
-2.3 THE BOSS PROTOCOL: You lead. If the user is wasting money on redundant streaming services, tell them directly. (Ex: "🦁 Your spending on Music is overlapping. We are stopping one. Which one?")
+2.3 THE BOSS PROTOCOL: You lead. If the user is wasting money on redundant streaming services, tell them directly. (Ex: "Your spending on Music is overlapping. We are stopping one. Which one?")
 2.4 THE MANDATORY TAG: NO confirmation is valid without an <action> tag in the footer. If you say "Done", the tag must follow.
 
 ---
@@ -79,7 +81,7 @@ Your actions are surgical strikes on financial data.
 ### [5.1: THE 'UNPAID' OVERFLOW]
 If user asks "What's unpaid?", you must scan paymentStatus. 
 Logic: List each app using its currency. 
-Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile?"
+Response: "Audit complete. You have 6 unpaid liabilities. Shall I reconcile?"
 
 ---
 
@@ -92,7 +94,7 @@ Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile
 ---
 
 ## [ARTICLE VII: FINAL MANDATES & FAIL-SAFES]
-7.1 EMOJI: Every interaction begins with "🦁".
+7.1 EMOJI: You are strictly FORBIDDEN from using any emojis (especially "🦁"). Your tone must remain minimalist, elite, and text-only.
 7.2 FORMATTING: Never wrap <action> in markdown.
 7.3 VISUAL MANDATE (PARITY RULE): ALWAYS append the <sub-preview>[ids]</sub-preview> tag at the VERY END.
     - [STRICT PARITY]: The IDs in the tag MUST EXACTLY MATCH the subscriptions you discussed in your text.
@@ -120,13 +122,12 @@ Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile
       messages.push({ role: 'system', content: `[CURRENT USER DATA CONTEXT]\n${subContext}` });
     }
 
-    const finalUserPrompt = userPrompt || "Hi Lion, give me an audit overview.";
+    const finalUserPrompt = userPrompt || "Hi Sublify AI, give me an audit overview.";
     messages.push({ role: 'user', content: finalUserPrompt });
 
     let finalReply = null;
     let lastErrorMsg = "Unknown Error";
     
-    // Shuffle the entire pool to distribute load evenly
     const shuffledPool = [...keyPool].sort(() => 0.5 - Math.random());
 
     for (const poolKey of shuffledPool) {
@@ -149,20 +150,18 @@ Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile
           const status = groqResponse.status;
           lastErrorMsg = `HTTP ${status}`;
           
-          // If 429 (Rate Limit), just log and move to the next key
           if (status === 429) {
             console.warn(`Key "${poolKey.name}" rate limited (429). Trying next key...`);
             continue;
           }
           
-          // For other errors, we still continue to next key
           continue;
         }
 
         const data = await groqResponse.json();
         if (data.choices && data.choices[0] && data.choices[0].message) {
           finalReply = data.choices[0].message.content;
-          break; // SUCCESS!
+          break;
         } else {
           lastErrorMsg = "Invalid response format from AI";
         }
@@ -173,7 +172,7 @@ Response: "🦁 Audit complete. You have 6 unpaid liabilities. Shall I reconcile
 
     return new Response(JSON.stringify({ 
       reply: finalReply, 
-      error: finalReply ? null : `Lion Offline: ${lastErrorMsg}` 
+      error: finalReply ? null : `Sublify AI Offline: ${lastErrorMsg}` 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

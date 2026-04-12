@@ -90,13 +90,13 @@ function buildMessage(subscriptions, dayOffset) {
 
   if (renewingToday.length === 1) {
     return {
-      title: `🦁 Lion Alert: ${renewingToday[0].name} Due`,
+      title: `Sublify Alert: ${renewingToday[0].name} Due`,
       body: `Your ${renewingToday[0].name} renewal is today. Auditor's recommendation: Mark it as paid now.`
     };
   }
   if (renewingToday.length > 1) {
     return {
-      title: `⚠️ Lion Audit: ${renewingToday.length} Renewals`,
+      title: `⚠️ Sublify Audit: ${renewingToday.length} Renewals`,
       body: `${renewingToday.map(s => s.name).join(', ')} are all due today. Let's manage your cash flow.`
     };
   }
@@ -105,7 +105,7 @@ function buildMessage(subscriptions, dayOffset) {
   const trial = active.find(s => s.type === 'trial');
   if (trial && dayOffset % 5 === 0) { // Every 5 days, remind they have a trial
     return {
-      title: `🦁 Lion Spotted a Trial: ${trial.name}`,
+      title: `Sublify Spotted a Trial: ${trial.name}`,
       body: `You still have an active trial for ${trial.name}. Should we kill it before it charges you?`
     };
   }
@@ -118,7 +118,7 @@ function buildMessage(subscriptions, dayOffset) {
     if (upcoming.length > 0) {
       const dayStr = d === 1 ? 'tomorrow' : `in ${d} days`;
       return {
-        title: `🔔 Lion Guard: ${upcoming[0].name} Soon`,
+        title: `🔔 Sublify Guard: ${upcoming[0].name} Soon`,
         body: `Upcoming renewal ${dayStr} for ${upcoming[0].name}. I'm keeping an eye on it for you.`
       };
     }
@@ -127,7 +127,7 @@ function buildMessage(subscriptions, dayOffset) {
   // ── Priority 4: All clear — The Lion's Financial Wisdom ────────────────
   const lionWisdom = [
     {
-      title: '🦁 The Lion\'s Daily Audit',
+      title: 'Sublify\'s Daily Audit',
       body: `Monitoring ${activeCnt} ${subWord}. Everything looks clean. No dues today.`
     },
     {
@@ -139,7 +139,7 @@ function buildMessage(subscriptions, dayOffset) {
       body: `No renewals today. Your cash flow is protected by the Lion.`
     },
     {
-      title: '🦁 Proactive Tip',
+      title: 'Proactive Tip',
       body: `Seeing duplicate apps? I can help you consolidate and save. Open chat to start.`
     },
     {
@@ -152,7 +152,7 @@ function buildMessage(subscriptions, dayOffset) {
     },
     {
       title: '🧠 Financial Intelligence',
-      body: `The Lion is watching. No upcoming spikes detected in your subscription list.`
+      body: `The Sublify ai is watching. No upcoming spikes detected in your subscription list.`
     }
   ];
 

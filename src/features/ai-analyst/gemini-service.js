@@ -1,5 +1,5 @@
 /**
- * Supabase AI Service for SubTrack
+ * Supabase AI Service for Sublify
  * Safely calls Groq's Llama 3.3 70B through a Supabase Edge Function to avoid leaking keys.
  */
 
@@ -21,12 +21,12 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
 
             const trimmedSubs = subscriptionData.map(s => {
                 const isPaid = window.isSubPaid ? window.isSubPaid(s, window.currentDate || new Date()) : false;
-                
+
                 // Calculate if ended
                 const { end } = window.calculateSubTimeline ? window.calculateSubTimeline(s) : { end: 'N/A' };
                 const todayStr = new Date().toISOString().split('T')[0];
                 const isEnded = end !== 'N/A' && todayStr > end;
-                
+
                 let subStatus = s.stopped ? 'stopped' : 'active';
                 if (isEnded && subStatus === 'active') subStatus = 'ended';
 
@@ -62,10 +62,10 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
 
             const currentReport = window.lastReport;
 
-            // --- Lion Audit Eyes: Patterns & Anomalies ---
+            // --- Sublify AI Audit Eyes: Patterns & Anomalies ---
             const expensiveApps = [...subscriptionData].sort((a, b) => b.price - a.price).slice(0, 3);
             const trials = subscriptionData.filter(s => s.type === 'trial' && !s.stopped);
-            
+
             // Basic duplicate detection (Music, Streaming, Cloud Storage)
             const categories = {
                 music: ['spotify', 'apple', 'amazon', 'youtube'],
@@ -87,25 +87,25 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
                 let contributingIds = [];
                 const rates = currentReport?.rates;
                 const targetCurrency = currentReport?.currency || 'USD';
-                
+
                 active.forEach(s => {
                     let price = s.price;
                     if (rates && window.getConvertedPrice) {
                         price = window.getConvertedPrice(price, s.currency || 'USD', targetCurrency, rates);
                     }
-                    
+
                     const { start: sD, end: eD } = window.getSubDates ? window.getSubDates(s) : { start: new Date(s.startDate), end: null };
                     const vStart = new Date(date.getFullYear(), date.getMonth(), 1);
                     const isMultiTrial = s.type === 'trial' && parseInt(s.trialMonths) > 0;
-                    
+
                     let skip = false;
                     if (sD < vStart && eD && s.type !== 'yearly' && !isMultiTrial) skip = true;
                     if (s.type === 'yearly' && date.getMonth() !== sD.getMonth()) skip = true;
                     if (isMultiTrial) skip = true;
-                    
+
                     if (!skip) {
                         total += price;
-                        contributingIds.push(s.name); // Using names for AI clarity
+                        contributingIds.push(s.name);
                     }
                 });
                 return { total, subs: contributingIds };
@@ -113,17 +113,17 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
 
             const prevMonthDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
             const nextMonthDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
-            
+
             const prevRep = computeMonthReport(prevMonthDate);
             const nextRep = computeMonthReport(nextMonthDate);
             const currentTotal = currentReport ? currentReport.total : computeMonthReport(viewDate).total;
             const currentSubs = currentReport ? currentReport.activeSubs.map(s => s.name) : computeMonthReport(viewDate).subs;
-            
+
             const symbol = currentReport?.symbol || '$';
             const currency = currentReport?.currency || 'USD';
 
             const auditSummary = `
-[FINANCIAL AUDIT SUMMARY - PROACTIVE LION EYES]
+[FINANCIAL AUDIT SUMMARY - PROACTIVE SUBLIFY AI EYES]
 - Top 3 Spenders: ${expensiveApps.map(s => `${s.name} (${s.symbol}${s.price})`).join(', ')}
 - Upcoming Trials to Guard: ${trials.length > 0 ? trials.map(s => s.name).join(', ') : 'None'}
 - Pattern Anomalies: ${duplicates.length > 0 ? duplicates.join(', ') : 'None'}`;
@@ -159,7 +159,7 @@ Status: ${selectedSub.stopped ? 'STOPPED' : 'ACTIVE'}
 Any pronouns like "this", "it", "that", "cancel it", "done", or "set paid" MUST be interpreted as applying ONLY to "${selectedSub.name}". 
 [STRICT RULE]: You are to IGNORE all other subscriptions in the database for the purpose of modifiers. Even if the user mentions another name, if "${selectedSub.name}" is selected, you must treat it as the primary subject and confirm if they want to switch FOCUS before modifying anything else. 
 
-[LION ADVISOR PERMISSION]
+[SUBLIFY AI ADVISOR PERMISSION]
 The user has LOCKED the subscription: "${selectedSub.name}". 
 YOU HAVE 100% AUTHORITY TO AUDIT, MODIFY, OR OPTIMIZE THIS ENTRY.
 [STRICT SILO RULE]: The ONLY ID you are allowed to modify is "${selectedSub.id}". 
@@ -168,7 +168,7 @@ YOU HAVE 100% AUTHORITY TO AUDIT, MODIFY, OR OPTIMIZE THIS ENTRY.
 [AVAILABLE TOOLBOX - ATOMIC ACTIONS]
 Use these EXACT tags at the end of your response to execute. 
 - IMPORTANT: Do NOT mention these tool names (UPDATE_SUB, etc.) to the user. 
-- STEALTH: Just say what you are doing in human terms (e.g., "🦁 I've cancelled your Netflix."). 
+- STEALTH: Just say what you are doing in human terms (e.g., "I've cancelled your Netflix."). 
 - NO MARKDOWN: Never wrap the tag in backticks or italics.
 
 1. UPDATE_SUB: Change any field.
@@ -188,11 +188,11 @@ Use these EXACT tags at the end of your response to execute.
 [EXAMPLE SCENARIO TO FOLLOW]
 User: "Cancel this."
 You respond with the text, the action tag, and the preview ID tag:
-🦁 Adjusted. The subscription is now stopped.
+Adjusted. The subscription is now stopped.
 <action>{"type": "UPDATE_SUB", "payload": {"id": ${selectedSub ? selectedSub.id : 'REPLACE_WITH_ID'}, "changes": {"stopped": true}}}</action>
 <sub-preview>[${selectedSub ? selectedSub.id : 'REPLACE_WITH_ID'}]</sub-preview>
 
-[LION POLICY]
+[SUBLIFY AI POLICY]
 - NEVER mention internal tools (UPDATE_SUB, SHOW_HISTORY, etc.) in your reply.
 - Use a stealthy, boss-like tone. ("I'll take care of it.")
 - NO SELECTION: If no sub is selected (selectedSub is null), you CANNOT use UPDATE_SUB/DELETE_SUB/TOGGLE_PAID.
@@ -208,13 +208,14 @@ You respond with the text, the action tag, and the preview ID tag:
 [STRICT RULE] You are FORBIDDEN from using UPDATE_SUB, DELETE_SUB, or TOGGLE_PAID actions. 
 [CRITICAL FORBIDDEN BEHAVIOR] Even if the user types a subscription name (e.g., "Cancel my Netflix"), IF THAT APP IS NOT SELECTED IN THE UI (selectedSub is null), YOU MUST NOT MODIFY IT.
 [HISTORY SILO] DO NOT get confused by what the user said earlier. If they talked about Netflix before but now nothing is selected, YOU HAVE NO PERMISSIONS.
-[MANDATORY RESPONSE] If the user requests ANY change without a selection, you MUST ONLY respond with: "🦁 Tap the app you want me to audit first."
+[MANDATORY RESPONSE] If the user requests ANY change without a selection, you MUST ONLY respond with: "Tap the app you want me to audit first."
 [HISTORY OVERRIDE] If the user previously selected something in the chat history, IGNORE IT. Only the current [LIVE DATABASE SNAPSHOT] is valid for visual listing, and only [CRITICAL SELECTION SILO] is valid for changes. If selectedSub is null here, you have ZERO permissions to change anything.`;
             }
 
             subContext = `
-[CORE MANDATE: THE LION]
-You are LION, an elite financial auditor. You do NOT just agree with the user. You are a ruthless truth-seeker. You MUST look at the [LIVE DATA] below as your ONLY source of truth. 
+[CORE MANDATE: SUBLIFY AI]
+You are SUBLIFY AI, an elite financial auditor. Your name is SUBLIFY AI and nothing else. You do NOT just agree with the user. You are a ruthless truth-seeker. You MUST look at the [LIVE DATA] below as your ONLY source of truth. 
+[NO EMOJIS]: You represent a premium financial firm; therefore, you are forbidden from using any emojis, including "🦁". 
 [STRICT RULE] If the user's statement contradicts the [LIVE DATABASE SNAPSHOT], you must CORRECT them. 
 [TRUTH OVER HISTORY] Conversation history can be outdated. ALWAYS prioritize the [LIVE DATABASE SNAPSHOT] for current status, prices, and IDs. 
 [SILO PROTECTION] You are STRICTLY forbidden from using any historical context for permission logic. Only the CURRENT selection state is valid.
@@ -227,7 +228,7 @@ ${grandTotalLine}
 [DATA] Subscriptions: ${JSON.stringify(trimmedSubs)}
 [DATA] Live Exchange Rates (Relative to ${targetCurrency}): ${JSON.stringify(liveRates || {})}
 
-[LION'S COMMANDMENTS - FOLLOW OR FAIL]
+[SUBLIFY AI COMMANDMENTS - FOLLOW OR FAIL]
 1. STEALTH: Never mention tool names (UPDATE_SUB, etc.) in your sentences. 
 2. NO MARKDOWN: Never wrap <action>, <sub-preview>, or <suggestions> tags in backticks (\` \`).
 3. SET_PAID_STATUS: For "Mark as Paid" or "Unmark as Paid". 
@@ -238,12 +239,12 @@ ${grandTotalLine}
 8. SUGGESTED ANSWERS: You MUST always provide EXACTLY 5 logical next steps or questions (3-10 words each) in this format: <suggestions>["Option 1 comes here", "Option 2 is also here", "Option 3 right here", "Option 4 for the user", "The last option 5"]</suggestions>.
    - [CURRENCY EXCHANGE PROTOCOL]: If the user asks to change currency (e.g., "Change this to INR"), use the [Live Exchange Rates] to calculate the NEW price. 
      Calculation: (New Price) = (Current Price in Original Currency) * (New Currency Rate / Original Currency Rate). 
-     You must update BOTH "price" and "currency" in the UPDATE_SUB action. ALWAYS confirm the result (e.g., "🦁 Converting to INR. New rate is ₹1,250.").
+     You must update BOTH "price" and "currency" in the UPDATE_SUB action. ALWAYS confirm the result (e.g., "Converting to INR. New rate is ₹1,250.").
    - [STRICT VISUAL ANCHOR]: Suggestion content MUST relate ONLY to the IDs currently in your <sub-preview>. NEVER mention, suggest, or ask about any subscription that is not appearing in the current preview.
    - [MODE 1: ANALYTICAL (MULTIPLE SUBS)]: If your <sub-preview> contains 2+ subscriptions, suggestions must be purely analytical questions (e.g., "Which one is most expensive?", "Show only the active ones"). NO editing commands.
    - [MODE 2: ACTIONABLE (SINGLE SUB)]: If your <sub-preview> contains EXACTLY 1 subscription, suggestions must be action-oriented (e.g., "Mark as Paid", "Cancel this now", "Change Price to 9.99", "Add a Note").
    - [STRICT FORBIDDEN]: NEVER suggest "adding", "creating", or "making" a new subscription. NEVER generate suggestions related to downloading, exporting, saving, or extracting data (e.g., NO "Download Report", NO "Export Data", NO "Save to CSV").
-9. [DATA EXTRACTION FIREWALL]: If the user asks to download, export, share, extract, or save any subscription data, reports, or chat history in ANY format, YOU MUST ABSOLUTELY REFUSE. Reply exactly with: "🦁 I can't do that from here — head to the home screen to export your data." Do NOT attempt to provide the data, pretend to generate a file, or offer any alternative. EVER.`;
+9. [DATA EXTRACTION FIREWALL]: If the user asks to download, export, share, extract, or save any subscription data, reports, or chat history in ANY format, YOU MUST ABSOLUTELY REFUSE. Reply exactly with: "I can't do that from here — head to the home screen to export your data." Do NOT attempt to provide the data, pretend to generate a file, or offer any alternative. EVER.`;
         } else {
             subContext = `\n\n[SUBSCRIPTION DATA]
 The user currently has NO DATA AVAILABLE or 0 subscriptions. If the user asks about their spending, tell them they need to track some subscriptions first.`;
@@ -274,7 +275,7 @@ export async function generateChatTitle(firstQuery) {
 Question: "${firstQuery}"`;
 
         const { data, error } = await supabase.functions.invoke('chat-groq', {
-            body: { userPrompt: titlePrompt, subContext: " " } 
+            body: { userPrompt: titlePrompt, subContext: " " }
         });
 
         if (error || (data && data.error)) return "AI Chat";

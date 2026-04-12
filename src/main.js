@@ -1093,15 +1093,10 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
           dot.style.backgroundColor = colorVar;
           dot.style.color = colorVar; // For currentColor box-shadow
           dotsContainer.appendChild(dot);
-        } else if (index === 3) {
-          const plus = document.createElement('div');
-          plus.className = 'sub-more-plus';
-          plus.innerText = '+';
-          dotsContainer.appendChild(plus);
         }
 
-        // Create icon (only show first 3 to prevent overflow)
-        if (index < 3) {
+        // Create icon (only show first 2 to keep calendar clean)
+        if (index < 2) {
           const isPaidOnThisMonth = window.isSubPaid(sub, currentDate);
           const icon = document.createElement('div');
           icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''} ${isPaidOnThisMonth ? 'paid-icon' : ''}`;
@@ -1138,12 +1133,8 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
 
           // Circular Logo Container for Calendar
           icon.style.borderRadius = '50%';
-          icon.style.cursor = 'pointer';
           icon.style.overflow = 'hidden';
-          icon.onclick = (e) => {
-            e.stopPropagation();
-            showSubscriptionDetails(sub, daySubs, new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-          };
+          // No click handler - details only open from list view or date popup
 
           // Fallback if logo fails (Show a sleek white cross)
           img.onerror = () => {
@@ -1154,6 +1145,15 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
           iconsContainer.appendChild(icon);
         }
       });
+
+      // If more than 2 subscriptions, show a "+N" badge in the 3rd slot
+      if (daySubs.length > 2) {
+        const extraCount = daySubs.length - 2;
+        const badge = document.createElement('div');
+        badge.className = 'sub-icon calendar-extra-badge';
+        badge.textContent = `+${extraCount}`;
+        iconsContainer.appendChild(badge);
+      }
 
       cell.appendChild(dotsContainer);
       cell.appendChild(iconsContainer);
