@@ -3,25 +3,26 @@
     position: absolute;
     top: 85px;
     left: 50%;
-    transform: translate3d(-50%, -80px, 0);
-    width: 44px;
-    height: 44px;
+    transform: translate3d(-50%, -85px, 0.1px); /* Force 3D context with non-zero Z */
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 50;
+    z-index: 10; /* Bottom layer of the pull sandwich */
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s, transform 0.1s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .refresh-logo {
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     object-fit: contain;
     filter: grayscale(1) brightness(2);
     opacity: 0.3;
     transition: all 0.2s ease;
+    transform: translateZ(0); /* Force GPU draw in IPA */
 }
 
 .refresh-indicator.reached .refresh-logo {

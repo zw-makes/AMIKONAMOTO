@@ -461,6 +461,9 @@ button:active {
   /* Space for the bottom bar */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: none; /* Crucial: stops iOS bounce breaking the header */
+  position: relative;
+  z-index: 20; /* Sits above the refresh logo (z-index: 10) */
+  background: var(--bg-color); /* Ensure it's opaque to mask the logo */
 }
 
 .weekday-header {
