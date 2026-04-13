@@ -104,6 +104,23 @@ export function initEmailAuthPage() {
         </div>
       </div>
 
+      <!-- New Password View (Initially Hidden) -->
+      <div id="new-password-view" class="hidden">
+        <div class="form-field">
+          <label>New Password (Min. 10 chars)</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="new-password-input" placeholder="••••••••" required>
+            <div class="strength-meter-container" id="new-password-strength-container" style="display:flex;">
+              <svg class="strength-svg" viewBox="0 0 36 36">
+                <circle class="strength-track" cx="18" cy="18" r="16" fill="none" stroke-width="3"></circle>
+                <circle id="new-pass-circle" class="strength-fill" cx="18" cy="18" r="16" fill="none" stroke-width="3" stroke-dasharray="100.5" stroke-dashoffset="100.5"></circle>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <button id="reset-final-btn" class="email-auth-submit disabled-btn">Update Password</button>
+      </div>
+
       <div class="email-auth-footer" id="email-auth-footer-container">
         <span id="email-auth-toggle-btn">Don't have an account? Sign Up</span>
       </div>
@@ -135,8 +152,11 @@ export function initEmailAuthPage() {
       }
       
       const submitBtn = document.getElementById('email-auth-main-btn');
+      const hapticSvc = window.HapticsService || HapticsService;
+      if (hapticSvc) hapticSvc.light();
+
       if (submitBtn) {
-        submitBtn.innerText = "SENDING LINK...";
+        submitBtn.innerText = "SENDING CODE...";
         submitBtn.style.opacity = "0.7";
         submitBtn.disabled = true;
       }
@@ -145,10 +165,11 @@ export function initEmailAuthPage() {
         const { error } = await window.supabase.auth.resetPasswordForEmail(emailVal);
         if (error) throw error;
         
-        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton("Reset link sent! Check your inbox.", true);
+        // Transition to OTP Screen with 'recovery' type
+        showOtpVerification(emailVal, 'recovery');
         
       } catch (err) {
-        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(err.message || "Failed to send reset link", false);
+        if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(err.message || "Failed to send reset code", false);
       }
     });
   }
@@ -168,51 +189,112 @@ export function initEmailAuthPage() {
   // Initial Visibility
   if (strengthCircleContainer) strengthCircleContainer.style.display = 'none';
 
-  passwordInput.addEventListener('input', () => {
-    const val = passwordInput.value;
-    const len = val.length;
+  // Shared strength meter logic for both signup and password reset
+  const setupStrengthMeter = (inputEl, circleEl, containerEl, btnEl) => {
+    inputEl.addEventListener('input', () => {
+      const val = inputEl.value;
+      const len = val.length;
 
-    // IF LOGIN MODE: No meter, no lockout
-    if (!isSignUpMode) {
-      strengthCircleContainer.style.display = 'none';
-      submitBtn.classList.remove('disabled-btn');
-      return;
-    }
+      // Only show for signup or reset screens
+      if (!isSignUpMode && inputEl.id === 'password-auth-input') {
+        if (containerEl) containerEl.style.display = 'none';
+        btnEl.classList.remove('disabled-btn');
+        return;
+      }
 
-    // IF SIGNUP MODE: Show meter and enforce rules
-    strengthCircleContainer.style.display = 'flex';
-    if (len === 0) {
-      strengthCircle.style.strokeDashoffset = '100.5';
-      strengthCircle.style.stroke = 'rgba(255,255,255,0.2)';
-      submitBtn.classList.add('disabled-btn');
-      return;
-    }
+      if (containerEl) containerEl.style.display = 'flex';
+      
+      if (len === 0) {
+        circleEl.style.strokeDashoffset = '100.5';
+        circleEl.style.stroke = 'rgba(255,255,255,0.2)';
+        btnEl.classList.add('disabled-btn');
+        return;
+      }
 
-    const hasUpper = /[A-Z]/.test(val);
-    const hasNumber = /[0-9]/.test(val);
-    const hasSpecial = /[^A-Za-z0-9]/.test(val);
-    const complexityScore = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+      const hasUpper = /[A-Z]/.test(val);
+      const hasNumber = /[0-9]/.test(val);
+      const hasSpecial = /[^A-Za-z0-9]/.test(val);
+      const complexityScore = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+      
+      let progress = Math.min((len / 10) * 60, 60); 
+      if (len >= 10) progress += (complexityScore * 13.33); 
+      
+      const offset = 100.5 - (progress / 100) * 100.5;
+      circleEl.style.strokeDashoffset = offset;
+
+      if (len < 10) {
+        circleEl.style.stroke = '#ff3b30'; 
+        btnEl.classList.add('disabled-btn');
+      } else if (complexityScore < 2) {
+        circleEl.style.stroke = '#ffcc00'; 
+        btnEl.classList.remove('disabled-btn');
+      } else if (complexityScore === 3 && len >= 12) {
+        circleEl.style.stroke = '#00ff88'; 
+        btnEl.classList.remove('disabled-btn');
+      } else {
+        circleEl.style.stroke = '#00a2ff'; 
+        btnEl.classList.remove('disabled-btn');
+      }
+    });
+  };
+
+  setupStrengthMeter(
+    passwordInput, 
+    strengthCircle, 
+    strengthCircleContainer, 
+    submitBtn
+  );
+
+  const newPassInput = document.getElementById('new-password-input');
+  const newStrengthCircle = document.getElementById('new-pass-circle');
+  const newStrengthContainer = document.getElementById('new-password-strength-container');
+  const resetFinalBtn = document.getElementById('reset-final-btn');
+
+  setupStrengthMeter(
+    newPassInput,
+    newStrengthCircle,
+    newStrengthContainer,
+    resetFinalBtn
+  );
+
+  // New Password Reset Handler
+  resetFinalBtn.onclick = async () => {
+    if (resetFinalBtn.classList.contains('disabled-btn')) return;
     
-    let progress = Math.min((len / 10) * 60, 60); 
-    if (len >= 10) progress += (complexityScore * 13.33); 
+    resetFinalBtn.disabled = true;
+    resetFinalBtn.innerText = "UPDATING...";
     
-    const offset = 100.5 - (progress / 100) * 100.5;
-    strengthCircle.style.strokeDashoffset = offset;
+    const hapticSvc = window.HapticsService || HapticsService;
+    
+    try {
+      const { error } = await window.supabase.auth.updateUser({
+        password: newPassInput.value
+      });
 
-    if (len < 10) {
-      strengthCircle.style.stroke = '#ff3b30'; 
-      submitBtn.classList.add('disabled-btn');
-    } else if (complexityScore < 2) {
-      strengthCircle.style.stroke = '#ffcc00'; 
-      submitBtn.classList.remove('disabled-btn');
-    } else if (complexityScore === 3 && len >= 12) {
-      strengthCircle.style.stroke = '#00ff88'; 
-      submitBtn.classList.remove('disabled-btn');
-    } else {
-      strengthCircle.style.stroke = '#00a2ff'; 
-      submitBtn.classList.remove('disabled-btn');
+      if (error) throw error;
+      
+      if (hapticSvc) hapticSvc.success();
+      
+      if (window.addNotification) {
+        window.addNotification({
+          title: "Password Updated",
+          text: "Your password has been changed successfully. Logging you in...",
+          type: "success"
+        });
+      }
+
+      // Success! The session is updated. The main.js onAuthStateChange will take them to the app.
+      // But we should hide this view first.
+      document.getElementById('email-auth-view').classList.add('hidden');
+      
+    } catch (err) {
+      if (hapticSvc) hapticSvc.error();
+      if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(err.message, false);
+    } finally {
+      resetFinalBtn.disabled = false;
+      resetFinalBtn.innerText = "Update Password";
     }
-  });
+  };
 
   // Global error listener for the button logic
   window.showAuthErrorOnButton = (message, isSuccess = false) => {
@@ -339,22 +421,29 @@ export function initEmailAuthPage() {
     otpVerifyBtn.innerText = "VERIFYING...";
     
     const email = document.getElementById('otp-email-display').innerText;
+    const currentOtpType = otpVerifyBtn.getAttribute('data-otp-type') || 'signup';
 
     try {
       const { error } = await window.supabase.auth.verifyOtp({
         email,
         token: code,
-        type: 'signup'
+        type: currentOtpType
       });
 
       if (error) throw error;
       
-      // Success! The session will change and main.js listener will handle the rest
-      if (window.HapticsService) window.HapticsService.success();
+      const hapticSvc = window.HapticsService || HapticsService;
+      if (hapticSvc) hapticSvc.success();
+
+      // If it was a recovery code, we need to show the New Password screen
+      if (currentOtpType === 'recovery') {
+        showNewPasswordScreen();
+      }
       
     } catch (err) {
       console.error('OTP Verification Error:', err.message);
-      if (window.HapticsService) window.HapticsService.error();
+      const hapticSvc = window.HapticsService || HapticsService;
+      if (hapticSvc) hapticSvc.error();
       
       // Flash error on the boxes
       otpInputs.forEach(i => {
@@ -367,6 +456,7 @@ export function initEmailAuthPage() {
         }, 1500);
       });
       otpInputs[0].focus();
+      if (window.showAuthErrorOnButton) window.showAuthErrorOnButton(err.message, false);
       
     } finally {
       otpVerifyBtn.disabled = false;
@@ -392,7 +482,7 @@ export function initEmailAuthPage() {
         otpResendBtn.style.pointerEvents = "none";
 
         const { error } = await window.supabase.auth.resend({
-          type: 'signup',
+          type: otpVerifyBtn.getAttribute('data-otp-type') || 'signup',
           email: email
         });
 
@@ -462,25 +552,29 @@ function startOtpResendTimer() {
 /**
  * Transitions the view to the OTP input screen
  */
-export function showOtpVerification(email) {
+export function showOtpVerification(email, type = 'signup') {
   const authForm = document.getElementById('email-auth-form-submit');
   const otpView = document.getElementById('otp-verification-view');
   const title = document.getElementById('email-auth-title-text');
   const footer = document.getElementById('email-auth-footer-container');
   const emailDisplay = document.getElementById('otp-email-display');
   const otpInputs = document.querySelectorAll('.otp-digit');
+  const otpVerifyBtn = document.getElementById('otp-verify-btn');
 
   const submitBtn = document.getElementById('email-auth-main-btn');
   if (submitBtn) {
-    submitBtn.innerText = "Sign Up";
+    submitBtn.innerText = isSignUpMode ? "Sign Up" : "Log In";
     submitBtn.style.opacity = "1";
     submitBtn.disabled = false;
   }
 
   if (!authForm || !otpView) return;
 
+  // Set the type for later verification
+  otpVerifyBtn.setAttribute('data-otp-type', type);
+
   // Update State
-  title.innerText = "Verify Email";
+  title.innerText = type === 'recovery' ? "Reset Password" : "Verify Email";
   emailDisplay.innerText = email;
   
   // Hide Login/Signup Form via smooth fade out
@@ -509,11 +603,39 @@ export function showOtpVerification(email) {
     otpView.style.animation = 'fadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards';
     
     // Focus first box
+    otpInputs.forEach(i => i.value = ''); // Clear old inputs
     otpInputs[0].focus();
   }, 250);
 
   // Start the 60s cooldown timer
   startOtpResendTimer();
+}
+
+function showNewPasswordScreen() {
+  const otpView = document.getElementById('otp-verification-view');
+  const newPassView = document.getElementById('new-password-view');
+  const title = document.getElementById('email-auth-title-text');
+
+  if (!otpView || !newPassView) return;
+
+  title.innerText = "New Password";
+
+  otpView.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+  otpView.style.opacity = '0';
+  otpView.style.transform = 'scale(0.97)';
+
+  setTimeout(() => {
+    otpView.classList.add('hidden');
+    otpView.style.opacity = '';
+    otpView.style.transform = '';
+
+    newPassView.classList.remove('hidden');
+    void newPassView.offsetWidth;
+    newPassView.style.animation = 'fadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards';
+    
+    const input = document.getElementById('new-password-input');
+    if (input) input.focus();
+  }, 250);
 }
 
 

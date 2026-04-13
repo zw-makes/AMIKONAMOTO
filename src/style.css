@@ -2960,7 +2960,7 @@ input:checked+.slider:before {
   width: 100%;
   height: 100%;
   z-index: 0;
-  background: radial-gradient(ellipse at bottom, #111a22 0%, #000000 100%);
+  background: #000000;
   overflow: hidden;
 }
 
