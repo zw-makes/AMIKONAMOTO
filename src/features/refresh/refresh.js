@@ -87,15 +87,16 @@ export function initPullToRefresh() {
 
         if (pullDistance >= threshold) {
             indicator.classList.add('active', 'reached');
-            indicator.style.transform = `translate3d(-50%, 60px, 0.1px)`; 
+            // Give it 115px of space so it sits perfectly clear of everything
+            indicator.style.transform = `translate3d(-50%, 65px, 0.1px)`; 
             indicator.style.opacity = '1';
-            container.style.transform = `translate3d(0, 95px, 0)`;
+            container.style.transform = `translate3d(0, 115px, 0)`;
 
             if (window.HapticsService) window.HapticsService.medium();
             
             setTimeout(() => {
                 window.location.reload();
-            }, 800);
+            }, 850);
         } else {
             pullDistance = 0;
             requestAnimationFrame(updateUI);
