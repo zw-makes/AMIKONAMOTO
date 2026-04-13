@@ -1,3 +1,4 @@
+import { supabase } from '../../supabase.js';
 import { HapticsService } from '../../features/haptics/haptics.js';
 
 let isSignUpMode = false;
@@ -162,7 +163,7 @@ export function initEmailAuthPage() {
       }
       
       try {
-        const { error } = await window.supabase.auth.resetPasswordForEmail(emailVal);
+        const { error } = await supabase.auth.resetPasswordForEmail(emailVal);
         if (error) throw error;
         
         // Transition to OTP Screen with 'recovery' type
@@ -267,7 +268,7 @@ export function initEmailAuthPage() {
     const hapticSvc = window.HapticsService || HapticsService;
     
     try {
-      const { error } = await window.supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: newPassInput.value
       });
 
@@ -424,7 +425,7 @@ export function initEmailAuthPage() {
     const currentOtpType = otpVerifyBtn.getAttribute('data-otp-type') || 'signup';
 
     try {
-      const { error } = await window.supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
         type: currentOtpType
@@ -481,7 +482,7 @@ export function initEmailAuthPage() {
         otpResendBtn.style.opacity = "0.7";
         otpResendBtn.style.pointerEvents = "none";
 
-        const { error } = await window.supabase.auth.resend({
+        const { error } = await supabase.auth.resend({
           type: otpVerifyBtn.getAttribute('data-otp-type') || 'signup',
           email: email
         });
