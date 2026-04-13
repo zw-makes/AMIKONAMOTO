@@ -3072,6 +3072,14 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     window.currentUser = null;
     userProfile = null;
     hideSplash(true); // Don't show loading screen if user is not logged in!
+    
+    // Fix: Ensure main app UI is hidden when logging out
+    const appCont = document.getElementById('app-container');
+    if (appCont) appCont.classList.add('hidden');
+    
+    const loadingScreen = document.getElementById('auth-loading-screen');
+    if (loadingScreen) loadingScreen.classList.add('hidden');
+
     authScreen.classList.remove('hidden');
     onboardingScreen.classList.add('hidden');
     welcomeScreen.classList.add('hidden');
