@@ -31,9 +31,12 @@ export function initPullToRefresh() {
 
         container.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
         
-        const logoOffset = pullDistance - 70; 
-        indicator.style.opacity = Math.min(pullDistance / (threshold * 0.5), 1);
-        indicator.style.transform = `translate3d(-50%, ${logoOffset}px, 0.1px)`;
+        // Accelerated reveal: Logo clearing the header boundary faster
+        // When pullDistance is 75 (threshold), logoOffset will be ~45px, showing the full logo
+        const logoOffset = (pullDistance * 1.5) - 75; 
+        
+        indicator.style.opacity = Math.min(pullDistance / (threshold * 0.4), 1);
+        indicator.style.transform = `translate3d(-50%, ${logoOffset}px, 0.2px)`;
 
         if (pullDistance >= threshold) {
             indicator.classList.add('reached');
