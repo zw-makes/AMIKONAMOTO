@@ -2,7 +2,7 @@ import './refresh.css';
 
 export function initPullToRefresh() {
     const container = document.querySelector('.calendar-container');
-    const app = document.getElementById('app-container');
+    const app = document.getElementById('app'); // Root app container
     if (!container || !app) return;
 
     // Create indicator element if not exists
@@ -17,12 +17,12 @@ export function initPullToRefresh() {
     let startY = 0;
     let currentY = 0;
     let isPulling = false;
-    const threshold = 70; // pixels to pull before refresh
-    const maxPull = 120; // limit pull distance
+    const threshold = 70; 
+    const maxPull = 120; 
 
     container.addEventListener('touchstart', (e) => {
         // Only allow pulling if we are at the very top of the scroll
-        if (container.scrollTop <= 0) {
+        if (container.scrollTop <= 5) { // Slight tolerance for iOS
             startY = e.touches[0].pageY;
             isPulling = true;
             indicator.classList.remove('active');
@@ -39,15 +39,16 @@ export function initPullToRefresh() {
         let pullDistance = currentY - startY;
 
         if (pullDistance > 0) {
-            // Apply refined sensitivity
-            pullDistance = Math.min(pullDistance * 0.7, maxPull);
+            // CRITICAL: Prevent system scroll/bounce to allow our custom UI to show
+            if (e.cancelable) e.preventDefault();
             
-            // Move the content down with the pull
+            pullDistance = Math.min(pullDistance * 0.75, maxPull);
+            
+            // Move items
             container.style.transition = 'none';
             container.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
             container.style.willChange = 'transform';
             
-            // GPU Accelerated Indicator Transform
             indicator.style.opacity = Math.min(pullDistance / (threshold * 0.4), 1);
             indicator.style.transform = `translate3d(-50%, ${pullDistance - 65}px, 0)`;
             
@@ -62,26 +63,23 @@ export function initPullToRefresh() {
                 indicator.dataset.hapticFired = "";
             }
         }
-    }, { passive: true });
+    }, { passive: false }); // CHANGED: Must be false to allow preventDefault()
 
     container.addEventListener('touchend', () => {
         if (!isPulling) return;
         isPulling = false;
 
         let pullDistance = currentY - startY;
-        const finalDistance = Math.min(pullDistance * 0.7, maxPull);
+        const finalDistance = Math.min(pullDistance * 0.75, maxPull);
 
         container.style.transition = 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1)';
         
         if (finalDistance >= threshold) {
-            // Trigger Refresh
             indicator.classList.add('active');
             indicator.classList.add('reached');
             indicator.style.transform = `translate3d(-50%, 50px, 0)`;
             indicator.style.opacity = '1';
-            
-            // Hold the content down slightly while refreshing
-            container.style.transform = `translate3d(0, 80px, 0)`;
+            container.style.transform = `translate3d(0, 85px, 0)`;
 
             if (window.HapticsService) window.HapticsService.medium();
             
@@ -89,7 +87,6 @@ export function initPullToRefresh() {
                 window.location.reload();
             }, 800);
         } else {
-            // Snap back
             indicator.classList.remove('reached');
             indicator.style.opacity = '0';
             indicator.style.transform = `translate3d(-50%, -100px, 0)`;
