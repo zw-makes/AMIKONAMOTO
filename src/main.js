@@ -19,7 +19,7 @@ import { initCatalog } from './features/catalog/catalog.js';
 import { initSurveyPage } from './features/onboarding/survey-page.js';
 import { initBelievePage } from './features/onboarding/believe-page.js';
 import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
-import { initEmailAuthPage, showEmailAuthPage, showOtpVerification } from './features/onboarding/email-auth.js';
+import { initEmailAuthPage, showEmailAuthPage, showOtpVerification, resetEmailAuthViews } from './features/onboarding/email-auth.js';
 import { initGuider, showGuider } from './features/onboarding/guider.js';
 import './features/onboarding/survey-page.css';
 import './features/onboarding/believe-page.css';
@@ -2880,6 +2880,26 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     window.currentUser = session.user;
     console.log(`[Auth] Session active for: ${currentUser.email} `);
 
+    // Check if we are in the middle of a password reset flow
+    if (window.isRecoveringPassword) {
+      console.log('[Auth] Holding session transition for password recovery...');
+      
+      // We still need to expose a way to start the app once recovery is done
+      window.addEventListener('passwordResetComplete', () => {
+         window.isRecoveringPassword = false;
+         supabase.auth.getSession().then(({ data: { session: newSession } }) => {
+            if (newSession) {
+               console.log('[Auth] Password reset complete, launching app...');
+               // We manually trigger the logic again by calling the handler
+               // This is a bit recursive but since we cleared the flag it will proceed
+               window.location.reload(); // Simplest way to ensure everything loads correctly
+            }
+         });
+      }, { once: true });
+      
+      return; 
+    }
+
     // 1. Show the transition screen IMMEDIATELY
     const loadingScreen = document.getElementById('auth-loading-screen');
     if (loadingScreen) loadingScreen.classList.remove('hidden');
@@ -3087,6 +3107,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     loginView.classList.add('hidden');
     const loginContainer = document.getElementById('login-container');
     if (loginContainer) loginContainer.classList.add('hidden');
+    
+    // reset external auth views
+    resetEmailAuthViews();
+    
     subscriptions = [];
     renderCalendar();
   }

@@ -120,6 +120,9 @@ export function initEmailAuthPage() {
           </div>
         </div>
         <button id="reset-final-btn" class="email-auth-submit disabled-btn">Update Password</button>
+        <div style="margin-top: 15px; text-align: center;">
+          <span id="skip-reset-btn" style="font-size: 0.8rem; color: rgba(255,255,255,0.4); text-decoration: underline; cursor: pointer; font-weight: 600;">Skip for now</span>
+        </div>
       </div>
 
       <div class="email-auth-footer" id="email-auth-footer-container">
@@ -155,6 +158,9 @@ export function initEmailAuthPage() {
       const submitBtn = document.getElementById('email-auth-main-btn');
       const hapticSvc = window.HapticsService || HapticsService;
       if (hapticSvc) hapticSvc.light();
+      
+      // Set flag to prevent main.js from hiding the auth screen pre-emptively
+      window.isRecoveringPassword = true;
 
       if (submitBtn) {
         submitBtn.innerText = "SENDING CODE...";
@@ -274,6 +280,10 @@ export function initEmailAuthPage() {
 
       if (error) throw error;
       
+      // Success! Reset flag
+      window.isRecoveringPassword = false;
+      window.dispatchEvent(new Event('passwordResetComplete'));
+
       if (hapticSvc) hapticSvc.success();
       
       if (window.addNotification) {
@@ -296,6 +306,28 @@ export function initEmailAuthPage() {
       resetFinalBtn.innerText = "Update Password";
     }
   };
+
+  // Skip Password Reset Handler
+  const skipBtn = document.getElementById('skip-reset-btn');
+  if (skipBtn) {
+    skipBtn.onclick = () => {
+      if (window.HapticsService) window.HapticsService.light();
+      
+      // Reset flag
+      window.isRecoveringPassword = false;
+      window.dispatchEvent(new Event('passwordResetComplete'));
+
+      // Just hide the view and let the app takeover (since they are already verified/logged in)
+      document.getElementById('email-auth-view').classList.add('hidden');
+      if (window.addNotification) {
+        window.addNotification({
+          title: "Setup Complete",
+          text: "You can change your password anytime in settings.",
+          type: "info"
+        });
+      }
+    };
+  }
 
   // Global error listener for the button logic
   window.showAuthErrorOnButton = (message, isSuccess = false) => {
@@ -619,6 +651,10 @@ function showNewPasswordScreen() {
 
   if (!otpView || !newPassView) return;
 
+  // Ensure loading screens or other views don't overlap
+  const loadingScreen = document.getElementById('auth-loading-screen');
+  if (loadingScreen) loadingScreen.classList.add('hidden');
+
   title.innerText = "New Password";
 
   otpView.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
@@ -697,6 +733,9 @@ export function setAuthMode(signUp) {
 export function showEmailAuthPage(mode = 'login') {
   const emailAuthView = document.getElementById('email-auth-view');
   if (emailAuthView) {
+    // Reset internal views first before showing
+    resetEmailAuthViews();
+    
     if (mode === 'signup') {
       isSignUpMode = true;
       updateAuthMode();
@@ -706,4 +745,29 @@ export function showEmailAuthPage(mode = 'login') {
     }
     emailAuthView.classList.remove('hidden');
   }
+}
+
+/**
+ * Resets all internal views of the email auth screen to their default state.
+ * Useful for logout or switching between auth flows.
+ */
+export function resetEmailAuthViews() {
+  const authForm = document.getElementById('email-auth-form-submit');
+  const otpView = document.getElementById('otp-verification-view');
+  const newPassView = document.getElementById('new-password-view');
+  const footer = document.getElementById('email-auth-footer-container');
+
+  // Reset the recovery flag safely
+  window.isRecoveringPassword = false;
+
+  if (authForm) authForm.classList.remove('hidden');
+  if (footer) footer.classList.remove('hidden');
+  if (otpView) otpView.classList.add('hidden');
+  if (newPassView) newPassView.classList.add('hidden');
+  
+  // Clear inputs
+  const inputs = document.querySelectorAll('#email-auth-view input');
+  inputs.forEach(i => {
+     if (i.type !== 'submit' && i.type !== 'button') i.value = '';
+  });
 }
