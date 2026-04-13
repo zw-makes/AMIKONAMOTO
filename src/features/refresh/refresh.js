@@ -46,11 +46,12 @@ export function initPullToRefresh() {
             
             // Move items
             container.style.transition = 'none';
-            container.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
+            container.style.transform = `translate3d(0, ${pullDistance}px, 0.1px)`; // Content slide
             container.style.willChange = 'transform';
             
+            // Move indicator (No more -50% needed as parent is full-width flex)
             indicator.style.opacity = Math.min(pullDistance / (threshold * 0.4), 1);
-            indicator.style.transform = `translate3d(-50%, ${pullDistance - 65}px, 0)`;
+            indicator.style.transform = `translate3d(0, ${pullDistance - 80}px, 0.2px)`;
             
             if (pullDistance >= threshold) {
                 indicator.classList.add('reached');
@@ -63,7 +64,7 @@ export function initPullToRefresh() {
                 indicator.dataset.hapticFired = "";
             }
         }
-    }, { passive: false }); // CHANGED: Must be false to allow preventDefault()
+    }, { passive: false });
 
     container.addEventListener('touchend', () => {
         if (!isPulling) return;
@@ -77,9 +78,9 @@ export function initPullToRefresh() {
         if (finalDistance >= threshold) {
             indicator.classList.add('active');
             indicator.classList.add('reached');
-            indicator.style.transform = `translate3d(-50%, 50px, 0)`;
+            indicator.style.transform = `translate3d(0, 45px, 0.2px)`;
             indicator.style.opacity = '1';
-            container.style.transform = `translate3d(0, 85px, 0)`;
+            container.style.transform = `translate3d(0, 85px, 0.1px)`;
 
             if (window.HapticsService) window.HapticsService.medium();
             
@@ -89,7 +90,7 @@ export function initPullToRefresh() {
         } else {
             indicator.classList.remove('reached');
             indicator.style.opacity = '0';
-            indicator.style.transform = `translate3d(-50%, -100px, 0)`;
+            indicator.style.transform = `translate3d(0, -100px, 0.2px)`;
             container.style.transform = `translate3d(0, 0, 0)`;
         }
         
