@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap');
 
 :root {
   /* Colors - Inspired by the premium dark theme in the image */
@@ -3173,3 +3173,26 @@ input:checked+.slider:before {
   transform: scale(0.96);
   opacity: 0.9;
 }
+/* Step Indicators for Guiders */
+.guider-step-indicator {
+  background: transparent;
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 100px;
+  padding: 0 16px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: none;
+  pointer-events: none;
+  flex-shrink: 0;
+  letter-spacing: 0.08em;
+  align-self: center;
+  white-space: nowrap;
+}
+
+

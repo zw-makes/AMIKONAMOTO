@@ -44,12 +44,18 @@ export function initEmailAuthPage() {
         <div class="form-row-grid">
           <div class="form-field">
             <label>Gender</label>
-            <select id="auth-gender-input" class="premium-select">
-              <option value="" disabled selected>Select</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+            <div class="custom-select-wrapper" id="gender-select-wrapper">
+              <div class="custom-select-trigger" id="gender-select-trigger">
+                <span id="gender-selected-text" style="color: rgba(255,255,255,0.35);">Select</span>
+                <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M7 10l5 5 5-5z"/></svg>
+              </div>
+              <div class="custom-select-dropdown hidden" id="gender-dropdown">
+                <div class="custom-select-option" data-value="male">Male</div>
+                <div class="custom-select-option" data-value="female">Female</div>
+                <div class="custom-select-option" data-value="other">Other</div>
+              </div>
+            </div>
+            <input type="hidden" id="auth-gender-input">
           </div>
           <div class="form-field">
             <label>Birthday</label>
@@ -358,6 +364,40 @@ export function initEmailAuthPage() {
   passwordInput.addEventListener('input', clearError);
   document.getElementById('email-auth-input').addEventListener('input', clearError);
 
+  // --- Custom Gender Dropdown Logic ---
+  const genderTrigger = document.getElementById('gender-select-trigger');
+  const genderDropdown = document.getElementById('gender-dropdown');
+  const genderSelectedText = document.getElementById('gender-selected-text');
+  const genderInput = document.getElementById('auth-gender-input');
+  const genderWrapper = document.getElementById('gender-select-wrapper');
+
+  if (genderTrigger && genderDropdown) {
+    genderTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = !genderDropdown.classList.contains('hidden');
+      genderDropdown.classList.toggle('hidden');
+      genderWrapper.classList.toggle('open', !isOpen);
+    });
+
+    genderDropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const val = opt.dataset.value;
+        genderInput.value = val;
+        genderSelectedText.textContent = opt.textContent;
+        genderSelectedText.style.color = '#ffffff';
+        genderDropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        genderDropdown.classList.add('hidden');
+        genderWrapper.classList.remove('open');
+      });
+    });
+
+    document.addEventListener('click', () => {
+      genderDropdown.classList.add('hidden');
+      genderWrapper.classList.remove('open');
+    });
+  }
+
 
   document.getElementById('email-auth-form-submit').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -514,10 +554,21 @@ export function initEmailAuthPage() {
         otpResendBtn.style.opacity = "0.7";
         otpResendBtn.style.pointerEvents = "none";
 
-        const { error } = await supabase.auth.resend({
-          type: otpVerifyBtn.getAttribute('data-otp-type') || 'signup',
-          email: email
-        });
+        const currentOtpType = otpVerifyBtn.getAttribute('data-otp-type') || 'signup';
+        let error;
+
+        if (currentOtpType === 'recovery') {
+           // For password resets, we call resetPasswordForEmail again to resend the code
+           const result = await supabase.auth.resetPasswordForEmail(email);
+           error = result.error;
+        } else {
+           // For signups, we use the standard resend method
+           const result = await supabase.auth.resend({
+             type: currentOtpType,
+             email: email
+           });
+           error = result.error;
+        }
 
         if (error) throw error;
         

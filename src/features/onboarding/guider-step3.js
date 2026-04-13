@@ -93,9 +93,10 @@ export function initGuiderStep3() {
              <p class="guider-description">Stay ahead, always.<br>Sublify sends you reminders before every renewal, trial, and due date, so nothing ever sneaks up on you.</p>
           </div>
           
-          <div class="guider-actions" style="display: flex; gap: 12px; width: 100%; margin-top: auto;">
+          <div class="guider-actions" style="display: flex; gap: 12px; width: 100%; margin-top: auto; align-items: center;">
               <button id="guider-step3-back-btn" class="guider-main-btn" style="flex: 1; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);">Previous</button>
               <button id="guider-step3-finish-btn" class="guider-main-btn" style="flex: 1;">GOT IT!</button>
+              <div class="guider-step-indicator">3/3</div>
           </div>
         </div>
       </div>

@@ -285,7 +285,10 @@ export async function initGuider() {
              <p class="guider-description">See exactly which days money leaves your account. No more surprise charges, just a clear view of what's coming.</p>
           </div>
           
-          <button id="guider-continue-btn" class="guider-main-btn">GOT IT!</button>
+          <div style="display: flex; gap: 12px; width: 100%; align-items: center;">
+            <button id="guider-continue-btn" class="guider-main-btn" style="flex: 1;">GOT IT!</button>
+            <div class="guider-step-indicator">1/3</div>
+          </div>
 
         </div>
       </div>

@@ -95,9 +95,10 @@ export function initGuiderStep2() {
              <p class="guider-description">Stop thinking about it. We got it. 100% private, zero AI training on your data. Life's too full for subscription stress.</p>
           </div>
           
-          <div class="guider-actions" style="display: flex; gap: 12px; width: 100%; margin-top: auto;">
+          <div class="guider-actions" style="display: flex; gap: 12px; width: 100%; margin-top: auto; align-items: center;">
               <button id="guider-back-btn" class="guider-main-btn" style="flex: 1; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1);">Previous</button>
               <button id="guider-finish-btn" class="guider-main-btn" style="flex: 1;">GOT IT!</button>
+              <div class="guider-step-indicator">2/3</div>
           </div>
         </div>
       </div>

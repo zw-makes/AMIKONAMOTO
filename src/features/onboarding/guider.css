@@ -366,3 +366,28 @@
   right: 0px !important;
 }
 
+
+/* Pagination Dots */
+.guider-pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 25px;
+  z-index: 10;
+}
+
+.guider-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.guider-dot.active {
+  background: #ffffff;
+  width: 20px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
