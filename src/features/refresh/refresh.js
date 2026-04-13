@@ -23,7 +23,7 @@ export function initPullToRefresh() {
     function updateUI() {
         if (!isPulling && pullDistance === 0) {
             container.style.transform = `translate3d(0, 0, 0)`;
-            indicator.style.transform = `translate3d(-50%, -100px, 0.1px)`;
+            indicator.style.transform = `translate3d(-50%, -120px, 0.1px)`; // Hide deep
             indicator.style.opacity = '0';
             ticking = false;
             return;
@@ -31,12 +31,10 @@ export function initPullToRefresh() {
 
         container.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
         
-        // Accelerated reveal: Logo clearing the header boundary faster
-        // When pullDistance is 75 (threshold), logoOffset will be ~45px, showing the full logo
-        const logoOffset = (pullDistance * 1.5) - 75; 
-        
+        // Perfectly centered in the opened gap
+        const logoOffset = (pullDistance / 2); 
         indicator.style.opacity = Math.min(pullDistance / (threshold * 0.4), 1);
-        indicator.style.transform = `translate3d(-50%, ${logoOffset}px, 0.2px)`;
+        indicator.style.transform = `translate3d(-50%, ${logoOffset}px, 0.1px)`;
 
         if (pullDistance >= threshold) {
             indicator.classList.add('reached');
@@ -87,16 +85,17 @@ export function initPullToRefresh() {
 
         if (pullDistance >= threshold) {
             indicator.classList.add('active', 'reached');
-            // Give it 115px of space so it sits perfectly clear of everything
-            indicator.style.transform = `translate3d(-50%, 65px, 0.1px)`; 
+            
+            // Hold logo in the middle of the final refresh gap
+            indicator.style.transform = `translate3d(-50%, 45px, 0.1px)`; 
             indicator.style.opacity = '1';
-            container.style.transform = `translate3d(0, 115px, 0)`;
+            container.style.transform = `translate3d(0, 100px, 0)`;
 
             if (window.HapticsService) window.HapticsService.medium();
             
             setTimeout(() => {
                 window.location.reload();
-            }, 850);
+            }, 800);
         } else {
             pullDistance = 0;
             requestAnimationFrame(updateUI);

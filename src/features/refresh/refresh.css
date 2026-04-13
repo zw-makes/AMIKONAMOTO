@@ -1,15 +1,16 @@
 /* Pure Logo-based Pull to Refresh (No BG) */
 .refresh-indicator {
     position: absolute;
-    top: 85px;
+    /* Dynamically calculate position based on Status Bar + Header height */
+    top: calc(env(safe-area-inset-top, 20px) + 95px); 
     left: 50%;
-    transform: translate3d(-50%, -85px, 0.1px); /* Force 3D context with non-zero Z */
+    transform: translate3d(-50%, -120px, 0.1px); /* Tucked deeper behind header */
     width: 60px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10; /* Bottom layer of the pull sandwich */
+    z-index: 10;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s, transform 0.1s cubic-bezier(0.19, 1, 0.22, 1);
