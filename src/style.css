@@ -181,12 +181,12 @@ button:active {
 /* Top Status Bar Styles */
 .status-bar {
   position: relative;
-  z-index: 2000;
+  z-index: 1000; /* High enough to mask refresh logo */
+  background: var(--bg-color);
   padding: calc(env(safe-area-inset-top, 20px) + 12px) 20px 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 10;
   height: calc(env(safe-area-inset-top, 20px) + 40px);
 }
 
@@ -460,6 +460,7 @@ button:active {
   padding-bottom: 80px;
   /* Space for the bottom bar */
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none; /* Crucial: stops iOS bounce breaking the header */
 }
 
 .weekday-header {

@@ -42,9 +42,14 @@ export function initPullToRefresh() {
             // Apply refined sensitivity
             pullDistance = Math.min(pullDistance * 0.7, maxPull);
             
-            // GPU Accelerated Transform
-            indicator.style.opacity = Math.min(pullDistance / (threshold * 0.5), 1);
-            indicator.style.transform = `translate3d(-50%, ${pullDistance - 50}px, 0)`;
+            // Move the content down with the pull
+            container.style.transition = 'none';
+            container.style.transform = `translate3d(0, ${pullDistance}px, 0)`;
+            container.style.willChange = 'transform';
+            
+            // GPU Accelerated Indicator Transform
+            indicator.style.opacity = Math.min(pullDistance / (threshold * 0.4), 1);
+            indicator.style.transform = `translate3d(-50%, ${pullDistance - 65}px, 0)`;
             
             if (pullDistance >= threshold) {
                 indicator.classList.add('reached');
@@ -66,25 +71,32 @@ export function initPullToRefresh() {
         let pullDistance = currentY - startY;
         const finalDistance = Math.min(pullDistance * 0.7, maxPull);
 
+        container.style.transition = 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1)';
+        
         if (finalDistance >= threshold) {
             // Trigger Refresh
             indicator.classList.add('active');
             indicator.classList.add('reached');
-            indicator.style.transform = `translate3d(-50%, 45px, 0)`; // Increased clearance from 25px to 45px
+            indicator.style.transform = `translate3d(-50%, 50px, 0)`;
             indicator.style.opacity = '1';
             
+            // Hold the content down slightly while refreshing
+            container.style.transform = `translate3d(0, 80px, 0)`;
+
             if (window.HapticsService) window.HapticsService.medium();
             
             setTimeout(() => {
                 window.location.reload();
-            }, 750);
+            }, 800);
         } else {
             // Snap back
             indicator.classList.remove('reached');
             indicator.style.opacity = '0';
-            indicator.style.transform = `translate3d(-50%, -80px, 0)`;
+            indicator.style.transform = `translate3d(-50%, -100px, 0)`;
+            container.style.transform = `translate3d(0, 0, 0)`;
         }
         
         indicator.dataset.hapticFired = "";
+        setTimeout(() => { container.style.willChange = 'auto'; }, 500);
     });
 }
