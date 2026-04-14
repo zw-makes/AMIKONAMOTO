@@ -31,6 +31,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: "https://ptueakygbjohifkscplk.supabase.co"
           VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dWVha3lnYmpvaGlma3NjcGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ0NjgsImV4cCI6MjA4ODEyMDQ2OH0.6x5_QVjhP6wYXVTBEpQ-eil2U5w0A0Qd0gncxrD53Zk"
+          VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
 
       - name: Sync Capacitor iOS
         run: npx @capacitor/cli sync ios
