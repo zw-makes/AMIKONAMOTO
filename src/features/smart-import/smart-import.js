@@ -793,7 +793,14 @@ function createSmartImportModal() {
                     <h1 style="font-size: 1.2rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 12px; max-width: 100%;">Find Every Subscription, Automatically</h1>
                     <p style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); line-height: 1.35; margin-bottom: 15px; max-width: 100%;">Upload your bank statement, PDF, or connect your email. Sublify scans everything and adds your subscriptions for you. No manual entry, ever.</p>
                     
-                    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin-top: 10px;">
+                    <div id="smart-import-offline-notice" class="smart-import-offline-notice">
+                        <div class="offline-notice-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22"/><path d="M16.72 11.06A5 5 0 0 1 15 20H6a5 5 0 0 1-5-5 5 5 0 0 1 4-4.9V10a5 5 0 0 1 .14-1.18M8 8V7a4 4 0 0 1 8 0v1h1a5 5 0 0 1 4.7 3.3"/></svg>
+                        </div>
+                        <div class="offline-notice-text">Sublify Sync requires an internet connection to process files with AI.</div>
+                    </div>
+
+                    <div id="smart-import-options-grid" style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin-top: 10px;">
                         
                         <!-- Option 1: Bank Statement -->
                         <button class="smart-import-banner" aria-label="Import a Bank Statement" onclick="window.showSmartImportOption('bank')" style="margin-bottom: 0;">
@@ -924,6 +931,11 @@ export function initSmartImport() {
     modalEl = createSmartImportModal();
     document.body.appendChild(modalEl);
 
+    // Initial Connectivity Check
+    updateConnectivityUI();
+    window.addEventListener('online', updateConnectivityUI);
+    window.addEventListener('offline', updateConnectivityUI);
+
     // Back button
     document.getElementById('smart-import-back')?.addEventListener('click', () => {
         const optionPage = modalEl.querySelector('.smart-import-option-page');
@@ -999,4 +1011,23 @@ export function initSmartImport() {
     // Expose globally
     window.openSmartImport = openSmartImport;
     window.closeSmartImport = closeSmartImport;
+}
+
+function updateConnectivityUI() {
+    if (!modalEl) return;
+    const isOnline = navigator.onLine;
+    const notice = modalEl.querySelector('#smart-import-offline-notice');
+    const banners = modalEl.querySelectorAll('.smart-import-banner');
+    
+    if (notice) {
+        notice.style.display = isOnline ? 'none' : 'flex';
+    }
+    
+    banners.forEach(banner => {
+        if (!isOnline) {
+            banner.classList.add('disabled');
+        } else {
+            banner.classList.remove('disabled');
+        }
+    });
 }

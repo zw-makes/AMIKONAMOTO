@@ -28,6 +28,38 @@
   transform: scale(0.98);
 }
 
+.smart-import-offline-notice {
+  display: none;
+  background: rgba(255, 100, 100, 0.08); /* Minimal red tint */
+  border: 1px solid rgba(255, 100, 100, 0.15);
+  border-radius: 18px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  align-items: center;
+  gap: 12px;
+  color: #ff6464;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease;
+}
+
+.offline-notice-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smart-import-banner.disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
 .smart-import-banner .space-bg {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
