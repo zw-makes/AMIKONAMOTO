@@ -16,6 +16,7 @@ import { HapticsService } from './features/haptics/haptics.js';
 import { initFilter } from './features/filter/filter.js';
 import { animateThanosSnap } from './features/ai-analyst/thanos-snap.js';
 import { initCatalog } from './features/catalog/catalog.js';
+import { initSmartImport, openSmartImport } from './features/smart-import/smart-import.js';
 import { initSurveyPage } from './features/onboarding/survey-page.js';
 import { initBelievePage } from './features/onboarding/believe-page.js';
 import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
@@ -77,6 +78,8 @@ initListView();
 initFilter();
 // Initialize Catalog
 initCatalog();
+// Initialize Smart Import
+initSmartImport();
 // Initialize Survey
 initSurveyPage();
 // Initialize Believe

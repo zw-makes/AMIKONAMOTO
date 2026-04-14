@@ -69,6 +69,12 @@
   <link rel="stylesheet" href="/src/features/filter/filter.css">
   <link rel="stylesheet" href="/src/features/catalog/catalog.css">
   <title>Sublify - Subscription Manager</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window['pdfjs-dist/build/pdf']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 </head>
 
 <body>
@@ -183,6 +189,16 @@
 
           <script>
             (function() {
+              const JSON_SCHEMA = `Return a JSON array of objects with (FOLLOW THIS EXTRACTION HIERARCHY: 1. Name/Logo, 2. Price/Currency, 3. Full Date):
+- "name": string - EXHAUSTIVE Search for the brand/service name.
+- "domain": string - The most likely root domain for the name (e.g., "spotify.com").
+- "price": number OR string - Extract precisely. If zero or neutral, still include it.
+- "currency": string - (e.g., "USD", "INR", "GBP").
+- "symbol": string - (e.g., "$", "₹", "£").
+- "type": string - "monthly" | "yearly" | "trial" | "one-time".
+- "date": string - Full Date (YYYY-MM-DD). If year/month missing, use current year/month.
+
+Return ONLY the raw JSON array. NO code blocks, NO text.`;
               const symbols = ['$', '€', '£', '¥', '₹', '₿'];
               let currentIndex = 0;
               const el = document.getElementById('thanos-symbol');
@@ -728,6 +744,7 @@
             </svg>
           </button>
         </div>
+
 
         <div class="catalog-scroll" id="catalog-grid">
           <!-- Apps will be injected here by catalog.js -->
