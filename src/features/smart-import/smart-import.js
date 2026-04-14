@@ -46,8 +46,31 @@ async function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1024;
+
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // Compress to 0.8 quality JPEG to drastically reduce payload size
+                const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                resolve(base64);
+            };
+            img.onerror = reject;
+            img.src = reader.result;
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);
@@ -64,12 +87,28 @@ async function readFileAsText(file) {
 }
 
 // ─── PDF to Images (handles both text and scanned PDFs) ──────
+async function extractPdfAsText(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    
+    // Only parse first 10 pages for text to keep it reasonably fast
+    for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += `--- Page ${i} ---\n${pageText}\n\n`;
+    }
+    
+    return fullText.trim();
+}
+
 async function extractPdfAsImages(file) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const images = [];
 
-    for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) { // cap at 5 pages
+    for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) { // cap at 5 pages for vision
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 2.0 }); // high res
         const canvas = document.createElement('canvas');
@@ -112,76 +151,34 @@ Return a JSON array of objects with (FOLLOW THIS EXTRACTION HIERARCHY: 1. Name/L
 Return ONLY the raw JSON array. NO code blocks, NO text.`;
 
 async function callGroqVision(base64Image, mimeType) {
-    const response = await fetch(GROQ_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'text',
-                            text: EXTRACTION_SYSTEM_PROMPT
-                        },
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: `data:${mimeType};base64,${base64Image}`
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens: 2048,
-            temperature: 0.1
-        })
+    const supabase = window.supabase;
+    if (!supabase) throw new Error('Supabase not ready');
+
+    const { data, error } = await supabase.functions.invoke('sync-groq', {
+        body: { 
+            image: base64Image, 
+            mimeType: mimeType,
+            systemPrompt: EXTRACTION_SYSTEM_PROMPT 
+        }
     });
 
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '[]';
+    if (error || (data && data.error)) throw new Error(error?.message || data?.error || 'AI Sync Error');
+    return data.reply || '[]';
 }
 
 async function callGroqText(text) {
-    const response = await fetch(GROQ_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                {
-                    role: 'system',
-                    content: EXTRACTION_SYSTEM_PROMPT
-                },
-                {
-                    role: 'user',
-                    content: `Extract subscriptions from this content:\n\n${text}`
-                }
-            ],
-            max_tokens: 2048,
-            temperature: 0.1
-        })
+    const supabase = window.supabase;
+    if (!supabase) throw new Error('Supabase not ready');
+
+    const { data, error } = await supabase.functions.invoke('sync-groq', {
+        body: { 
+            userPrompt: `Extract subscriptions from this content:\n\n${text}`,
+            systemPrompt: EXTRACTION_SYSTEM_PROMPT 
+        }
     });
 
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '[]';
+    if (error || (data && data.error)) throw new Error(error?.message || data?.error || 'AI Sync Error');
+    return data.reply || '[]';
 }
 
 // ─── Parse AI Response ───────────────────────────────────────
@@ -273,6 +270,9 @@ async function analyzeFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
 
         if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+            if (file.size > 4 * 1024 * 1024) { // Lowered to 4MB
+                throw new Error('Image too large. Please use a file under 4MB.');
+            }
             setStep(0, 'done', 'Image loaded ✓');
 
             // STEP 2: Analyze with vision AI
@@ -283,23 +283,31 @@ async function analyzeFile(file) {
 
         } else if (ext === 'pdf') {
             setStep(0, 'done', 'PDF loaded ✓');
-            setStep(1, 'active', 'Converting pages to images...');
+            setStep(1, 'active', 'Extracting document text...');
             
-            const images = await extractPdfAsImages(file);
-            setStep(1, 'done', `${images.length} page(s) extracted ✓`);
-
-            setStep(2, 'active', 'Scanning with AI Vision...');
+            const text = await extractPdfAsText(file);
             
-            // Send each page to vision model and combine results
-            let allSubs = [];
-            for (const base64 of images) {
-                const raw = await callGroqVision(base64, 'image/jpeg');
-                const pageSubs = parseAIResponse(raw);
-                allSubs = [...allSubs, ...pageSubs];
+            if (text && text.length > 50) {
+                // If we successfully got enough text, use callGroqText (more accurate/cheaper)
+                setStep(1, 'done', 'Text extracted ✓');
+                setStep(2, 'active', 'Processing with AI...');
+                rawResponse = await callGroqText(text);
+            } else {
+                // If it's a scanned PDF (no text), fall back to vision
+                setStep(1, 'active', 'Scanned PDF: Converting to images...');
+                const images = await extractPdfAsImages(file);
+                
+                setStep(1, 'done', `${images.length} page(s) ready ✓`);
+                setStep(2, 'active', 'Scanning via AI Vision...');
+                
+                let allSubs = [];
+                for (const base64 of images) {
+                    const raw = await callGroqVision(base64, 'image/jpeg');
+                    const pageSubs = parseAIResponse(raw);
+                    allSubs = [...allSubs, ...pageSubs];
+                }
+                return allSubs;
             }
-            
-            setStep(2, 'done', `Found ${allSubs.length} subscription${allSubs.length !== 1 ? 's' : ''}`);
-            return allSubs;
 
         } else if (ext === 'csv') {
             setStep(0, 'done', 'CSV loaded ✓');
@@ -611,6 +619,11 @@ async function triggerAnalysis() {
             activeAurora.destroy();
             activeAurora = null;
         }
+        
+        console.error('--- SMART IMPORT FAILURE ---');
+        console.error('Error Object:', err);
+        console.error('File Info:', selectedFile?.name, selectedFile?.type, selectedFile?.size);
+        
         showToast(`Analysis failed: ${err.message}`, 'error', 5000);
         // On error, show the option page again instead of hero if they were in one
         const optionPage = modalEl?.querySelector('.smart-import-option-page');
