@@ -777,7 +777,7 @@
   backdrop-filter: blur(12px); /* Glass effect */
   -webkit-backdrop-filter: blur(12px);
   border-radius: 22px;
-  padding: 16px 20px;
+  padding: 16px 56px 16px 20px; /* Increased right padding for tick clearance */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -789,9 +789,9 @@
 }
 
 .result-sub-card.selected {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.02); /* Same as unselected */
+  border-color: rgba(255, 255, 255, 0.05); /* Same as unselected */
+  transform: none; /* Remove scaling */
 }
 
 .result-sub-card.selected::before {
@@ -859,11 +859,28 @@
 }
 
 .result-price-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  text-align: right;
+  min-width: 90px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.result-price-main {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffffff;
-  margin-right: 32px; 
-  font-family: 'Outfit', sans-serif;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.result-price-pref {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7df9ff;
+  opacity: 0.85;
+  white-space: nowrap;
 }
 
 @keyframes resultSlideIn {
@@ -1007,11 +1024,11 @@
 }
 
 .import-selected-btn {
-  flex: 2; /* Take more space */
-  background: #ffffff; /* Whitish bg */
-  color: #000000;
+  flex: 2;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
   border: none;
-  border-radius: 50px; /* Circular/Pill */
+  border-radius: 50px;
   padding: 16px;
   font-size: 0.95rem;
   font-weight: 700;
@@ -1020,12 +1037,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   white-space: nowrap;
+  opacity: 1; /* Keep opacity 1 and use background/color for dimming to be more stable */
+}
+
+.import-selected-btn:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+  opacity: 1;
 }
 
 .import-selected-btn:disabled {
-  opacity: 0.4;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.3);
   cursor: not-allowed;

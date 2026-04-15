@@ -342,7 +342,7 @@ function delay(ms) {
 }
 
 // ─── Render Results ──────────────────────────────────────────
-function renderResults(subs) {
+async function renderResults(subs) {
     const resultsContainer = modalEl?.querySelector('.smart-import-results');
     const resultsList = modalEl?.querySelector('.results-list');
     const countBadge = modalEl?.querySelector('.results-count-badge');
@@ -360,6 +360,23 @@ function renderResults(subs) {
         return;
     }
 
+    // 1. Determine Preferred Currency and Fetch Rates
+    const settings = window.userProfile?.settings || {};
+    const targetCurrency = settings.currency || 'USD';
+    const targetCurrObj = (window.CURRENCIES || []).find(c => c.code === targetCurrency) || { symbol: '$' };
+    const targetSymbol = targetCurrObj.symbol;
+    
+    let rates = null;
+    try {
+        // Only fetch if there's a reason to (at least one sub is in a different currency)
+        const hasOtherCurrency = subs.some(s => (s.currency || 'USD') !== targetCurrency);
+        if (hasOtherCurrency && window.fetchExchangeRates) {
+            rates = await window.fetchExchangeRates(targetCurrency);
+        }
+    } catch (e) {
+        console.warn('[SmartImport] Exchange rates unavailable:', e);
+    }
+
     // Prepare Results
     if (countBadge) countBadge.textContent = `${subs.length} FOUND`;
     
@@ -368,8 +385,18 @@ function renderResults(subs) {
 
     subs.forEach((sub, idx) => {
         const logoUrl = window.getLogoUrl ? window.getLogoUrl(sub.domain || sub.name) : '';
-        const symbol = sub.currency === 'USD' ? '$' : (sub.currency === 'EUR' ? '€' : (sub.currency === 'GBP' ? '£' : '₹'));
-        const formattedPrice = `${symbol}${parseFloat(sub.price).toLocaleString()}`;
+        
+        // Imported Price Display
+        const subCurrency = sub.currency || 'USD';
+        const subSymbol = (window.CURRENCIES || []).find(c => c.code === subCurrency)?.symbol || '$';
+        const formattedImported = `${subSymbol}${parseFloat(sub.price).toFixed(2)}`;
+        
+        // Exchange Price Display
+        let prefPriceHtml = '';
+        if (rates && subCurrency !== targetCurrency && window.getConvertedPrice) {
+            const converted = window.getConvertedPrice(sub.price, subCurrency, targetCurrency, rates);
+            prefPriceHtml = `<div class="result-price-pref">${targetSymbol}${converted.toFixed(2)}/mo</div>`;
+        }
         
         const card = document.createElement('div');
         card.className = 'result-sub-card selected';
@@ -392,11 +419,14 @@ function renderResults(subs) {
                     <div class="result-date">${sub.startDate || (sub.date ? `Day ${sub.date}` : 'Monthly Subscription')}</div>
                 </div>
             </div>
-            <div class="result-price-area">${formattedPrice}/mo</div>
+            <div class="result-price-area">
+                <div class="result-price-main">${formattedImported} ${subCurrency}/mo</div>
+                ${prefPriceHtml}
+            </div>
         `;
 
         card.addEventListener('click', () => toggleSubSelection(card, idx));
-    resultsList.appendChild(card);
+        resultsList.appendChild(card);
         
         // Staggered haptics as they appear
         setTimeout(() => {
@@ -434,8 +464,8 @@ function updateImportBtn() {
     const count = selectedSubs.size;
     btn.disabled = count === 0;
     btn.innerHTML = count === 0
-        ? 'Select subscriptions to import'
-        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import ${count} Subscription${count !== 1 ? 's' : ''}`;
+        ? 'select subs'
+        : `Import ${count} Subs`;
 }
 
 function updateSelectAllBtn() {
@@ -642,7 +672,7 @@ async function triggerAnalysis() {
         
         detectedSubs = subs;
         showAurora(false);
-        renderResults(detectedSubs);
+        await renderResults(detectedSubs);
     } catch (err) {
         showAurora(false);
         showToast('Analysis failed. Try again.', 'error');
@@ -974,7 +1004,7 @@ function createSmartImportModal() {
                 <div class="aurora-container">
                     <!-- WebGL Canvas will be injected here -->
                 </div>
-                <div id="aurora-status-text" class="scanning-text" style="display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 20px;">ANALYZING STATEMENT...</div>
+                <!-- Status text removed per request for a cleaner experience -->
                 <span class="logo-beta-tag">BETA</span>
              </div>
 
@@ -984,7 +1014,7 @@ function createSmartImportModal() {
             <!-- Footer -->
             <div class="smart-import-footer">
                 <button class="select-all-btn cancel-import-btn">Cancel</button>
-                <button class="import-selected-btn" disabled>Import 0 Subscriptions</button>
+                <button class="import-selected-btn" disabled>select subs</button>
             </div>
         </div>
     `;
@@ -996,7 +1026,6 @@ function createSmartImportModal() {
 function showAurora(show, message = 'ANALYZING...') {
     const auroraEl = modalEl?.querySelector('.smart-import-aurora-section');
     const auroraContainer = modalEl?.querySelector('.aurora-container');
-    const statusText = modalEl?.querySelector('#aurora-status-text');
     const headerEl = modalEl?.querySelector('.smart-import-header');
     const bodyEl = modalEl?.querySelector('.smart-import-body');
     const footerEl = modalEl?.querySelector('.smart-import-footer');
@@ -1008,11 +1037,16 @@ function showAurora(show, message = 'ANALYZING...') {
             auroraEl.classList.add('visible');
             auroraEl.style.zIndex = '100'; 
         }
-        if (statusText) statusText.innerText = message;
         
-        // Hide ALL other UI elements for a fully immersive experience
-        if (headerEl) headerEl.style.opacity = '0';
-        if (headerEl) headerEl.style.pointerEvents = 'none';
+        // Allow the "Sublify Sync" title to be visible, but hide the back button for cinematic focus
+        if (headerEl) {
+            headerEl.style.opacity = '1';
+            const backBtn = headerEl.querySelector('.smart-import-back-btn');
+            if (backBtn) {
+                backBtn.style.opacity = '0';
+                backBtn.style.pointerEvents = 'none';
+            }
+        }
         if (bodyEl) bodyEl.style.display = 'none';
         if (footerEl) footerEl.style.display = 'none';
         if (removeFileBtn) removeFileBtn.style.display = 'none';
@@ -1040,8 +1074,14 @@ function showAurora(show, message = 'ANALYZING...') {
         }
         
         // Restore all UI elements
-        if (headerEl) headerEl.style.opacity = '1';
-        if (headerEl) headerEl.style.pointerEvents = 'auto';
+        if (headerEl) {
+            headerEl.style.opacity = '1';
+            const backBtn = headerEl.querySelector('.smart-import-back-btn');
+            if (backBtn) {
+                backBtn.style.opacity = '1';
+                backBtn.style.pointerEvents = 'auto';
+            }
+        }
         if (bodyEl) bodyEl.style.display = 'flex';
         if (footerEl) footerEl.style.display = 'flex';
         if (removeFileBtn) removeFileBtn.style.display = 'flex';

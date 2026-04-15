@@ -29,6 +29,8 @@ import './features/onboarding/email-auth.css';
 import './features/onboarding/guider.css';
 import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
 import { initPullToRefresh } from './features/refresh/refresh.js';
+import './features/data-management/data-management.css';
+import { initDataManagement } from './features/data-management/data-management.js';
 
 // --- Global Start Time (Min 1.2s splash) ---
 const appStartTime = Date.now();
@@ -91,6 +93,9 @@ initEmailAuthPage();
 // Initialize Guider
 initGuider();
 window.showGuider = showGuider;
+
+// Initialize Data Management
+initDataManagement();
 
 // --- Sublify Sync Calendar Banner Logic ---
 function initCalendarSyncBanner() {
@@ -4048,6 +4053,10 @@ if (updatePassBtn) {
 document.getElementById('test-native-notif-btn')?.addEventListener('click', () => {
     NativeNotifications.sendTestNotification();
     showToast('Scheduling test notification... 🔔');
+});
+
+document.getElementById('data-management-btn')?.addEventListener('click', () => {
+    if (window.showDataModal) window.showDataModal(true);
 });
 closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
 
