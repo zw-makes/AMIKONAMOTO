@@ -982,123 +982,126 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       </div>
     </div>
 
-    <!-- Profile Modal -->
-    <div id="profile-modal" class="modal-overlay hidden">
-      <div class="day-detail-content">
-        <div class="detail-header">
-          <h3>User Profile</h3>
-          <button id="close-profile" class="nav-arrow"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+    <!-- Profile Page (Transformed from Modal) -->
+    <div id="profile-page" class="profile-page hidden">
+      <div class="profile-page-container">
+        <div class="profile-page-header">
+          <button id="close-profile" class="profile-page-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
+            <span>Back</span>
           </button>
+          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Profile</h2>
+          <div style="width: 70px;"></div> <!-- Spacer to center title -->
         </div>
-        <div class="profile-content"
-          style="display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0;">
-          <div class="profile-avatar"
-            style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); overflow: hidden;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-          </div>
-          <div class="profile-info" style="text-align: center;">
-            <h4 style="font-family: 'Roboto Mono', monospace; font-size: 1.2rem; margin-bottom: 5px;">John Doe</h4>
-            <p style="color: var(--text-secondary); font-size: 0.85rem;">PREMIUM MEMBER</p>
-          </div>
-          <div id="profile-stats-container" class="profile-stats"
-            style="display: flex; gap: 0; width: 100%; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 20px 0;">
-            <!-- Stats injected via JS -->
-          </div>
-          <div class="profile-actions" style="width: 100%; display: flex; flex-direction: column; gap: 12px; max-height: 260px; overflow-y: auto; padding-right: 8px;">
-            <button id="pricing-btn" class="glass-btn" style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
-              
-              <div class="space-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
-                <div class="stars"></div>
-                <div class="stars2"></div>
-                <div class="stars3"></div>
-              </div>
-              
-              <div style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
-                <img src="/sublify-logo.png" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
-              </div>
-              
-              <div style="z-index: 1; display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
-                <span style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade The Sovereign</span>
-                <div style="height: 15px; position: relative; width: 100%;">
-                  <div id="sovereign-text-container" style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;"></div>
-                </div>
-              </div>
-            </button>
-            <style>
-              .sov-word { opacity: 0; display: inline-block; filter: blur(3px); transform: translateY(2px); animation: sovFadeIn 0.5s ease forwards; }
-              @keyframes sovFadeIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
-            </style>
-            <script>
-              setTimeout(() => {
-                const container = document.getElementById('sovereign-text-container');
-                const phrases = ["Unlock more features", "Break the limits", "Try new features early", "Have a real purpose"];
-                let phraseIdx = 0;
-                
-                if (container) {
-                  function animateTypography() {
-                    container.innerHTML = '';
-                    const words = phrases[phraseIdx].split(' ');
-                    
-                    words.forEach((word, idx) => {
-                      const span = document.createElement('span');
-                      span.innerText = word;
-                      span.className = 'sov-word';
-                      span.style.animationDelay = `${idx * 0.15}s`;
-                      container.appendChild(span);
-                    });
-                    
-                    const finishTime = 2200 + (words.length * 150);
-                    setTimeout(() => {
-                      container.style.transition = 'opacity 0.4s ease';
-                      container.style.opacity = '0';
-                      setTimeout(() => {
-                        container.style.transition = 'none';
-                        container.style.opacity = '1';
-                        phraseIdx = (phraseIdx + 1) % phrases.length;
-                        animateTypography();
-                      }, 400);
-                    }, finishTime);
-                  }
-                  animateTypography();
-                }
-              }, 100);
-            </script>
-            <button id="account-settings-btn" class="glass-btn"
-              style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Account Settings
-            </button>
-            <button id="app-settings-btn" class="glass-btn"
-              style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              App Settings
-            </button>
-            <button id="data-management-btn" class="glass-btn"
-              style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-              Data
-            </button>
 
-            <button id="logout-btn" class="glass-btn"
-              style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; color: var(--accent-red); background: rgba(255,51,51,0.06); border: 1px solid rgba(255,51,51,0.15); display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              Logout
-            </button>
-            <button id="test-native-notif-btn" class="glass-btn"
-              style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(80,250,123,0.05); border: 1px solid rgba(80,250,123,0.2); color: #50fa7b; margin-top: 8px; display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              Send Test Notification
-            </button>
+        <div class="profile-page-scroll">
+          <div class="profile-content" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <div class="profile-avatar"
+              style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); overflow: hidden; cursor: pointer;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            </div>
+            <div class="profile-info" style="text-align: center;">
+              <h4 style="font-family: 'Roboto Mono', monospace; font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase;">John Doe</h4>
+              <p style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">PREMIUM MEMBER</p>
+            </div>
+            <div id="profile-stats-container" class="profile-stats"
+              style="display: flex; gap: 0; width: 100%; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 20px 0;">
+              <!-- Stats injected via JS -->
+            </div>
+            <div class="profile-actions" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+              <button id="pricing-btn" class="glass-btn" style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+                
+                <div class="space-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
+                  <div class="stars"></div>
+                  <div class="stars2"></div>
+                  <div class="stars3"></div>
+                </div>
+                
+                <div style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
+                  <img src="/sublify-logo.png" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
+                </div>
+                
+                <div style="z-index: 1; display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
+                  <span style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade The Sovereign</span>
+                  <div style="height: 15px; position: relative; width: 100%;">
+                    <div id="sovereign-text-container" style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;"></div>
+                  </div>
+                </div>
+              </button>
+              <style>
+                .sov-word { opacity: 0; display: inline-block; filter: blur(3px); transform: translateY(2px); animation: sovFadeIn 0.5s ease forwards; }
+                @keyframes sovFadeIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+              </style>
+              <script>
+                setTimeout(() => {
+                  const container = document.getElementById('sovereign-text-container');
+                  const phrases = ["Unlock more features", "Break the limits", "Try new features early", "Have a real purpose"];
+                  let phraseIdx = 0;
+                  
+                  if (container) {
+                    function animateTypography() {
+                      container.innerHTML = '';
+                      const words = phrases[phraseIdx].split(' ');
+                      
+                      words.forEach((word, idx) => {
+                        const span = document.createElement('span');
+                        span.innerText = word;
+                        span.className = 'sov-word';
+                        span.style.animationDelay = `${idx * 0.15}s`;
+                        container.appendChild(span);
+                      });
+                      
+                      const finishTime = 2200 + (words.length * 150);
+                      setTimeout(() => {
+                        container.style.transition = 'opacity 0.4s ease';
+                        container.style.opacity = '0';
+                        setTimeout(() => {
+                          container.style.transition = 'none';
+                          container.style.opacity = '1';
+                          phraseIdx = (phraseIdx + 1) % phrases.length;
+                          animateTypography();
+                        }, 400);
+                      }, finishTime);
+                    }
+                    animateTypography();
+                  }
+                }, 100);
+              </script>
+              <button id="account-settings-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Account Settings
+              </button>
+              <button id="app-settings-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                App Settings
+              </button>
+              <button id="data-management-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                Data
+              </button>
+
+              <button id="logout-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; color: var(--accent-red); background: rgba(255,51,51,0.06); border: 1px solid rgba(255,51,51,0.15); display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout
+              </button>
+              <button id="test-native-notif-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(80,250,123,0.05); border: 1px solid rgba(80,250,123,0.2); color: #50fa7b; margin-top: 8px; display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Send Test Notification
+              </button>
+            </div>
           </div>
         </div>
       </div>

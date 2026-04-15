@@ -23,6 +23,7 @@ import { initAuthPage, showAuthPage } from './features/onboarding/auth-view.js';
 import { initEmailAuthPage, showEmailAuthPage, showOtpVerification, resetEmailAuthViews } from './features/onboarding/email-auth.js';
 import { initGuider, showGuider } from './features/onboarding/guider.js';
 import './features/onboarding/survey-page.css';
+import { initProfilePage, toggleProfilePage } from './features/profile-page/profile-page.js';
 import './features/onboarding/believe-page.css';
 import './features/onboarding/auth-page.css';
 import './features/onboarding/email-auth.css';
@@ -2385,24 +2386,17 @@ document.getElementById('close-stats').addEventListener('click', () => {
   document.getElementById('stats-modal').classList.add('hidden');
 });
 
-// --- Profile Modal ---
+// --- Profile Page Integration ---
 const profileBtn = document.querySelector('.profile-btn');
-const profileModal = document.getElementById('profile-modal');
-const closeProfile = document.getElementById('close-profile');
 
 if (profileBtn) {
   profileBtn.addEventListener('click', () => {
-    showProfileModal();
+    updateProfilePageData();
+    if (window.toggleProfilePage) window.toggleProfilePage(true);
   });
 }
 
-if (closeProfile) {
-  closeProfile.addEventListener('click', () => {
-    profileModal.classList.add('hidden');
-  });
-}
-
-const showProfileModal = async () => {
+const updateProfilePageData = async () => {
   const statsContainer = document.querySelector('.profile-stats');
   if (!statsContainer) return;
 
@@ -4354,6 +4348,7 @@ setInterval(updateTime, 30000); // Update every 30s
 renderHeader();
 loadSubscriptions(); // Fetch from Supabase
 initNotifications();
+initProfilePage();
 
 // --- Helper to get normalized start and end dates for a subscription ---
 window.getSubDates = function (sub) {
