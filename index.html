@@ -464,6 +464,42 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       <div id="calendar-grid" class="calendar-grid">
         <!-- Calendar cells will be injected here -->
       </div>
+
+      <!-- NEW: Sublify Sync Button within Calendar View -->
+      <div id="calendar-sync-banner-container" style="padding: 10px 15px 5px 15px; position: relative;">
+          <button id="calendar-smart-import-btn" class="smart-import-banner" aria-label="Sublify Sync" onclick="if(window.openSmartImport) window.openSmartImport();">
+            <div class="space-bg" style="border-radius: 25px;">
+              <div class="stars"></div>
+              <div class="stars2"></div>
+              <div class="stars3"></div>
+              <div class="shooting-star" style="top: -20px; right: 20%; animation-duration: 6s;"></div>
+              <div class="shooting-star" style="top: 50%; right: 40%; animation-duration: 9s; animation-delay: 3s;"></div>
+            </div>
+            <div class="smart-import-banner-logo">
+              <img src="/sublify-logo.png" alt="Sublify">
+            </div>
+            <div class="smart-import-banner-text" style="text-align: left;">
+              <span class="smart-import-banner-title">Sublify Sync</span>
+              <div class="smart-import-typo-container">
+                <div id="calendar-sync-text-container" class="smart-import-text-wrapper"></div>
+              </div>
+            </div>
+            <div id="calendar-sync-dynamic-icon" class="smart-import-banner-arrow"></div>
+          </button>
+          
+          <!-- Close Button for the Banner -->
+          <button id="close-calendar-sync-banner" 
+                  style="position: absolute; top: 14px; right: 19px; width: 18px; height: 18px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s;"
+                  onmouseover="this.style.background='rgba(255,50,80,0.4)'; this.style.color='#fff';"
+                  onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='rgba(255,255,255,0.7)';"
+                  onclick="event.stopPropagation(); document.getElementById('calendar-sync-banner-container').style.display='none';">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+      </div>
+
       <div class="brand-footer" id="calendar-brand-footer">
         <img src="/sublify-logo.png" class="brand-footer-logo" alt="Logo">
         <span class="brand-footer-version">v1.2.9</span>

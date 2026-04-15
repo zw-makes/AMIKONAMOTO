@@ -445,51 +445,97 @@ function updateSelectAllBtn() {
 // ─── Import Subscriptions ────────────────────────────────────
 async function importSelected() {
     if (!window.saveToSupabase || !window.subscriptions) {
-        showToast('App not ready. Please try again.', 'error');
+        showToast('App readying... please try again.', 'error');
         return;
     }
 
     const subsToImport = [...selectedSubs].map(i => detectedSubs[i]);
+    if (subsToImport.length === 0) {
+        showToast('No subscriptions selected.', 'info');
+        return;
+    }
+
     const btn = modalEl?.querySelector('.import-selected-btn');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<div class="btn-spinner"></div> Importing...';
+        btn.innerHTML = '<div class="btn-spinner"></div> Syncing...';
     }
 
     let successCount = 0;
+    const currentSubs = window.subscriptions;
+
+    // Show Aurora for syncing state
+    showAurora(true, 'SYNCING SUBSCRIPTIONS...');
 
     for (const sub of subsToImport) {
         try {
+            // Generate a numeric temp ID similar to main.js for compatibility
+            const tempId = Date.now() + Math.floor(Math.random() * 100000);
+            
+            // Format date to ISO string if it's a simple YYYY-MM-DD
+            let startDate = sub.startDate;
+            if (startDate && startDate.length === 10) {
+                startDate = new Date(startDate + 'T12:00:00').toISOString();
+            }
+
             const newSub = {
-                id: crypto.randomUUID(),
-                name: sub.name,
+                id: tempId,
+                name: sub.name || 'Untitled Subscription',
                 price: parseFloat(sub.price) || 0,
                 date: parseInt(sub.date) || 1,
                 type: sub.type || 'monthly',
                 domain: sub.domain || '',
                 currency: sub.currency || 'USD',
                 symbol: sub.symbol || '$',
-                color: '--text-primary',
+                // Use standard color tokens from main.js
+                color: sub.type === 'trial' ? '--accent-red' : (sub.type === 'one-time' ? '--accent-purple' : '--accent-blue'),
                 stopped: false,
                 paid: false,
                 recurring: sub.type === 'monthly' ? 'recurring' : null,
-                startDate: sub.startDate || null,
+                startDate: startDate,
                 notes: 'Imported via Sublify Sync'
             };
 
-            window.subscriptions.push(newSub);
-            await window.saveToSupabase(newSub);
+            // 1. Add to local array
+            currentSubs.push(newSub);
+            
+            // 2. Persist to Supabase and LocalStorage
+            // saveToSupabase handles the ID replacement and localStorage update internally
+            const savedSub = await window.saveToSupabase(newSub);
+            
+            // 3. If DB returned a real ID, update our local object
+            if (savedSub && savedSub.id && savedSub.id !== tempId) {
+                newSub.id = savedSub.id;
+                localStorage.setItem('subscriptions', JSON.stringify(currentSubs));
+            }
+
             successCount++;
         } catch (err) {
-            console.error('[SmartImport] Failed to import sub:', sub.name, err);
+            console.error('[SmartImport] Error importing:', sub.name, err);
         }
     }
 
-    // Refresh UI
+    // Sync complete - we keep Aurora visible until closeSmartImport handles the cleanup
+    // to prevent the "glitch" of buttons briefly reappearing.
+
+    // Direct UI updates
     if (window.renderCalendar) window.renderCalendar();
     if (window.updateStats) window.updateStats();
+    if (window.loadSubscriptions) {
+        // Optional: trigger a full reload to be sure, 
+        // but renderCalendar should be enough if local array is updated.
+    }
 
-    showToast(`✓ ${successCount} subscription${successCount !== 1 ? 's' : ''} imported!`, 'success', 4000);
+    if (successCount > 0) {
+        if (window.HapticsService) window.HapticsService.success();
+        showToast(`✓ ${successCount} Subscriptions added!`, 'success', 3000);
+        
+        // Trigger the success state on the background banner button
+        if (window.showCalendarSyncSuccess) {
+            window.showCalendarSyncSuccess(successCount);
+        }
+    }
+
     closeSmartImport();
 }
 
@@ -585,19 +631,7 @@ async function triggerAnalysis() {
     const footerEl = modalEl?.querySelector('.smart-import-footer');
     footerEl?.classList.remove('visible');
 
-    const auroraEl = modalEl?.querySelector('.smart-import-aurora-section');
-    const auroraContainer = modalEl?.querySelector('.aurora-container');
-    
-    if (auroraEl) auroraEl.classList.add('visible');
-    if (auroraContainer) {
-        if (activeAurora) activeAurora.destroy();
-        activeAurora = initAurora(auroraContainer, {
-            colorStops: ["#2b28e3", "#8400ff", "#3100f7"],
-            blend: 1,
-            amplitude: 1.0,
-            speed: 1
-        });
-    }
+    showAurora(true, 'ANALYZING STATEMENT...');
 
     try {
         // Enforce a minimum 8-second cinematic scanning experience
@@ -607,24 +641,16 @@ async function triggerAnalysis() {
         ]);
         
         detectedSubs = subs;
-        if (auroraEl) auroraEl.classList.remove('visible');
-        if (activeAurora) {
-            activeAurora.destroy();
-            activeAurora = null;
-        }
+        showAurora(false);
         renderResults(detectedSubs);
     } catch (err) {
-        if (auroraEl) auroraEl.classList.remove('visible');
-        if (activeAurora) {
-            activeAurora.destroy();
-            activeAurora = null;
-        }
+        showAurora(false);
+        showToast('Analysis failed. Try again.', 'error');
         
         console.error('--- SMART IMPORT FAILURE ---');
         console.error('Error Object:', err);
         console.error('File Info:', selectedFile?.name, selectedFile?.type, selectedFile?.size);
         
-        showToast(`Analysis failed: ${err.message}`, 'error', 5000);
         // On error, show the option page again instead of hero if they were in one
         const optionPage = modalEl?.querySelector('.smart-import-option-page');
         if (optionPage && optionPage.innerHTML.trim() !== '') {
@@ -642,6 +668,9 @@ function resetFileSelection() {
     selectedSubs.clear();
     currentActiveOption = null;
 
+    // Reset all scanning visuals
+    showAurora(false);
+
     const heroEl = modalEl?.querySelector('.smart-import-hero');
     if (heroEl) heroEl.style.display = 'flex';
 
@@ -649,7 +678,12 @@ function resetFileSelection() {
     if (optionPage) optionPage.style.display = 'none';
 
     const previewEl = modalEl?.querySelector('.smart-import-preview');
-    previewEl?.classList.remove('visible');
+    if (previewEl) {
+        previewEl.classList.remove('visible');
+        previewEl.style.display = 'none';
+        const previewCard = previewEl.querySelector('.preview-file-card');
+        if (previewCard) previewCard.innerHTML = '';
+    }
 
     const statusEl = modalEl?.querySelector('.smart-import-status');
     statusEl?.classList.remove('visible');
@@ -661,7 +695,10 @@ function resetFileSelection() {
     emptyEl?.classList.remove('visible');
 
     const footerEl = modalEl?.querySelector('.smart-import-footer');
-    footerEl?.classList.remove('visible');
+    if (footerEl) {
+        footerEl.classList.remove('visible');
+        footerEl.style.display = 'none';
+    }
 
     // Reset file input
     const fileInput = modalEl?.querySelector('.smart-import-file-input');
@@ -783,6 +820,11 @@ function createSmartImportModal() {
                 <div class="smart-import-header-spacer"></div>
             </div>
 
+            <!-- File Preview (hidden initially) -->
+            <div class="smart-import-preview" style="margin-bottom: 20px;">
+                <div class="preview-file-card"></div>
+            </div>
+
             <!-- Scrollable Body -->
             <div class="smart-import-body">
 
@@ -860,6 +902,48 @@ function createSmartImportModal() {
                         </button>
                         
                     </div>
+
+                    <!-- Live Stats Ticker (Wrapped in Banner) -->
+                    <div class="smart-import-stats-ticker-wrapper">
+                        <div class="smart-import-banner stats-banner" style="cursor: default; pointer-events: none; justify-content: center; padding: 30px 20px; flex-direction: column;">
+                            <!-- Corner Screws -->
+                            <div class="banner-screw tl"></div>
+                            <div class="banner-screw tr"></div>
+                            <div class="banner-screw bl"></div>
+                            <div class="banner-screw br"></div>
+
+                            <div class="space-bg" style="border-radius: 25px; opacity: 0.2;">
+                                <div class="stars"></div>
+                                <div class="stars2"></div>
+                                <div class="stars3"></div>
+                            </div>
+                            
+                            <!-- Drifting Logos Background -->
+                            <div class="stats-drifting-logos">
+                                <img src="/logos/netflix.com.png" class="drift-logo dl1" onerror="this.style.display='none'">
+                                <img src="/logos/spotify.com.png" class="drift-logo dl2" onerror="this.style.display='none'">
+                                <img src="/logos/apple.com.png" class="drift-logo dl3" onerror="this.style.display='none'">
+                                <img src="/logos/adobe.com.png" class="drift-logo dl4" onerror="this.style.display='none'">
+                                <img src="/logos/figma.com.png" class="drift-logo dl5" onerror="this.style.display='none'">
+                                <img src="/logos/youtube.com.png" class="drift-logo dl6" onerror="this.style.display='none'">
+                                <img src="/logos/disneyplus.com.png" class="drift-logo dl7" onerror="this.style.display='none'">
+                                <img src="/logos/hbo.com.png" class="drift-logo dl8" onerror="this.style.display='none'">
+                                <img src="/logos/amazon.com.png" class="drift-logo dl9" onerror="this.style.display='none'">
+                                <img src="/logos/notion.so.png" class="drift-logo dl10" onerror="this.style.display='none'">
+                            </div>
+
+                            <div class="stats-ticker-content" style="z-index: 2;">
+                                <span id="stats-ticker-count" class="stats-ticker-number">2,452</span>
+                                <span class="stats-ticker-label">subscriptions detected this week</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Branding Footer -->
+                    <div class="smart-import-branding-footer">
+                        <img src="/sublify-logo.png" alt="Sublify" class="branding-logo">
+                        <span class="branding-version">v1.2.9</span>
+                    </div>
                 </div>
 
                 <!-- Option Page (hidden initially) -->
@@ -867,10 +951,7 @@ function createSmartImportModal() {
                     <div id="smart-import-option-content" style="width: 100%;"></div>
                 </div>
 
-                <!-- File Preview (hidden initially) -->
-                <div class="smart-import-preview">
-                    <div class="preview-file-card"></div>
-                </div>
+
 
                 <!-- Empty State -->
                 <div class="smart-import-empty">
@@ -893,6 +974,7 @@ function createSmartImportModal() {
                 <div class="aurora-container">
                     <!-- WebGL Canvas will be injected here -->
                 </div>
+                <div id="aurora-status-text" class="scanning-text" style="display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 20px;">ANALYZING STATEMENT...</div>
                 <span class="logo-beta-tag">BETA</span>
              </div>
 
@@ -908,6 +990,71 @@ function createSmartImportModal() {
     `;
 
     return el;
+}
+
+// ─── Aurora Helper ──────────────────────────────────────────
+function showAurora(show, message = 'ANALYZING...') {
+    const auroraEl = modalEl?.querySelector('.smart-import-aurora-section');
+    const auroraContainer = modalEl?.querySelector('.aurora-container');
+    const statusText = modalEl?.querySelector('#aurora-status-text');
+    const headerEl = modalEl?.querySelector('.smart-import-header');
+    const bodyEl = modalEl?.querySelector('.smart-import-body');
+    const footerEl = modalEl?.querySelector('.smart-import-footer');
+    const previewEl = modalEl?.querySelector('.smart-import-preview');
+    const removeFileBtn = modalEl?.querySelector('#remove-file-btn');
+
+    if (show) {
+        if (auroraEl) {
+            auroraEl.classList.add('visible');
+            auroraEl.style.zIndex = '100'; 
+        }
+        if (statusText) statusText.innerText = message;
+        
+        // Hide ALL other UI elements for a fully immersive experience
+        if (headerEl) headerEl.style.opacity = '0';
+        if (headerEl) headerEl.style.pointerEvents = 'none';
+        if (bodyEl) bodyEl.style.display = 'none';
+        if (footerEl) footerEl.style.display = 'none';
+        if (removeFileBtn) removeFileBtn.style.display = 'none';
+        
+        // Keep the preview visible during scanning for context
+        if (previewEl && selectedFile) {
+            previewEl.style.display = 'block';
+            previewEl.style.position = 'relative';
+            previewEl.style.zIndex = '200'; // Above Aurora
+        }
+
+        if (auroraContainer) {
+            if (activeAurora) activeAurora.destroy();
+            activeAurora = initAurora(auroraContainer, {
+                colorStops: ["#2b28e3", "#8400ff", "#3100f7"],
+                blend: 1,
+                amplitude: 1.0,
+                speed: 1
+            });
+        }
+    } else {
+        if (auroraEl) {
+            auroraEl.classList.remove('visible');
+            auroraEl.style.zIndex = '';
+        }
+        
+        // Restore all UI elements
+        if (headerEl) headerEl.style.opacity = '1';
+        if (headerEl) headerEl.style.pointerEvents = 'auto';
+        if (bodyEl) bodyEl.style.display = 'flex';
+        if (footerEl) footerEl.style.display = 'flex';
+        if (removeFileBtn) removeFileBtn.style.display = 'flex';
+        
+        if (previewEl) {
+            previewEl.style.zIndex = '';
+        }
+
+        if (activeAurora) {
+            activeAurora.destroy();
+            activeAurora = null;
+        }
+    }
 }
 
 // ─── Open / Close ─────────────────────────────────────────────
@@ -935,6 +1082,9 @@ export function initSmartImport() {
     updateConnectivityUI();
     window.addEventListener('online', updateConnectivityUI);
     window.addEventListener('offline', updateConnectivityUI);
+    
+    // Start Ticker Animation
+    initStatsTicker();
 
     // Back button
     document.getElementById('smart-import-back')?.addEventListener('click', () => {
@@ -1005,9 +1155,6 @@ export function initSmartImport() {
         updateSelectAllBtn();
     });
 
-    // Import selected button
-    modalEl.querySelector('.import-selected-btn')?.addEventListener('click', importSelected);
-
     // Expose globally
     window.openSmartImport = openSmartImport;
     window.closeSmartImport = closeSmartImport;
@@ -1030,4 +1177,15 @@ function updateConnectivityUI() {
             banner.classList.remove('disabled');
         }
     });
+}
+
+function initStatsTicker() {
+    const countEl = modalEl?.querySelector('#stats-ticker-count');
+    if (!countEl) return;
+
+    // Set static count as requested
+    countEl.innerHTML = "2,452";
+    countEl.style.color = "#ffffff";
+    
+    // Interval removed to prevent number changes
 }

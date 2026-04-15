@@ -92,6 +92,111 @@ initEmailAuthPage();
 initGuider();
 window.showGuider = showGuider;
 
+// --- Sublify Sync Calendar Banner Logic ---
+function initCalendarSyncBanner() {
+    const phrases = [
+        { text: "Add subscriptions from your email", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>` },
+        { text: "Find all subs from bank statement", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21v-8"/><path d="M19 21v-8"/><path d="M9 21v-8"/><path d="M15 21v-8"/><path d="M12 4 5 10h14Z"/></svg>` },
+        { text: "Upload a PDF, find your subs", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>` },
+        { text: "Scan receipts, catch every sub", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>` },
+        { text: "Import from CSV in seconds", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>` },
+        { text: "Connect Gmail, we find the rest", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 8.4c.5.3.8.8.8 1.4v10.2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.8c0-.6.3-1.1.8-1.4l8-5.3c.7-.5 1.7-.5 2.4 0l8 5.3Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></svg>` },
+        { text: "Drop your statement, we do the work", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-1.2-1.8A2 2 0 0 0 7.55 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/></svg>` },
+        { text: "Find hidden subs from your inbox", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>` }
+    ];
+
+    let phraseIdx = 0;
+    let timer = null;
+
+    // Helper to temporarily show a success message
+    window.showCalendarSyncSuccess = (count) => {
+        window.isSyncBannerSuccessMode = true;
+        if (timer) clearTimeout(timer);
+
+        const textContainer = document.getElementById('calendar-sync-text-container');
+        const iconContainer = document.getElementById('calendar-sync-dynamic-icon');
+        const banner = document.getElementById('calendar-smart-import-btn');
+
+        if (textContainer) {
+            textContainer.innerHTML = `<span class="smart-import-word" style="animation-delay: 0s; color: #00ff88; font-weight: 800;">✓</span> <span class="smart-import-word" style="animation-delay: 0.1s; color: #fff;">${count} Synced Subscriptions</span>`;
+        }
+        if (iconContainer) {
+            iconContainer.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            iconContainer.style.background = 'rgba(0, 255, 136, 0.1)';
+            iconContainer.style.borderColor = 'rgba(0, 255, 136, 0.2)';
+        }
+        if (banner) {
+            banner.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+            banner.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.15)';
+        }
+
+        setTimeout(() => {
+            window.isSyncBannerSuccessMode = false;
+            if (iconContainer) {
+                iconContainer.style.background = '';
+                iconContainer.style.borderColor = '';
+            }
+            if (banner) {
+                banner.style.borderColor = '';
+                banner.style.boxShadow = '';
+            }
+            animate();
+        }, 5000);
+    };
+
+    function animate() {
+        if (window.isSyncBannerSuccessMode) return;
+        const textContainer = document.getElementById('calendar-sync-text-container');
+        const iconContainer = document.getElementById('calendar-sync-dynamic-icon');
+        if (!textContainer) return;
+
+        textContainer.innerHTML = '';
+        const currentData = phrases[phraseIdx];
+        const words = currentData.text.split(' ');
+
+        if (iconContainer && iconContainer.innerHTML !== currentData.icon) {
+            iconContainer.innerHTML = currentData.icon;
+            iconContainer.style.animation = 'none';
+            void iconContainer.offsetWidth; // trigger reflow
+            iconContainer.style.animation = 'iconRotateIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        }
+
+        words.forEach((word, idx) => {
+            const span = document.createElement('span');
+            span.innerText = word;
+            span.className = 'smart-import-word';
+            span.style.animationDelay = `${idx * 0.15}s`;
+            textContainer.appendChild(span);
+        });
+
+        const finishTime = 2200 + (words.length * 150);
+        timer = setTimeout(() => {
+            if (!document.getElementById('calendar-sync-text-container')) return;
+            textContainer.style.transition = 'opacity 0.4s ease';
+            textContainer.style.opacity = '0';
+            if (iconContainer) {
+                iconContainer.style.transition = 'opacity 0.4s ease';
+                iconContainer.style.opacity = '0';
+            }
+            setTimeout(() => {
+                textContainer.style.transition = 'none';
+                textContainer.style.opacity = '1';
+                if (iconContainer) {
+                    iconContainer.style.transition = 'none';
+                    iconContainer.style.opacity = '1';
+                }
+                phraseIdx = (phraseIdx + 1) % phrases.length;
+                animate();
+            }, 400);
+        }, finishTime);
+    }
+
+    animate();
+}
+
+// Initialize Calendar Sync Banner
+initCalendarSyncBanner();
+
 // Initialize Pull to Refresh (Calendar & List View root)
 initPullToRefresh();
 
