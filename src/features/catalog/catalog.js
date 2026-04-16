@@ -409,5 +409,11 @@ export function initCatalog() {
     // 2. Immediate switch (No delay to avoid background flash)
     addModal.classList.remove('hidden');
     catalogModal.classList.add('hidden');
+
+    // Populate Nexus dropdown if function is available
+    if (window.populatePaymentCardsDropdown) {
+        window.populatePaymentCardsDropdown();
+    }
   };
 }
+

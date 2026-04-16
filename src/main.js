@@ -33,7 +33,10 @@ import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
 import { initPullToRefresh } from './features/refresh/refresh.js';
 import './features/data-management/data-management.css';
 import { initDataManagement } from './features/data-management/data-management.js';
-import { initNexus } from './features/nexus/nexus.js';
+import { initNexus, populatePaymentCardsDropdown } from './features/nexus/nexus.js';
+window.populatePaymentCardsDropdown = populatePaymentCardsDropdown;
+
+
 
 
 // --- Global Start Time (Min 1.2s splash) ---
@@ -902,8 +905,10 @@ async function saveToSupabase(sub) {
     recurring: sub.recurring,
     startDate: sub.startDate,
     notes: sub.notes || null,
+    nexus_card_id: sub.nexus_card_id || null,
     user_id: currentUser.id
   };
+
 
   try {
     console.log('[Supabase] Attempting to save:', subToSave);
@@ -1766,8 +1771,15 @@ window.stopSubscription = function (id, e) {
       item.style.transform = 'translateX(-120px)';
       wrapper.querySelector('.stop').style.opacity = '1';
     }
+
+    // Refresh Nexus Detail if open
+    const nexusDetail = document.getElementById('nexus-card-detail');
+    if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
+        window.renderLinkedSubscriptions(window._currentNexusCardId);
+    }
   }
 };
+
 
 window.togglePaidStatus = async function (id, e, forceStatus = null) {
   if (e && e.stopPropagation) e.stopPropagation();
@@ -1860,13 +1872,25 @@ window.togglePaidStatus = async function (id, e, forceStatus = null) {
       wrapper.querySelector('.paid').style.opacity = '1';
       wrapper.querySelector('.freq').style.opacity = '1';
     }
+
+    // Refresh Nexus Detail if open
+    const nexusDetail = document.getElementById('nexus-card-detail');
+    if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
+        window.renderLinkedSubscriptions(window._currentNexusCardId);
+    }
   }
 };
+
 
 function attachSwipeEvents() {
   const items = document.querySelectorAll('.detail-item');
   items.forEach(item => {
+    // Prevent double-attaching listeners which causes massive lag
+    if (item.getAttribute('data-swipe-attached')) return;
+    item.setAttribute('data-swipe-attached', 'true');
+
     let startX = 0;
+
     let currentX = 0;
     let isDragging = false;
     let hasStartedSwipe = false;
@@ -2120,8 +2144,29 @@ document.getElementById('close-modal').addEventListener('click', () => {
     if (window.setFormDefaultCurrency) window.setFormDefaultCurrency();
     window.editingSubId = null;
     if (window.updatePlatformIcon) window.updatePlatformIcon(null);
+    
+    // Reset Nexus card selector
+    const cardSelectText = document.getElementById('card-select-text');
+    const cardSelectId = document.getElementById('selected-card-id');
+    const cardSelectIcon = document.getElementById('selected-card-status-icon');
+    if (cardSelectText) cardSelectText.textContent = 'Select Nexus Card';
+    if (cardSelectId) cardSelectId.value = '';
+    if (cardSelectIcon) {
+        cardSelectIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
+    }
   }, 300);
 });
+
+// Nexus Card Dropdown Toggle
+document.getElementById('card-select-trigger').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('card-select-dropdown');
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+        populatePaymentCardsDropdown();
+    }
+});
+
 
 document.getElementById('close-detail').addEventListener('click', () => {
   dayDetailModal.classList.add('hidden');
@@ -2288,7 +2333,9 @@ subForm.addEventListener('submit', (e) => {
       subObj.recurring = recurring;
       subObj.startDate = startDate;
       subObj.notes = subNotes;
+      subObj.nexus_card_id = document.getElementById('selected-card-id').value || null;
       // Keep existing properties like color, stopped, paid
+
     }
   }
 
@@ -2308,7 +2355,9 @@ subForm.addEventListener('submit', (e) => {
       recurring: recurring,
       startDate: startDate,
       notes: subNotes,
+      nexus_card_id: document.getElementById('selected-card-id').value || null,
       paid: false
+
     };
     subscriptions.push(subObj);
   }

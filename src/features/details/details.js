@@ -387,10 +387,20 @@ function createCardHTML(s, viewDate = new Date()) {
                     <span class="info-label">Currency</span>
                     <span class="info-value">${s.currency || 'USD'}</span>
                 </div>
+                ${s.nexus_card_id ? `
+                <div class="info-card" id="detail-payment-info-${s.id}">
+                    <span class="info-label">Payment Method</span>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <div class="payment-icon-placeholder" style="width: 20px; height: 14px; background: rgba(255,255,255,0.05); border-radius: 2px;"></div>
+                        <span class="info-value" style="font-size: 0.8rem; opacity: 0.8;">Loading...</span>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
 }
+
 
 /**
  * Replicates main.js getSubDates for local calculation
@@ -457,7 +467,47 @@ export function showSubscriptionDetails(sub, daySubs = [], viewDate = new Date()
             track.scrollLeft = activeIndex * 360; 
         }, 10);
     }
+
+    // Solve Payment Method Info
+    resolvePaymentMethods(daySubs);
 }
+
+async function resolvePaymentMethods(subs) {
+    const subsWithCards = subs.filter(s => s.nexus_card_id);
+    if (subsWithCards.length === 0) return;
+
+    // Fetch cards once
+    const { supabase } = await import('../../supabase.js');
+    const { data: cards, error } = await supabase.from('nexus_cards').select('*');
+    if (error || !cards) return;
+
+    const logoMap = {
+        'visa': 'https://cdn.simpleicons.org/visa/white',
+        'mastercard': 'https://cdn.simpleicons.org/mastercard/white',
+        'amex': 'https://cdn.simpleicons.org/americanexpress/white',
+        'discover': 'https://cdn.simpleicons.org/discover/white',
+        'jcb': 'https://cdn.simpleicons.org/jcb/white',
+        'debit': '/sublify-logo.png',
+        'credit': '/sublify-logo.png'
+    };
+
+    subsWithCards.forEach(s => {
+        const card = cards.find(c => c.id === s.nexus_card_id);
+        if (card) {
+            const infoDiv = document.getElementById(`detail-payment-info-${s.id}`);
+            if (infoDiv) {
+                const iconContainer = infoDiv.querySelector('.payment-icon-placeholder');
+                const textSpan = infoDiv.querySelector('.info-value');
+                if (iconContainer) {
+                    iconContainer.innerHTML = `<img src="${logoMap[card.type] || '/sublify-logo.png'}" style="width: 100%; height: 100%; object-fit: contain;">`;
+                    iconContainer.style.background = 'transparent';
+                }
+                if (textSpan) textSpan.textContent = `••• ${card.last4}`;
+            }
+        }
+    });
+}
+
 
 function renderDots(activeSub, daySubs) {
     const dotsContainer = document.getElementById('detail-dots');

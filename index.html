@@ -727,7 +727,34 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </p>
             </div>
 
+            <!-- Payment Method (Nexus Integration) -->
+            <div class="form-group" style="margin-top: 24px;">
+              <label style="margin-bottom: 8px; display: block;">Payment Method <span style="opacity: 0.4; font-weight: 400; font-size: 0.75rem;">(Nexus)</span></label>
+              <div class="card-selection-container" style="position: relative;">
+                <button type="button" id="card-select-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="selected-card-status-icon" style="width: 20px; height: 14px; display: flex; align-items: center; justify-content: center; opacity: 0.8;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    </div>
+                    <span id="card-select-text" style="font-size: 0.85rem; font-weight: 500;">Select Nexus Card</span>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4;">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                <div class="dropdown-content hidden" id="card-select-dropdown" style="z-index: 1000; bottom: auto; top: calc(100% + 8px); max-height: 250px; overflow-y: auto;">
+                  <ul id="nexus-cards-dropdown-list">
+                    <!-- Cards will be injected here via JS -->
+                    <li style="padding: 12px; opacity: 0.5; font-size: 0.75rem; pointer-events: none;">No cards found in Nexus</li>
+                  </ul>
+                </div>
+                <input type="hidden" id="selected-card-id" value="">
+              </div>
+            </div>
+
             <!-- Notes Section -->
+
             <div class="form-group" style="margin-top: 10px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <label for="sub-notes" style="margin-bottom: 0;">Notes <span style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
@@ -1016,7 +1043,8 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
               </div>
               <div class="profile-info" style="position: relative; z-index: 1;">
-                <h4 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em;">John Doe</h4>
+                <h4 id="profile-name-text" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em;">John Doe</h4>
+
                 <p style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">PREMIUM MEMBER</p>
               </div>
             </div>
@@ -1820,72 +1848,56 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         </div>
     </div>
 
-    <!-- Add Card Bottom Sheet -->
-    <div id="add-card-modal" class="profile-page hidden" style="z-index: 2500; top: auto; bottom: 0; left: 0; right: 0; margin: 0 auto; width: 100%; max-width: 450px; height: 45vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 0.98); backdrop-filter: blur(25px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.8); overflow: hidden;">
 
-        <div class="profile-page-container">
-            <!-- Drag Handle -->
-            <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 101;"></div>
 
-            <div class="profile-page-header" id="add-card-header" style="border-radius: 32px 32px 0 0; padding-top: 30px; cursor: pointer;">
-                <button id="close-add-card" class="profile-page-back-btn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    <span>Cancel</span>
-                </button>
-                <h2 style="margin: 0; font-size: 1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">New Card</h2>
+    <!-- Nexus Card Detail Page -->
+    <div id="nexus-card-detail" class="nexus-page hidden" style="z-index: 5005;">
+        <div class="nexus-header" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); justify-content: space-between;">
+            <button id="close-card-detail" class="nexus-back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <h2 class="nexus-title" style="text-align: right; flex: 1;">Card Details</h2>
+        </div>
+
+        <!-- Hero Card Section (Static) -->
+        <div class="nexus-card-hero-section" style="width: 100%; display: flex; justify-content: center; padding: 20px 0 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); z-index: 5;">
+
+            <div id="detail-card-container" style="width: 80%; max-width: 400px; transform: scale(1.15); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <!-- Selected card will be clone here -->
             </div>
+        </div>
 
-
-            <div class="profile-page-scroll" style="padding-top: 75px; padding-bottom: 20px;">
-                <form id="nexus-add-card-form" style="display: flex; flex-direction: column; gap: 16px;">
-
-                    
-                    <div class="form-group">
-                        <label>Card Type</label>
-                        <div class="custom-dropdown" id="card-type-picker">
-                            <button type="button" class="dropdown-trigger" id="card-type-trigger">
-                                <span id="card-type-selected">Select Type</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-                            </button>
-                            <div class="dropdown-content hidden" id="card-type-dropdown">
-                                <ul id="card-type-list">
-                                    <li data-value="visa">Visa</li>
-                                    <li data-value="mastercard">MasterCard</li>
-                                    <li data-value="amex">American Express</li>
-                                    <li data-value="discover">Discover</li>
-                                    <li data-value="jcb">JCB</li>
-                                    <li data-value="debit">Debit Card</li>
-                                    <li data-value="credit">Other Credit Card</li>
-                                </ul>
-                            </div>
-                            <input type="hidden" id="new-card-type" value="">
-                        </div>
+        <!-- Scrollable Subscriptions Section -->
+        <div class="nexus-detail-body" style="flex: 1; width: 100%; overflow-y: auto; padding: 0 20px 140px; position: relative; z-index: 1;">
+            <div id="card-linked-subs-section" style="width: 100%;">
+                <h3 style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 20px; font-weight: 700; opacity: 0.8;">Linked Subscriptions</h3>
+                <div id="card-linked-subs-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Subscriptions will be injected here -->
+                    <div style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6;">No subscriptions linked to this card</p>
                     </div>
-
-                    <div class="form-group">
-                        <label>Last 4 Digits</label>
-                        <input type="tel" id="new-card-last4" placeholder="e.g. 4242" maxlength="4" inputmode="numeric" autocomplete="cc-number" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 14px; color: #fff; outline: none;">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Expiry Date</label>
-                        <input type="tel" id="new-card-expiry" placeholder="MM/YY" maxlength="5" inputmode="numeric" autocomplete="cc-exp" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 14px; color: #fff; outline: none;">
-                    </div>
-
-
-                    <button type="submit" class="nexus-glow-btn" style="width: 100%; height: 48px; font-size: 0.85rem; margin-top: 12px; border-radius: 14px;">Save Card</button>
-
-                </form>
+                </div>
             </div>
+        </div>
+
+
+        <!-- Fixed Bottom Action Bar -->
+        <div class="nexus-detail-footer" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; border-radius: 0 0 32px 32px;">
+             <button id="delete-card-btn" class="glass-btn" style="width: 100%; padding: 18px; border-radius: 20px; color: #ff453a; border-color: rgba(255, 69, 58, 0.2); font-weight: 700; background: rgba(255, 69, 58, 0.08); font-size: 1rem; letter-spacing: -0.01em; box-sizing: border-box;">
+                Remove from Nexus
+            </button>
         </div>
     </div>
 
+
+
+
+
     <!-- Nexus Custom Toast -->
+
     <div id="nexus-toast" class="hidden" style="position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 10000; background: rgba(255, 59, 48, 0.9); backdrop-filter: blur(10px); color: #fff; padding: 12px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: none; transition: all 0.3s ease;">
         <span id="nexus-toast-msg"></span>
     </div>
