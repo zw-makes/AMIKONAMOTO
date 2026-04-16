@@ -19,8 +19,6 @@ export function initDataManagement() {
     window.showDataModal = function(show = true) {
         if (show) {
             dataModal.classList.remove('hidden');
-            const profileModal = document.getElementById('profile-modal');
-            if (profileModal) profileModal.classList.add('hidden');
         } else {
             dataModal.classList.add('hidden');
         }
@@ -66,11 +64,7 @@ export function initDataManagement() {
         });
     }
 
-    if (deleteAccountBtn) {
-        deleteAccountBtn.addEventListener('click', () => {
-            window.showDataModal(false);
-        });
-    }
+
 }
 
 async function deleteSubscriptionsPermanently() {

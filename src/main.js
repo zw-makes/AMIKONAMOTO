@@ -24,6 +24,7 @@ import { initEmailAuthPage, showEmailAuthPage, showOtpVerification, resetEmailAu
 import { initGuider, showGuider } from './features/onboarding/guider.js';
 import './features/onboarding/survey-page.css';
 import { initProfilePage, toggleProfilePage } from './features/profile-page/profile-page.js';
+import { initAccountSettingsPage, toggleAccountSettingsPage } from './features/account-settings/account-settings.js';
 import './features/onboarding/believe-page.css';
 import './features/onboarding/auth-page.css';
 import './features/onboarding/email-auth.css';
@@ -375,7 +376,7 @@ const getStartedBtn = document.getElementById('get-started-btn');
 const authSubmitBtn = document.getElementById('auth-submit-btn');
 const onboardingScreen = document.getElementById('onboarding-screen');
 const welcomeScreen = document.getElementById('welcome-screen');
-const settingsModal = document.getElementById('settings-modal');
+// --- Account Settings Logic handled in account-settings.js ---
 const settingsForm = document.getElementById('settings-form');
 const avatarUpload = document.getElementById('avatar-upload');
 const avatarImgPreview = document.getElementById('avatar-img-preview');
@@ -2489,7 +2490,7 @@ const updateProfilePageData = async () => {
      </div>
   `;
 
-  profileModal.classList.remove('hidden');
+  if (window.toggleProfilePage) window.toggleProfilePage(true);
 };
 
 // --- Auth Event Listeners ---
@@ -2822,7 +2823,7 @@ window.showTrialPath = function (id, e) {
 // Logout logic
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  profileModal.classList.add('hidden');
+  if (window.toggleProfilePage) window.toggleProfilePage(false);
 });
 
 // Delete Account logic - Step 1: Show Confirmation Modal
@@ -3651,12 +3652,17 @@ window.showAccountSettings = function () {
   // Set Custom Gender Dropdown
   const gender = userProfile.gender || 'male';
   genderHiddenInput.value = gender;
-  genderSelectedSpan.innerText = gender.charAt(0).toUpperCase() + gender.slice(1);
+  
+  const selectedSpan = document.getElementById('settings-gender-selected');
+  if (selectedSpan) selectedSpan.innerText = gender.charAt(0).toUpperCase() + gender.slice(1);
 
   // Update selected class in list
-  genderList.querySelectorAll('li').forEach(li => {
-    li.classList.toggle('selected', li.dataset.value === gender);
-  });
+  const list = document.getElementById('settings-gender-list');
+  if (list) {
+    list.querySelectorAll('li').forEach(li => {
+      li.classList.toggle('selected', li.dataset.value === gender);
+    });
+  }
 
   // Handle DOB locking
   const dobInput = document.getElementById('settings-dob');
@@ -3676,8 +3682,17 @@ window.showAccountSettings = function () {
   // Handle Avatar Preview
   updateProfileUI();
 
-  settingsModal.classList.remove('hidden');
-  profileModal.classList.add('hidden'); // Close profile modal
+  // Populate the banner card inside settings with user info
+  const bannerName = document.getElementById('settings-banner-name');
+  const bannerEmail = document.getElementById('settings-banner-email');
+  const name = userProfile?.name || currentUser?.email?.split('@')[0] || 'User';
+  if (bannerName) {
+    bannerName.innerText = name;
+    bannerName.dataset.fallback = name; // Used by live preview as fallback when input is cleared
+  }
+  if (bannerEmail) bannerEmail.innerText = currentUser?.email || '';
+
+  if (window.toggleAccountSettingsPage) window.toggleAccountSettingsPage(true);
 };
 
 // --- App Settings Logic ---
@@ -3724,7 +3739,6 @@ window.showAppSettings = function () {
   notifTimeSelected.innerText = formatTimeLabel(prefNoifTime);
 
   appSettingsModal.classList.remove('hidden');
-  profileModal.classList.add('hidden');
 };
 
 function formatTimeLabel(val) {
@@ -3933,29 +3947,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Custom Gender Dropdown Event Listeners
-genderTrigger.addEventListener('click', (e) => {
-  e.stopPropagation();
-  genderDropdown.classList.toggle('hidden');
+// Custom Gender Dropdown — handled by initFixedDropdown() in account-settings.js
 
-  // Close other dropdowns if any (following app pattern)
-  document.getElementById('currency-dropdown')?.classList.add('hidden');
-  document.getElementById('platform-dropdown')?.classList.add('hidden');
-});
-
-genderList.addEventListener('click', (e) => {
-  const li = e.target.closest('li');
-  if (li) {
-    const val = li.dataset.value;
-    genderHiddenInput.value = val;
-    genderSelectedSpan.innerText = li.innerText;
-
-    genderList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
-    li.classList.add('selected');
-
-    genderDropdown.classList.add('hidden');
-  }
-});
+// genderList click — handled by initFixedDropdown() in account-settings.js
 
 // Close custom dropdowns on outside click
 document.addEventListener('click', (e) => {
@@ -4052,10 +4046,12 @@ document.getElementById('test-native-notif-btn')?.addEventListener('click', () =
 document.getElementById('data-management-btn')?.addEventListener('click', () => {
     if (window.showDataModal) window.showDataModal(true);
 });
-closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
-
+// Handled in initAccountSettingsPage
 appSettingsBtn.addEventListener('click', () => window.showAppSettings());
-closeAppSettingsBtn.addEventListener('click', () => appSettingsModal.classList.add('hidden'));
+
+closeAppSettingsBtn.addEventListener('click', () => {
+  appSettingsModal.classList.add('hidden');
+});
 
 // Avatar Selection Modal Logic
 const avatarModal = document.getElementById('avatar-modal');
@@ -4112,6 +4108,64 @@ uploadCustomBtn.addEventListener('click', () => {
   avatarUpload.click();
   avatarModal.classList.add('hidden');
 });
+
+// Reusable Bottom Sheet Drag to Close Logic
+function initBottomSheetDrag(modalId, dragAreaId) {
+  const modal = document.getElementById(modalId);
+  const dragArea = document.getElementById(dragAreaId);
+  if (!modal || !dragArea) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  const onDragStart = (y) => {
+    startY = y;
+    isDragging = true;
+    modal.style.transition = 'none';
+    dragArea.style.cursor = 'grabbing';
+  };
+
+  const onDragMove = (y) => {
+    if (!isDragging) return;
+    currentY = y;
+    const diffY = currentY - startY;
+    if (diffY > 0) {
+      modal.style.transform = `translateY(${diffY}px)`;
+    }
+  };
+
+  const onDragEnd = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    dragArea.style.cursor = 'grab';
+    modal.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
+
+    const diffY = currentY > 0 ? (currentY - startY) : 0;
+    if (diffY > 100) {
+      modal.classList.add('hidden');
+      setTimeout(() => { modal.style.transform = ''; }, 400);
+    } else {
+      modal.style.transform = '';
+    }
+    currentY = 0;
+  };
+
+  dragArea.addEventListener('touchstart', (e) => onDragStart(e.touches[0].clientY), { passive: true });
+  dragArea.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientY), { passive: true });
+  dragArea.addEventListener('touchend', onDragEnd);
+
+  dragArea.addEventListener('mousedown', (e) => onDragStart(e.clientY));
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) onDragMove(e.clientY);
+  });
+  document.addEventListener('mouseup', onDragEnd);
+}
+
+// Initialize for all bottom sheets
+initBottomSheetDrag('avatar-modal', 'avatar-drag-area');
+initBottomSheetDrag('delete-subs-confirm-modal', 'delete-subs-drag-area');
+initBottomSheetDrag('delete-confirm-modal', 'delete-account-drag-area');
 
 avatarUpload.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -4349,6 +4403,7 @@ renderHeader();
 loadSubscriptions(); // Fetch from Supabase
 initNotifications();
 initProfilePage();
+initAccountSettingsPage();
 
 // --- Helper to get normalized start and end dates for a subscription ---
 window.getSubDates = function (sub) {

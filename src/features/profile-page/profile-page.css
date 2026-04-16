@@ -1,25 +1,27 @@
 .profile-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background: var(--bg-color);
   z-index: 1500;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
-  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease;
   overflow: hidden;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
 }
 
 .profile-page.hidden {
-  transform: translateY(100%);
+  transform: translate3d(0, 100%, 0);
+  -webkit-transform: translate3d(0, 100%, 0);
+  opacity: 0;
   pointer-events: none;
 }
 
 .profile-page-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 450px;
   margin: 0 auto;
   height: 100%;
   display: flex;
@@ -28,15 +30,18 @@
 }
 
 .profile-page-header {
-  padding: calc(env(safe-area-inset-top, 20px) + 20px) 25px 15px;
+  padding: calc(env(safe-area-inset-top, 20px) + 20px) 20px 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-color);
-  position: sticky;
+  background: rgba(13, 13, 13, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: absolute;
   top: 0;
-  z-index: 10;
+  left: 0;
+  width: 100%;
+  z-index: 100;
 }
 
 .profile-page-back-btn {
@@ -61,7 +66,7 @@
 .profile-page-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 0 25px 40px;
+  padding: 0 16px 40px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -81,29 +86,83 @@
 
 /* Redesigning some profile components to be more "page-like" */
 .profile-page .profile-content {
-  padding-top: 30px;
+  padding-top: 80px;
+}
+
+.profile-header-card {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 28px;
+  padding: 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  margin-top: 0px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.02);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+.profile-header-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.04);
+}
+
+.profile-page .profile-info {
+  text-align: left !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-page .profile-info h4,
+.profile-page .profile-info p {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .profile-page .profile-avatar {
-  width: 100px !important;
-  height: 100px !important;
+  width: 80px !important;
+  height: 80px !important;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  margin-bottom: 10px;
+  margin-bottom: 0px;
 }
 
 .profile-page .profile-info h4 {
-  font-size: 1.4rem !important;
+  margin: 0;
 }
 
 .profile-page .profile-stats {
-  margin: 25px 0;
-  background: rgba(255,255,255,0.02);
-  border-radius: 20px;
-  border: 1px solid var(--border-color) !important;
+  margin: 8px 0 25px 0;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .profile-page .profile-actions {
   max-height: none !important;
   overflow-y: visible !important;
   padding-right: 0 !important;
+}
+
+.profile-page .profile-actions .form-group,
+.profile-page .profile-content .form-group {
+  margin-bottom: 0 !important;
+}
+
+/* Ensure dropdowns inside the page-scroll are not clipped */
+.profile-page-scroll .custom-dropdown,
+.profile-page-scroll .custom-dropdown .dropdown-content {
+  overflow: visible;
 }
