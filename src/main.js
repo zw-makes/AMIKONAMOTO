@@ -33,6 +33,8 @@ import { LOCAL_LOGOS } from './features/logos/local-logos-map.js';
 import { initPullToRefresh } from './features/refresh/refresh.js';
 import './features/data-management/data-management.css';
 import { initDataManagement } from './features/data-management/data-management.js';
+import { initNexus } from './features/nexus/nexus.js';
+
 
 // --- Global Start Time (Min 1.2s splash) ---
 const appStartTime = Date.now();
@@ -98,6 +100,10 @@ window.showGuider = showGuider;
 
 // Initialize Data Management
 initDataManagement();
+
+// Initialize Nexus
+initNexus();
+
 
 // --- Sublify Sync Calendar Banner Logic ---
 function initCalendarSyncBanner() {
@@ -3870,16 +3876,20 @@ closeAppSettingsBtn.addEventListener('click', () => {
   appSettingsModal.classList.add('hidden');
 });
 
-// Mutually exclusive toggles
+// At least one toggle must be active at all times
 autoCurrencyToggle.addEventListener('change', () => {
   if (autoCurrencyToggle.checked) {
     usdTotalToggle.checked = false;
+  } else {
+    usdTotalToggle.checked = true;
   }
 });
 
 usdTotalToggle.addEventListener('change', () => {
   if (usdTotalToggle.checked) {
     autoCurrencyToggle.checked = false;
+  } else {
+    autoCurrencyToggle.checked = true;
   }
 });
 
