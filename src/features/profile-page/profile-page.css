@@ -86,7 +86,8 @@
 
 /* Redesigning some profile components to be more "page-like" */
 .profile-page .profile-content {
-  padding-top: 80px;
+  /* Use safe area to avoid overlap with notch/Dynamic Island + header height */
+  padding-top: calc(env(safe-area-inset-top, 20px) + 85px);
 }
 
 .profile-header-card {
