@@ -1,6 +1,22 @@
 import './nexus.css';
 import { supabase } from '../../supabase.js';
 
+function checkNexusOnline() {
+    if (!navigator.onLine) {
+        const modal = document.getElementById('offline-modal');
+        const titleEl = document.getElementById('offline-modal-title');
+        const descEl = document.getElementById('offline-modal-desc');
+        
+        if (modal && titleEl && descEl) {
+            titleEl.textContent = 'Nexus Action Unavailable';
+            descEl.textContent = 'Sublify Nexus requires an active cloud connection to manage your payment methods securely. Please reconnect to continue.';
+            modal.classList.remove('hidden');
+        }
+        return false;
+    }
+    return true;
+}
+
 export async function initNexus() {
     console.log('Nexus initialized');
     
@@ -20,6 +36,7 @@ export async function initNexus() {
     
     if (addCardBtn) {
         addCardBtn.addEventListener('click', async () => {
+            if (!checkNexusOnline()) return;
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
@@ -31,6 +48,7 @@ export async function initNexus() {
 
     if (addDigitalBtn) {
         addDigitalBtn.addEventListener('click', async () => {
+            if (!checkNexusOnline()) return;
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
@@ -153,6 +171,8 @@ function initFormSubmit() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!checkNexusOnline()) return;
 
         const cards = await getStoredCards();
         if (cards.length >= 6) {
@@ -464,6 +484,8 @@ function showDeleteCardConfirm(cardId) {
 
     // Confirm delete
     document.getElementById('nexus-confirm-delete-yes').onclick = async () => {
+        if (!checkNexusOnline()) return;
+
         const yesBtn = document.getElementById('nexus-confirm-delete-yes');
         if (yesBtn) {
             yesBtn.disabled = true;
@@ -616,6 +638,8 @@ export async function populatePaymentCardsDropdown() {
 
     list.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
+            if (!checkNexusOnline()) return;
+
             const id = li.dataset.id;
             const last4 = li.dataset.last4;
             const type = li.dataset.type;

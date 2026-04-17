@@ -57,6 +57,17 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Native App Feel - Prevent user copying and selection */
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea {
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
 }
 
 .brand-footer {
