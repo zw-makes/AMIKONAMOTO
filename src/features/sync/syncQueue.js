@@ -94,6 +94,17 @@ async function flushQueue() {
           .update(item.data)
           .eq('id', user.id);
         if (error) throw error;
+      } else if (item.action === 'upsert_nexus_card') {
+        const { error } = await supabase
+          .from('nexus_cards')
+          .upsert({ ...item.data, user_id: user.id });
+        if (error) throw error;
+      } else if (item.action === 'delete_nexus_card') {
+        const { error } = await supabase
+          .from('nexus_cards')
+          .delete()
+          .eq('id', item.data.id);
+        if (error) throw error;
       }
 
       console.log(`[SyncQueue] ✅ "${item.action}" synced to cloud`);

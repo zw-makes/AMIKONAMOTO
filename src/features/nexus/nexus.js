@@ -1,21 +1,6 @@
 import './nexus.css';
 import { supabase } from '../../supabase.js';
-
-function checkNexusOnline() {
-    if (!navigator.onLine) {
-        const modal = document.getElementById('offline-modal');
-        const titleEl = document.getElementById('offline-modal-title');
-        const descEl = document.getElementById('offline-modal-desc');
-        
-        if (modal && titleEl && descEl) {
-            titleEl.textContent = 'Nexus Action Unavailable';
-            descEl.textContent = 'Sublify Nexus requires an active cloud connection to manage your payment methods securely. Please reconnect to continue.';
-            modal.classList.remove('hidden');
-        }
-        return false;
-    }
-    return true;
-}
+import { queueOperation, getQueue } from '../sync/syncQueue.js';
 
 export async function initNexus() {
     console.log('Nexus initialized');
@@ -36,7 +21,6 @@ export async function initNexus() {
     
     if (addCardBtn) {
         addCardBtn.addEventListener('click', async () => {
-            if (!checkNexusOnline()) return;
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
@@ -48,7 +32,6 @@ export async function initNexus() {
 
     if (addDigitalBtn) {
         addDigitalBtn.addEventListener('click', async () => {
-            if (!checkNexusOnline()) return;
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
@@ -69,6 +52,12 @@ export async function initNexus() {
     initCardTypePicker();
     initFormValidation();
     initFormSubmit();
+
+    // Listen for sync queue flushes to refresh Nexus view
+    window.addEventListener('syncqueue:flushed', () => {
+        console.log('[Nexus] Sync queue flushed — refreshing cards...');
+        renderStoredCards();
+    });
     
     // Load persisted cards from DB
     await renderStoredCards();
@@ -79,16 +68,43 @@ async function getStoredCards() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
 
-        const { data, error } = await supabase
-            .from('nexus_cards')
-            .select('*')
-            .order('created_at', { ascending: true });
+        // 1. OFFLINE-FIRST: Always try local storage first
+        const cache = localStorage.getItem('nexus_cards');
+        let cards = cache ? JSON.parse(cache) : [];
 
-        if (error) throw error;
-        return data || [];
+        // Merge with pending offline operations (optimistic)
+        const q = getQueue();
+        q.forEach(item => {
+            if (item.action === 'upsert_nexus_card' && item.data) {
+                const idx = cards.findIndex(c => c.id === item.data.id);
+                if (idx !== -1) cards[idx] = { ...cards[idx], ...item.data };
+                else cards.push(item.data);
+            } else if (item.action === 'delete_nexus_card' && item.data) {
+                cards = cards.filter(c => c.id !== item.data.id);
+            }
+        });
+
+        // 2. BACKGROUND FETCH (if online)
+        if (navigator.onLine) {
+            supabase
+                .from('nexus_cards')
+                .select('*')
+                .order('created_at', { ascending: true })
+                .then(({ data, error }) => {
+                    if (!error && data) {
+                        // Update local storage for next time
+                        localStorage.setItem('nexus_cards', JSON.stringify(data));
+                        // No need to trigger a full re-render here as the initial render 
+                        // already showed the correct data (cache + queue).
+                    }
+                });
+        }
+
+        return cards;
     } catch (err) {
         console.error('Error fetching cards:', err);
-        return [];
+        const cache = localStorage.getItem('nexus_cards');
+        return cache ? JSON.parse(cache) : [];
     }
 }
 
@@ -100,16 +116,40 @@ async function saveCardToStorage(cardData) {
             return false;
         }
 
+        const fullCard = { ...cardData, user_id: user.id };
+
+        // 1. Update Local Cache IMMEDIATELY (Offline-First)
+        const cache = localStorage.getItem('nexus_cards');
+        let cards = cache ? JSON.parse(cache) : [];
+        const existingIdx = cards.findIndex(c => c.id === fullCard.id);
+        if (existingIdx !== -1) cards[existingIdx] = fullCard;
+        else cards.push(fullCard);
+        localStorage.setItem('nexus_cards', JSON.stringify(cards));
+
+        // 2. Attempt Supabase Write
+        if (!navigator.onLine) {
+            console.log('[Nexus] Offline — queuing card upsert');
+            queueOperation('upsert_nexus_card', fullCard);
+            showNexusToast('Working offline — synced locally.', false);
+            return true;
+        }
+
         const { error } = await supabase
             .from('nexus_cards')
-            .insert([{ ...cardData, user_id: user.id }]);
+            .upsert([fullCard]);
 
-        if (error) throw error;
+        if (error) {
+            console.warn('[Nexus] Supabase write failed, queuing...', error.message);
+            queueOperation('upsert_nexus_card', fullCard);
+            return true;
+        }
+
         return true;
     } catch (err) {
         console.error('Error saving card:', err);
-        showNexusToast('Error saving card.');
-        return false;
+        // Best effort fallback to queue
+        queueOperation('upsert_nexus_card', cardData);
+        return true; 
     }
 }
 
@@ -171,8 +211,6 @@ function initFormSubmit() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        if (!checkNexusOnline()) return;
 
         const cards = await getStoredCards();
         if (cards.length >= 6) {
@@ -484,12 +522,29 @@ function showDeleteCardConfirm(cardId) {
 
     // Confirm delete
     document.getElementById('nexus-confirm-delete-yes').onclick = async () => {
-        if (!checkNexusOnline()) return;
-
         const yesBtn = document.getElementById('nexus-confirm-delete-yes');
         if (yesBtn) {
             yesBtn.disabled = true;
             yesBtn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,69,58,0.3);border-top-color:#ff453a;border-radius:50%;animation:nexusSpin 0.7s linear infinite;"></span>`;
+        }
+
+        // 1. Update Local Storage Immediately
+        const cache = localStorage.getItem('nexus_cards');
+        if (cache) {
+            const cards = JSON.parse(cache).filter(c => c.id !== cardId);
+            localStorage.setItem('nexus_cards', JSON.stringify(cards));
+        }
+
+        // 2. Optimistic UI update
+        modal.remove();
+        await renderStoredCards();
+        document.getElementById('nexus-card-detail')?.classList.add('hidden');
+
+        // 3. Attempt network delete
+        if (!navigator.onLine) {
+            queueOperation('delete_nexus_card', { id: cardId });
+            showNexusToast('Offline — change queued locally.', false);
+            return;
         }
 
         const { error } = await supabase
@@ -497,13 +552,12 @@ function showDeleteCardConfirm(cardId) {
             .delete()
             .eq('id', cardId);
 
-        modal.remove();
-        if (!error) {
-            await renderStoredCards();
-            document.getElementById('nexus-card-detail')?.classList.add('hidden');
-            showNexusToast('Card removed from Nexus', false);
+        if (error) {
+            console.warn('[Nexus] Network delete failed, queuing...', error.message);
+            queueOperation('delete_nexus_card', { id: cardId });
+            showNexusToast('Action queued locally.', false);
         } else {
-            showNexusToast('Failed to remove card. Please try again.');
+            showNexusToast('Card removed from Nexus', false);
         }
     };
 }
@@ -638,8 +692,6 @@ export async function populatePaymentCardsDropdown() {
 
     list.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
-            if (!checkNexusOnline()) return;
-
             const id = li.dataset.id;
             const last4 = li.dataset.last4;
             const type = li.dataset.type;
