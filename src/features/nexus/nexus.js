@@ -65,10 +65,7 @@ export async function initNexus() {
 
 async function getStoredCards() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
-
-        // 1. OFFLINE-FIRST: Always try local storage first
+        // 1. INSTANT OFFLINE LOAD: No blocking auth checks!
         const cache = localStorage.getItem('nexus_cards');
         let cards = cache ? JSON.parse(cache) : [];
 
@@ -84,20 +81,22 @@ async function getStoredCards() {
             }
         });
 
-        // 2. BACKGROUND FETCH (if online)
+        // 2. ASYNC BACKGROUND SYNC: Don't await this, let it run in parallel
         if (navigator.onLine) {
-            supabase
-                .from('nexus_cards')
-                .select('*')
-                .order('created_at', { ascending: true })
-                .then(({ data, error }) => {
-                    if (!error && data) {
-                        // Update local storage for next time
-                        localStorage.setItem('nexus_cards', JSON.stringify(data));
-                        // No need to trigger a full re-render here as the initial render 
-                        // already showed the correct data (cache + queue).
-                    }
-                });
+            supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) {
+                    supabase
+                        .from('nexus_cards')
+                        .select('*')
+                        .order('created_at', { ascending: true })
+                        .then(({ data, error }) => {
+                            if (!error && data) {
+                                localStorage.setItem('nexus_cards', JSON.stringify(data));
+                                // Optionally trigger a refresh if the data changed significantly
+                            }
+                        });
+                }
+            });
         }
 
         return cards;
@@ -110,15 +109,13 @@ async function getStoredCards() {
 
 async function saveCardToStorage(cardData) {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            showNexusToast('Sign in to save cards.');
-            return false;
-        }
+        // Use global user if available, otherwise fetch as fallback
+        const user = window.currentUser;
+        const userId = user?.id || 'offline_user';
 
-        const fullCard = { ...cardData, user_id: user.id };
+        const fullCard = { ...cardData, user_id: userId };
 
-        // 1. Update Local Cache IMMEDIATELY (Offline-First)
+        // 1. Update Local Cache IMMEDIATELY (True Offline-First)
         const cache = localStorage.getItem('nexus_cards');
         let cards = cache ? JSON.parse(cache) : [];
         const existingIdx = cards.findIndex(c => c.id === fullCard.id);
@@ -126,11 +123,11 @@ async function saveCardToStorage(cardData) {
         else cards.push(fullCard);
         localStorage.setItem('nexus_cards', JSON.stringify(cards));
 
-        // 2. Attempt Supabase Write
-        if (!navigator.onLine) {
-            console.log('[Nexus] Offline — queuing card upsert');
+        // 2. Attempt Supabase Write Asynchronously
+        if (!navigator.onLine || !user) {
+            console.log('[Nexus] Queuing offline card upsert');
             queueOperation('upsert_nexus_card', fullCard);
-            showNexusToast('Working offline — synced locally.', false);
+            showNexusToast('Saved locally — will sync when online.', false);
             return true;
         }
 
@@ -139,7 +136,7 @@ async function saveCardToStorage(cardData) {
             .upsert([fullCard]);
 
         if (error) {
-            console.warn('[Nexus] Supabase write failed, queuing...', error.message);
+            console.warn('[Nexus] Supabase upsert failed, queuing...', error.message);
             queueOperation('upsert_nexus_card', fullCard);
             return true;
         }
@@ -147,7 +144,6 @@ async function saveCardToStorage(cardData) {
         return true;
     } catch (err) {
         console.error('Error saving card:', err);
-        // Best effort fallback to queue
         queueOperation('upsert_nexus_card', cardData);
         return true; 
     }
