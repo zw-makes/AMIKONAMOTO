@@ -7,6 +7,7 @@ export async function initNexus() {
     const nexusBtn = document.getElementById('nexus-btn');
     const closeNexusBtn = document.getElementById('close-nexus');
     const addCardBtn = document.getElementById('nexus-add-card-btn');
+    const addDigitalBtn = document.getElementById('nexus-add-digital-btn');
     const closeAddCardBtn = document.getElementById('close-add-card');
     
     if (nexusBtn) {
@@ -21,12 +22,24 @@ export async function initNexus() {
         addCardBtn.addEventListener('click', async () => {
             const cards = await getStoredCards();
             if (cards.length >= 6) {
-                showNexusToast('Maximum limit of 6 cards.');
+                showNexusToast('Maximum limit of 6 payment methods.');
                 return;
             }
-            toggleAddCardModal(true);
+            toggleAddCardModal(true, 'card');
         });
     }
+
+    if (addDigitalBtn) {
+        addDigitalBtn.addEventListener('click', async () => {
+            const cards = await getStoredCards();
+            if (cards.length >= 6) {
+                showNexusToast('Maximum limit of 6 payment methods.');
+                return;
+            }
+            toggleAddCardModal(true, 'digital');
+        });
+    }
+
 
     const closeCardDetailBtn = document.getElementById('close-card-detail');
     if (closeCardDetailBtn) {
@@ -136,67 +149,69 @@ function showNexusToast(message, isError = true) {
 
 function initFormSubmit() {
     const form = document.getElementById('nexus-add-card-form');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    if (!form) return;
 
-            const cards = await getStoredCards();
-            if (cards.length >= 6) {
-                showNexusToast('Maximum limit of 6 cards reached.');
-                toggleAddCardModal(false);
-                return;
-            }
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-            const type = document.getElementById('new-card-type').value;
-            const last4 = document.getElementById('new-card-last4').value;
-            const expiry = document.getElementById('new-card-expiry').value;
+        const cards = await getStoredCards();
+        if (cards.length >= 6) {
+            showNexusToast('Maximum limit of 6 payment methods reached.');
+            toggleAddCardModal(false);
+            return;
+        }
 
-            if (!type) {
-                showNexusToast('Please select a Card Type.');
-                return;
-            }
+        const type = document.getElementById('new-card-type').value;
+        const identifierInput = document.getElementById('new-card-last4');
+        const expiryInput = document.getElementById('new-card-expiry');
+        const identifier = identifierInput ? identifierInput.value.trim() : '';
+        const expiry = expiryInput ? expiryInput.value.trim() : '';
 
-            if (last4.length < 4) {
-                showNexusToast('Enter the last 4 digits.');
-                return;
-            }
+        if (!type) { showNexusToast('Please select a payment method type.'); return; }
 
-            if (expiry.length < 5) {
-                showNexusToast('Enter a valid expiry date.');
-                return;
-            }
+        const CARD_TYPES = ['visa','mastercard','amex','discover','jcb','debit','credit'];
+        const isCard = CARD_TYPES.includes(type);
 
-            const submitBtn = form.querySelector('[type="submit"]');
-            const originalText = submitBtn ? submitBtn.textContent : '';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:nexusSpin 0.7s linear infinite;"></span>`;
-            }
+        if (isCard) {
+            if (identifier.length < 4) { showNexusToast('Enter the last 4 digits.'); return; }
+            if (expiry.length < 5) { showNexusToast('Enter a valid expiry date.'); return; }
+        } else if (type === 'paypal') {
+            if (!identifier.includes('@')) { showNexusToast('Enter a valid PayPal email.'); return; }
+        } else if (type === 'bank') {
+            if (identifier.length < 2) { showNexusToast('Enter a bank or account name.'); return; }
+        }
+        // For applepay / googlepay — no identifier needed
 
-            const success = await saveCardToStorage({ type, last4, expiry });
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
-            if (success) {
-                await renderStoredCards();
-                showNexusToast('Card added successfully!', false);
-                toggleAddCardModal(false);
-                form.reset();
-                const selectedText = document.getElementById('card-type-selected');
-                if (selectedText) selectedText.textContent = 'Select Type';
-                document.getElementById('new-card-type').value = '';
-            }
-        });
-    }
+        const submitBtn = form.querySelector('[type="submit"]');
+        const originalText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:nexusSpin 0.7s linear infinite;"></span>`;
+        }
+
+        const success = await saveCardToStorage({ type, last4: identifier, expiry: isCard ? expiry : 'N/A' });
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+        if (success) {
+            await renderStoredCards();
+            showNexusToast('Payment method added!', false);
+            toggleAddCardModal(false);
+        }
+    });
 }
+
 
 function initFormValidation() {
     const last4Input = document.getElementById('new-card-last4');
     const expiryInput = document.getElementById('new-card-expiry');
+    const CARD_TYPES = ['visa','mastercard','amex','discover','jcb','debit','credit'];
+
+    // Only apply digit-restriction to card types (not email/UPI fields)
+    const typeHiddenInput = document.getElementById('new-card-type');
+    const isCurrentlyCard = () => CARD_TYPES.includes(typeHiddenInput?.value || '');
 
     if (last4Input) {
         last4Input.addEventListener('input', (e) => {
+            if (!isCurrentlyCard()) return;
             let val = e.target.value.replace(/\D/g, '');
             if (val.length > 4) val = val.slice(0, 4);
             e.target.value = val;
@@ -217,6 +232,7 @@ function initFormValidation() {
     }
 }
 
+
 function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
     const stack = document.getElementById('nexus-cards-list');
     if (!stack) return;
@@ -229,6 +245,9 @@ function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
     card.style.zIndex = cardCount + 2;
     card.style.cursor = 'pointer';
 
+    const CARD_TYPES = ['visa','mastercard','amex','discover','jcb','debit','credit'];
+    const isCard = CARD_TYPES.includes(type);
+
     const logoMap = {
         'visa': 'https://cdn.simpleicons.org/visa/white',
         'mastercard': 'https://cdn.simpleicons.org/mastercard/white',
@@ -236,24 +255,56 @@ function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
         'discover': 'https://cdn.simpleicons.org/discover/white',
         'jcb': 'https://cdn.simpleicons.org/jcb/white',
         'debit': '/sublify-logo.png',
-        'credit': '/sublify-logo.png'
+        'credit': '/sublify-logo.png',
+        'paypal': 'https://cdn.simpleicons.org/paypal/white',
+        'applepay': 'https://cdn.simpleicons.org/applepay/white',
+        'googlepay': 'https://cdn.simpleicons.org/googlepay/white',
+        'bank': '/sublify-logo.png',
+    };
+
+    const labelMap = {
+        'paypal': 'PayPal',
+        'applepay': 'Apple Pay',
+        'googlepay': 'Google Pay',
+        'bank': 'Bank Transfer',
     };
 
     const logoUrl = logoMap[type] || '/sublify-logo.png';
     const profileNameEl = document.getElementById('profile-name-text');
     const userName = profileNameEl ? profileNameEl.innerText.trim() : 'Nexus Member';
 
-    card.innerHTML = `
-        <div class="card-chip"></div>
-        <div class="card-brand-logo">
-            <img src="${logoUrl}" alt="${type}" style="opacity: 0.95; max-height: 24px;">
-        </div>
-        <div class="card-number">•••• •••• •••• ${last4}</div>
-        <div class="card-footer-info">
-            <div class="card-holder">${userName}</div>
-            <div class="card-expiry">${expiry}</div>
-        </div>
-    `;
+    if (isCard) {
+        card.innerHTML = `
+            <div class="card-chip"></div>
+            <div class="card-brand-logo">
+                <img src="${logoUrl}" alt="${type}" style="opacity: 0.95; max-height: 24px;">
+            </div>
+            <div class="card-number">•••• •••• •••• ${last4}</div>
+            <div class="card-footer-info">
+                <div class="card-holder">${userName}</div>
+                <div class="card-expiry">${expiry}</div>
+            </div>
+        `;
+    } else {
+        // Digital payment method — flat, logo-centric design
+        const label = labelMap[type] || type;
+        const identifierLine = last4 && last4 !== 'N/A' && last4.length > 0
+            ? `<div style="font-size:0.75rem; opacity:0.5; letter-spacing:0.02em; margin-top:4px;">${last4}</div>`
+            : '';
+        card.innerHTML = `
+            <div style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; opacity:0.5;">Nexus Wallet</div>
+                    <img src="${logoUrl}" alt="${label}" style="max-height:22px; opacity:0.9;">
+                </div>
+                <div>
+                    <div style="font-size:1.4rem; font-weight:800; letter-spacing:-0.02em;">${label}</div>
+                    ${identifierLine}
+                </div>
+                <div style="font-size:0.6rem; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; opacity:0.4;">${userName}</div>
+            </div>
+        `;
+    }
     
     card.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -532,18 +583,36 @@ export async function populatePaymentCardsDropdown() {
         'discover': 'https://cdn.simpleicons.org/discover/white',
         'jcb': 'https://cdn.simpleicons.org/jcb/white',
         'debit': '/sublify-logo.png',
-        'credit': '/sublify-logo.png'
+        'credit': '/sublify-logo.png',
+        'paypal': 'https://cdn.simpleicons.org/paypal/white',
+        'applepay': 'https://cdn.simpleicons.org/applepay/white',
+        'googlepay': 'https://cdn.simpleicons.org/googlepay/white',
+        'bank': '/sublify-logo.png'
     };
 
-    list.innerHTML = cards.map(card => `
-        <li data-id="${card.id}" data-type="${card.type}" data-last4="${card.last4}" style="display: flex; align-items: center; gap: 10px; padding: 12px;">
-            <img src="${logoMap[card.type] || '/sublify-logo.png'}" style="width: 20px; height: 14px; object-fit: contain; opacity: 0.9;">
+    const labelMap = {
+        'paypal': 'PayPal',
+        'applepay': 'Apple Pay',
+        'googlepay': 'Google Pay',
+        'bank': 'Bank Transfer'
+    };
+
+    const CARD_TYPES = ['visa','mastercard','amex','discover','jcb','debit','credit'];
+
+    list.innerHTML = cards.map(c => {
+        const isCard = CARD_TYPES.includes(c.type);
+        const title = isCard ? `•••• ${c.last4}` : (labelMap[c.type] || c.type);
+        const subtext = isCard ? c.type : (c.last4 && c.last4 !== 'N/A' ? c.last4 : 'Linked');
+        
+        return `
+        <li data-id="${c.id}" data-type="${c.type}" data-last4="${c.last4}" style="display: flex; align-items: center; gap: 10px; padding: 12px;">
+            <img src="${logoMap[c.type] || '/sublify-logo.png'}" style="width: 20px; height: 14px; object-fit: contain; opacity: 0.9;">
             <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.85rem; font-weight: 600;">•••• ${card.last4}</span>
-                <span style="font-size: 0.65rem; opacity: 0.5; text-transform: uppercase;">${card.type}</span>
+                <span style="font-size: 0.85rem; font-weight: 600; text-transform: ${!isCard && labelMap[c.type] ? 'none' : 'uppercase'};">${title}</span>
+                <span style="font-size: 0.65rem; opacity: 0.5; text-transform: ${isCard ? 'uppercase' : 'none'};">${subtext}</span>
             </div>
         </li>
-    `).join('');
+    `}).join('');
 
     list.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
@@ -578,8 +647,8 @@ export function toggleNexus(show) {
     }
 }
 
-export function toggleAddCardModal(show) {
-    if (show) showAddCardSheet();
+export function toggleAddCardModal(show, mode = 'both') {
+    if (show) showAddCardSheet(mode);
     else {
         const modal = document.getElementById('nexus-add-card-sheet');
         if (modal) dismissSheet(modal);
@@ -597,8 +666,35 @@ function dismissSheet(modal) {
     setTimeout(() => modal.remove(), 300);
 }
 
-function showAddCardSheet() {
+function showAddCardSheet(mode) {
     document.getElementById('nexus-add-card-sheet')?.remove();
+
+    let dropdownHtml = '';
+    
+    if (mode === 'card' || mode === 'both') {
+        dropdownHtml += `
+            <li style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; opacity:0.4; padding: 10px 14px 4px; pointer-events:none; font-weight:700;">Physical Cards</li>
+            <li data-value="visa">Visa</li>
+            <li data-value="mastercard">MasterCard</li>
+            <li data-value="amex">American Express</li>
+            <li data-value="discover">Discover</li>
+            <li data-value="jcb">JCB</li>
+            <li data-value="debit">Debit Card</li>
+            <li data-value="credit">Other Credit Card</li>
+        `;
+    }
+    
+    if (mode === 'digital' || mode === 'both') {
+        dropdownHtml += `
+            <li style="font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; opacity:0.4; padding: 12px 14px 4px; pointer-events:none; font-weight:700; ${mode === 'both' ? 'border-top: 1px solid rgba(255,255,255,0.06); margin-top:6px;' : ''}">Digital Methods</li>
+            <li data-value="paypal">PayPal</li>
+            <li data-value="applepay">Apple Pay</li>
+            <li data-value="googlepay">Google Pay</li>
+            <li data-value="bank">Bank Transfer</li>
+        `;
+    }
+
+    const titleText = mode === 'digital' ? 'Add Digital Method' : 'Add New Card';
 
     const modal = document.createElement('div');
     modal.id = 'nexus-add-card-sheet';
@@ -617,7 +713,7 @@ function showAddCardSheet() {
             border-radius: 28px 28px 0 0;
             padding-bottom: 34px;
             animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-            overflow: hidden;
+            position: relative;
         ">
             <!-- Drag Handle -->
             <div id="add-card-drag-handle" style="padding: 14px 0 4px; display: flex; justify-content: center; cursor: grab;">
@@ -633,8 +729,8 @@ function showAddCardSheet() {
                     </svg>
                 </div>
                 <div>
-                    <h2 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Add New Card</h2>
-                    <p style="margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 400;">Your card details are stored securely.</p>
+                    <h2 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #fff;">${titleText}</h2>
+                    <p style="margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 400;">Your details are stored securely.</p>
                 </div>
             </div>
 
@@ -645,42 +741,45 @@ function showAddCardSheet() {
                 <form id="nexus-add-card-form" style="display: flex; flex-direction: column; gap: 14px;">
 
                     <div>
-                        <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Card Type</label>
-                        <div class="custom-dropdown" id="card-type-picker">
+                        <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Payment Method</label>
+                        <div class="custom-dropdown dropdown-up" id="card-type-picker">
                             <button type="button" class="dropdown-trigger" id="card-type-trigger">
                                 <span id="card-type-selected">Select Type</span>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <div class="dropdown-content hidden" id="card-type-dropdown">
                                 <ul id="card-type-list">
-                                    <li data-value="visa">Visa</li>
-                                    <li data-value="mastercard">MasterCard</li>
-                                    <li data-value="amex">American Express</li>
-                                    <li data-value="discover">Discover</li>
-                                    <li data-value="jcb">JCB</li>
-                                    <li data-value="debit">Debit Card</li>
-                                    <li data-value="credit">Other Credit Card</li>
+                                    ${dropdownHtml}
                                 </ul>
                             </div>
                             <input type="hidden" id="new-card-type" value="">
                         </div>
                     </div>
 
-                    <div>
-                        <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Last 4 Digits</label>
-                        <input type="tel" id="new-card-last4" placeholder="e.g. 4242" maxlength="4" inputmode="numeric" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; outline: none; font-size: 0.95rem; box-sizing: border-box;">
+                    <!-- Dynamic fields — shown/hidden by initCardTypePicker -->
+                    <div id="card-fields-card" style="display: ${mode === 'digital' ? 'none' : 'block'};">
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Last 4 Digits</label>
+                            <input type="tel" id="new-card-last4" placeholder="e.g. 4242" maxlength="4" inputmode="numeric" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; outline: none; font-size: 0.95rem; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Expiry Date</label>
+                            <input type="tel" id="new-card-expiry" placeholder="MM/YY" maxlength="5" inputmode="numeric" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; outline: none; font-size: 0.95rem; box-sizing: border-box;">
+                        </div>
                     </div>
 
-                    <div>
-                        <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Expiry Date</label>
-                        <input type="tel" id="new-card-expiry" placeholder="MM/YY" maxlength="5" inputmode="numeric" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; outline: none; font-size: 0.95rem; box-sizing: border-box;">
+                    <div id="card-fields-identifier" style="display:none;">
+                        <label id="identifier-label" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 8px;">Identifier</label>
+                        <input type="text" id="new-card-identifier-hidden" placeholder="e.g. you@example.com" style="width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; outline: none; font-size: 0.95rem; box-sizing: border-box;">
+                        <input type="hidden" id="new-card-expiry-hidden" value="N/A">
                     </div>
 
-                    <button id="add-card-submit-btn" type="submit" style="width: 100%; padding: 17px; border-radius: 18px; background: rgba(255,255,255,0.92); border: none; color: #000; font-size: 1rem; font-weight: 700; cursor: pointer; letter-spacing: -0.01em; margin-top: 4px;">Save Card to Nexus</button>
+                    <button id="add-card-submit-btn" type="submit" style="width: 100%; padding: 17px; border-radius: 18px; background: rgba(255,255,255,0.92); border: none; color: #000; font-size: 1rem; font-weight: 700; cursor: pointer; letter-spacing: -0.01em; margin-top: 4px;">Save Payment Method</button>
                 </form>
             </div>
         </div>
     `;
+
 
     document.body.appendChild(modal);
 
@@ -737,11 +836,53 @@ function initCardTypePicker() {
 
         listItems.forEach(item => {
             item.addEventListener('click', () => {
+                if (!item.dataset.value) return; // Skip headers
                 const val = item.dataset.value;
                 const text = item.textContent;
                 selectedSpan.textContent = text;
                 hiddenInput.value = val;
                 dropdown.classList.add('hidden');
+
+                // Dynamic Form Logic
+                const cardFields = document.getElementById('card-fields-card');
+                const idFields = document.getElementById('card-fields-identifier');
+                const idLabel = document.getElementById('identifier-label');
+                const mainInput = document.getElementById('new-card-last4');
+
+                const CARD_TYPES = ['visa','mastercard','amex','discover','jcb','debit','credit'];
+                
+                if (CARD_TYPES.includes(val)) {
+                    cardFields.style.display = 'block';
+                    idFields.style.display = 'none';
+                    // Re-bind to the card inputs
+                    mainInput.id = ''; // clear from old
+                    cardFields.querySelector('input[placeholder="e.g. 4242"]').id = 'new-card-last4';
+                    cardFields.querySelector('input[placeholder="MM/YY"]').id = 'new-card-expiry';
+                } else {
+                    cardFields.style.display = 'none';
+                    idFields.style.display = 'block';
+                    // Re-bind to the id input
+                    if (cardFields.querySelector('#new-card-last4')) cardFields.querySelector('#new-card-last4').id = '';
+                    if (cardFields.querySelector('#new-card-expiry')) cardFields.querySelector('#new-card-expiry').id = '';
+                    
+                    const idInput = idFields.querySelector('input[type="text"]');
+                    idInput.id = 'new-card-last4';
+                    
+                    // Update label and placeholder dynamically
+                    if (val === 'paypal') {
+                        idLabel.textContent = 'PayPal Email';
+                        idInput.placeholder = 'you@example.com';
+                        idFields.style.display = 'block';
+                    } else if (val === 'bank') {
+                        idLabel.textContent = 'Bank / Account Name';
+                        idInput.placeholder = 'e.g. Chase Checking';
+                        idFields.style.display = 'block';
+                    } else if (val === 'applepay' || val === 'googlepay') {
+                        // These don't need user identifiers, the system knows what they are
+                        idFields.style.display = 'none';
+                        idInput.value = 'Linked'; // Auto-fill
+                    }
+                }
             });
         });
 
