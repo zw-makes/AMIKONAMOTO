@@ -61,6 +61,9 @@ export async function initNexus() {
     
     // Load persisted cards from DB
     await renderStoredCards();
+
+    // Secondary refresh after a short delay to catch the profile loading from main.js
+    setTimeout(() => renderStoredCards(), 1500);
 }
 
 async function getStoredCards() {
@@ -324,8 +327,12 @@ function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
     };
 
     const logoUrl = logoMap[type] || '/sublify-logo.png';
+    
+    // PRIORITY: 1. Loaded Profile, 2. Global DOM, 3. Fallback
+    const user = window.userProfile;
     const profileNameEl = document.getElementById('profile-name-text');
-    const userName = profileNameEl ? profileNameEl.innerText.trim() : 'Nexus Member';
+    let userName = user?.name || (profileNameEl?.innerText !== '...' ? profileNameEl?.innerText : null) || 'Nexus Member';
+    userName = userName.trim();
 
     if (isCard) {
         card.innerHTML = `
@@ -625,9 +632,21 @@ async function renderLinkedSubscriptions(cardId) {
         }
 
     } catch (err) {
-
         console.error('Error fetching linked subs:', err);
-        list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center;">Failed to load linked subscriptions</p>`;
+        if (!navigator.onLine) {
+            list.innerHTML = `
+                <div style="padding: 30px 20px; text-align: center;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" style="margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
+                        <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+                    </svg>
+                    <p style="color: var(--text-secondary); opacity: 0.7; font-size: 0.85rem; line-height: 1.4; max-width: 220px; margin: 0 auto;">
+                        Please connect to the internet to see your linked subscriptions here.
+                    </p>
+                </div>
+            `;
+        } else {
+            list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Failed to load linked subscriptions</p>`;
+        }
     }
 }
 
