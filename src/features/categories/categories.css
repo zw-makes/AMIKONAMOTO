@@ -1,0 +1,108 @@
+/* Mirror of nexus.css for consistent premium aesthetic */
+
+.categories-page {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 450px;
+    background: #000;
+    z-index: 2100; /* Slightly above profile */
+    display: flex;
+    flex-direction: column;
+    animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes nexusSlideIn {
+    from { transform: translateY(100%); opacity: 0; filter: blur(8px); }
+    to { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+.nexus-cards-stack {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.nexus-cards-stack .premium-physical-card {
+    position: relative;
+    margin-bottom: -160px; /* Overlap offset for category cards */
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+
+.nexus-cards-stack .premium-physical-card:last-child {
+    margin-bottom: 40px;
+}
+
+.nexus-cards-stack .premium-physical-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    z-index: 100 !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+
+.premium-physical-card {
+    aspect-ratio: 1.586/1;
+    width: 100%;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+.premium-physical-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* Specific to Categories Toast */
+#categories-toast {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Transition for bottom sheets */
+@keyframes nexusFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.nexus-glow-btn {
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15);
+    transition: all 0.2s ease;
+}
+
+.nexus-glow-btn:active {
+    transform: scale(0.96);
+}
+
+@keyframes nexusPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }

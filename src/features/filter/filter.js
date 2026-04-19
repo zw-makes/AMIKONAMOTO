@@ -8,7 +8,8 @@ let filters = {
     name: '',
     frequency: 'all',
     currency: 'all',
-    status: 'all'
+    status: 'all',
+    category: 'all'
 };
 
 export function initFilter() {
@@ -19,6 +20,15 @@ export function initFilter() {
     window.applyFilters = applyFilters;
     window.clearFilters = clearFilters;
     window.getGlobalFilters = () => filters;
+    window.setCategoryFilter = (catName) => {
+        filters.category = catName;
+        updateFilterBadges();
+        if (window.renderCalendar) window.renderCalendar();
+        if (window.updateStats) window.updateStats();
+        
+        // Show a little toast or badge to show we are filtered
+        console.log(`[Filter] Dashboard filtered by category: ${catName}`);
+    };
 
     setupPlatformPicker();
     setupCurrencyPicker();
@@ -207,7 +217,8 @@ function updateFilterBadges() {
     const isFiltered = filters.name !== '' || 
                        filters.frequency !== 'all' || 
                        filters.currency !== 'all' || 
-                       filters.status !== 'all';
+                       filters.status !== 'all' ||
+                       filters.category !== 'all';
 
     const headerBadge = document.getElementById('filter-badge-header');
     const optBadge = document.getElementById('filter-badge-opt');
@@ -237,7 +248,8 @@ export function clearFilters() {
         name: '',
         frequency: 'all',
         currency: 'all',
-        status: 'all'
+        status: 'all',
+        category: 'all'
     };
     resetModalUI();
     updateFilterBadges();

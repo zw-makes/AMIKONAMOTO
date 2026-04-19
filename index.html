@@ -4,17 +4,21 @@
 <head>
   <style>
     /* UNIVERSAL ANTI-FLASH SYSTEM */
-    html, body { 
-      background: #000000 !important; 
-      margin: 0 !important; 
-      padding: 0 !important; 
+    html,
+    body {
+      background: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: hidden !important;
       width: 100% !important;
       height: 100% !important;
     }
-    
+
     /* Force all logo instances to stay 140px even if CSS hasn't loaded */
-    #splash-logo, .loading-logo, .landing-logo-img, .brand-footer-logo {
+    #splash-logo,
+    .loading-logo,
+    .landing-logo-img,
+    .brand-footer-logo {
       width: 140px !important;
       height: 140px !important;
       object-fit: contain !important;
@@ -33,7 +37,7 @@
       opacity: 1;
       transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     #splash-screen.fade-out {
       opacity: 0 !important;
       pointer-events: none;
@@ -50,8 +54,17 @@
     }
 
     @keyframes logo-entrance {
-      0% { opacity: 0; transform: scale(0.85) translateY(10px); filter: blur(8px); }
-      100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+      0% {
+        opacity: 0;
+        transform: scale(0.85) translateY(10px);
+        filter: blur(8px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+      }
     }
   </style>
   <meta charset="UTF-8" />
@@ -94,7 +107,7 @@
 
     <!-- Auth / Welcome Screen -->
     <div id="auth-screen" class="auth-screen hidden" style="padding: 0;">
-      
+
       <!-- NEW LANDING PAGE -->
       <div id="welcome-view" class="landing-page">
         <!-- Space Background -->
@@ -129,66 +142,72 @@
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
             </defs>
-            
+
             <!-- Left Pipes (Unmanaged) converging to (200, 150) -->
             <path id="pathTop" d="M 0 60 C 120 60, 140 150, 200 150" fill="none" class="pipe-path-left" />
             <path id="pathMid" d="M 0 150 C 100 150, 100 150, 200 150" fill="none" class="pipe-path-left" />
             <path id="pathBot" d="M 0 240 C 120 240, 140 150, 200 150" fill="none" class="pipe-path-left" />
-            
+
             <!-- Right Pipes (Managed) diverging from (200, 150) -->
             <path id="pathRightTop" d="M 200 150 C 260 150, 280 80, 400 80" fill="none" class="pipe-path-right" />
             <path id="pathRightBot" d="M 200 150 C 260 150, 280 220, 400 220" fill="none" class="pipe-path-right" />
 
             <!-- Animated Unmanaged Subs traversing INTO the middle -->
             <image href="/logos/netflix.com.png" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
-               <animateMotion dur="4.5s" repeatCount="indefinite" begin="0s">
-                  <mpath href="#pathTop" />
-               </animateMotion>
-               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="0s" />
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="0s">
+                <mpath href="#pathTop" />
+              </animateMotion>
+              <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s"
+                repeatCount="indefinite" begin="0s" />
             </image>
             <image href="/logos/adobe.com.png" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
-               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3s">
-                  <mpath href="#pathMid" />
-               </animateMotion>
-               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-3s" />
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3s">
+                <mpath href="#pathMid" />
+              </animateMotion>
+              <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s"
+                repeatCount="indefinite" begin="-3s" />
             </image>
             <image href="/logos/spotify.com.png" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
-               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
-                  <mpath href="#pathBot" />
-               </animateMotion>
-               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-1.5s" />
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
+                <mpath href="#pathBot" />
+              </animateMotion>
+              <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s"
+                repeatCount="indefinite" begin="-1.5s" />
             </image>
 
             <!-- Animated Managed Subs traversing OUT OF the middle -->
             <image href="/logos/apple.com.png" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
-               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3.75s">
-                  <mpath href="#pathRightTop" />
-               </animateMotion>
-               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-3.75s" />
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="-3.75s">
+                <mpath href="#pathRightTop" />
+              </animateMotion>
+              <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s"
+                repeatCount="indefinite" begin="-3.75s" />
             </image>
             <image href="/logos/figma.com.png" width="28" height="28" x="-14" y="-14" class="svg-anim-icon">
-               <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
-                  <mpath href="#pathRightBot" />
-               </animateMotion>
-               <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s" repeatCount="indefinite" begin="-1.5s" />
+              <animateMotion dur="4.5s" repeatCount="indefinite" begin="-1.5s">
+                <mpath href="#pathRightBot" />
+              </animateMotion>
+              <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.1; 0.9; 1" dur="4.5s"
+                repeatCount="indefinite" begin="-1.5s" />
             </image>
           </svg>
-          
+
           <!-- Center Box -->
           <div class="center-pipeline-box">
-             <div id="thanos-symbol" class="thanos-symbol">$</div>
+            <div id="thanos-symbol" class="thanos-symbol">$</div>
           </div>
 
           <!-- Hidden SVG Filter for Thanos Snap -->
           <svg style="position: absolute; width: 0; height: 0;">
             <filter id="snap-filter" x="-50%" y="-50%" width="200%" height="200%">
               <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" />
-              <feDisplacementMap id="snap-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+              <feDisplacementMap id="snap-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R"
+                yChannelSelector="G" />
             </filter>
           </svg>
 
           <script>
-            (function() {
+            (function () {
               const JSON_SCHEMA = `Return a JSON array of objects with (FOLLOW THIS EXTRACTION HIERARCHY: 1. Name/Logo, 2. Price/Currency, 3. Full Date):
 - "name": string - EXHAUSTIVE Search for the brand/service name.
 - "domain": string - The most likely root domain for the name (e.g., "spotify.com").
@@ -203,7 +222,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               let currentIndex = 0;
               const el = document.getElementById('thanos-symbol');
               const map = document.getElementById('snap-map');
-              
+
               function showNewSymbol() {
                 const duration = 400;
                 let start = null;
@@ -211,10 +230,10 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                   if (!start) start = timestamp;
                   let progress = (timestamp - start) / duration;
                   if (progress > 1) progress = 1;
-                  
+
                   el.style.opacity = progress;
                   el.style.transform = `scale(${0.8 + (progress * 0.2)})`;
-                  
+
                   if (progress < 1) {
                     requestAnimationFrame(animate);
                   }
@@ -255,12 +274,13 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             })();
           </script>
         </div>
-        
+
         <!-- BOTTOM: Content Card -->
         <div class="landing-content">
           <img src="/sublify-logo.png" class="landing-logo-img" alt="Sublify Logo" width="140" height="140">
           <h2 class="landing-title">Meet Sublify</h2>
-          <p class="landing-desc">See where your money goes and let Sublify AI help you take control of every subscription.</p>
+          <p class="landing-desc">See where your money goes and let Sublify AI help you take control of every
+            subscription.</p>
           <button id="get-started-btn" class="landing-btn">lets get on the track</button>
         </div>
       </div>
@@ -375,105 +395,127 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
     <!-- Main App Container (Hidden during Auth/Onboarding) -->
     <div id="app-container" class="hidden">
       <!-- Top Status Bar -->
-    <div class="status-bar">
-      <div class="status-left">
-        <div id="status-terminal" class="status-terminal">
-          <span id="current-time">12:00 AM</span>
-          <span id="sync-status-text" class="sync-status-text hidden">Syncing...</span>
-        </div>
-      </div>
-      <div class="status-right" style="gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <div id="offline-tag" class="offline-tag hidden">OFFLINE</div>
-          <button class="status-icon-btn" aria-label="Notifications" id="notif-btn" style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <span id="notif-badge" class="hidden"
-              style="position: absolute; top: 0px; right: -2px; width: 10px; height: 10px; background: var(--accent-red); border-radius: 50%; border: 2.5px solid var(--bg-color); box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);"></span>
-          </button>
-        </div>
-        <div style="position: relative; display: flex; align-items: center; overflow: visible; z-index: 10000;">
-          <button class="status-icon-btn" aria-label="More Options" id="header-options-btn" style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;" onclick="const d = document.getElementById('header-options-dropdown'); if(d) d.classList.toggle('hidden'); if(event) event.stopPropagation();">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 4H3"></path>
-              <path d="M10 20l4-2"></path>
-              <path d="M18 9H6"></path>
-              <path d="M15 14H9"></path>
-            </svg>
-            <span id="filter-badge-header" class="hidden"
-              style="position: absolute; top: -1px; right: -1px; width: 8px; height: 8px; background: var(--accent-blue); border-radius: 50%; border: 1.5px solid var(--bg-color); box-shadow: 0 0 8px rgba(0, 162, 255, 0.4);"></span>
-          </button>
-          
-          <div id="header-options-dropdown" class="hidden glass" style="position: absolute; top: 48px; right: 0; z-index: 30000; width: 190px; border-radius: 16px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); text-align: left; border: 1px solid var(--border-color); background: rgba(13, 13, 13, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);" onclick="if(event) event.stopPropagation();">
-            <div id="opt-history-btn" style="padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); if(window.toggleHistoryMode) window.toggleHistoryMode(this);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /></svg>
-              <span>History</span>
-            </div>
-            <div id="opt-filter-btn" style="position: relative; padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); if(window.toggleFilterModal) window.toggleFilterModal();">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-              <span>Filter</span>
-              <span id="filter-badge-opt" class="hidden"
-                style="position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; background: var(--accent-blue); border-radius: 50%; box-shadow: 0 0 6px rgba(0, 162, 255, 0.4);"></span>
-            </div>
+      <div class="status-bar">
+        <div class="status-left">
+          <div id="status-terminal" class="status-terminal">
+            <span id="current-time">12:00 AM</span>
+            <span id="sync-status-text" class="sync-status-text hidden">Syncing...</span>
           </div>
         </div>
-        <button class="status-icon-btn profile-btn profile-avatar" aria-label="Profile" id="header-profile-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-        </button>
-      </div>
-    </div>
+        <div class="status-right" style="gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <div id="offline-tag" class="offline-tag hidden">OFFLINE</div>
+            <button class="status-icon-btn" aria-label="Notifications" id="notif-btn"
+              style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span id="notif-badge" class="hidden"
+                style="position: absolute; top: 0px; right: -2px; width: 10px; height: 10px; background: var(--accent-red); border-radius: 50%; border: 2.5px solid var(--bg-color); box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);"></span>
+            </button>
+          </div>
+          <div style="position: relative; display: flex; align-items: center; overflow: visible; z-index: 10000;">
+            <button class="status-icon-btn" aria-label="More Options" id="header-options-btn"
+              style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"
+              onclick="const d = document.getElementById('header-options-dropdown'); if(d) d.classList.toggle('hidden'); if(event) event.stopPropagation();">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 4H3"></path>
+                <path d="M10 20l4-2"></path>
+                <path d="M18 9H6"></path>
+                <path d="M15 14H9"></path>
+              </svg>
+              <span id="filter-badge-header" class="hidden"
+                style="position: absolute; top: -1px; right: -1px; width: 8px; height: 8px; background: var(--accent-blue); border-radius: 50%; border: 1.5px solid var(--bg-color); box-shadow: 0 0 8px rgba(0, 162, 255, 0.4);"></span>
+            </button>
 
-    <!-- Header Section -->
-    <header class="app-header">
-      <div class="header-left">
-        <h1 id="current-month">January, 2026</h1>
-        <div class="nav-controls">
-          <button id="prev-month" class="nav-arrow" aria-label="Previous Month">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="m15 18-6-6 6-6" />
+            <div id="header-options-dropdown" class="hidden glass"
+              style="position: absolute; top: 48px; right: 0; z-index: 30000; width: 190px; border-radius: 16px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); text-align: left; border: 1px solid var(--border-color); background: rgba(13, 13, 13, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);"
+              onclick="if(event) event.stopPropagation();">
+              <div id="opt-history-btn"
+                style="padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;"
+                onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+                onmouseout="this.style.background='transparent'"
+                onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); if(window.toggleHistoryMode) window.toggleHistoryMode(this);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)"
+                  stroke-width="2.2">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                </svg>
+                <span>History</span>
+              </div>
+              <div id="opt-filter-btn"
+                style="position: relative; padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.8rem; transition: background 0.2s; font-family: 'Roboto Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em;"
+                onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+                onmouseout="this.style.background='transparent'"
+                onclick="document.getElementById('header-options-dropdown').classList.add('hidden'); if(window.toggleFilterModal) window.toggleFilterModal();">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)"
+                  stroke-width="2.2">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <span>Filter</span>
+                <span id="filter-badge-opt" class="hidden"
+                  style="position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; background: var(--accent-blue); border-radius: 50%; box-shadow: 0 0 6px rgba(0, 162, 255, 0.4);"></span>
+              </div>
+            </div>
+          </div>
+          <button class="status-icon-btn profile-btn profile-avatar" aria-label="Profile" id="header-profile-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
             </svg>
-          </button>
-          <button id="today-btn" class="glass-btn">Today</button>
-          <button id="next-month" class="nav-arrow" aria-label="Next Month">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="m9 18 6-6-6-6" />
-            </svg>
+            <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
           </button>
         </div>
       </div>
-      <button id="add-sub-btn" class="add-btn" aria-label="Add Subscription">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
-    </header>
 
-    <!-- Calendar Body -->
-    <main class="calendar-container">
-      <div class="weekday-header">
-        <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
-      </div>
-      <div id="calendar-grid" class="calendar-grid">
-        <!-- Calendar cells will be injected here -->
-      </div>
+      <!-- Header Section -->
+      <header class="app-header">
+        <div class="header-left">
+          <h1 id="current-month">January, 2026</h1>
+          <div class="nav-controls">
+            <button id="prev-month" class="nav-arrow" aria-label="Previous Month">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <button id="today-btn" class="glass-btn">Today</button>
+            <button id="next-month" class="nav-arrow" aria-label="Next Month">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button id="add-sub-btn" class="add-btn" aria-label="Add Subscription">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      </header>
 
-      <!-- NEW: Sublify Sync Button within Calendar View -->
-      <div id="calendar-sync-banner-container" style="padding: 10px 15px 5px 15px; position: relative;">
-          <button id="calendar-smart-import-btn" class="smart-import-banner" aria-label="Sublify Sync" onclick="if(window.openSmartImport) window.openSmartImport();">
+      <!-- Calendar Body -->
+      <main class="calendar-container">
+        <div class="weekday-header">
+          <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid">
+          <!-- Calendar cells will be injected here -->
+        </div>
+
+        <!-- NEW: Sublify Sync Button within Calendar View -->
+        <div id="calendar-sync-banner-container" style="padding: 10px 15px 5px 15px; position: relative;">
+          <button id="calendar-smart-import-btn" class="smart-import-banner" aria-label="Sublify Sync"
+            onclick="if(window.openSmartImport) window.openSmartImport();">
             <div class="space-bg" style="border-radius: 25px;">
               <div class="stars"></div>
               <div class="stars2"></div>
               <div class="stars3"></div>
               <div class="shooting-star" style="top: -20px; right: 20%; animation-duration: 6s;"></div>
-              <div class="shooting-star" style="top: 50%; right: 40%; animation-duration: 9s; animation-delay: 3s;"></div>
+              <div class="shooting-star" style="top: 50%; right: 40%; animation-duration: 9s; animation-delay: 3s;">
+              </div>
             </div>
             <div class="smart-import-banner-logo">
               <img src="/sublify-logo.png" alt="Sublify">
@@ -486,80 +528,84 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             </div>
             <div id="calendar-sync-dynamic-icon" class="smart-import-banner-arrow"></div>
           </button>
-          
+
           <!-- Close Button for the Banner -->
-          <button id="close-calendar-sync-banner" 
-                  style="position: absolute; top: 14px; right: 19px; width: 18px; height: 18px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s;"
-                  onmouseover="this.style.background='rgba(255,50,80,0.4)'; this.style.color='#fff';"
-                  onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='rgba(255,255,255,0.7)';"
-                  onclick="event.stopPropagation(); document.getElementById('calendar-sync-banner-container').style.display='none';">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <button id="close-calendar-sync-banner"
+            style="position: absolute; top: 14px; right: 19px; width: 18px; height: 18px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.2s;"
+            onmouseover="this.style.background='rgba(255,50,80,0.4)'; this.style.color='#fff';"
+            onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='rgba(255,255,255,0.7)';"
+            onclick="event.stopPropagation(); document.getElementById('calendar-sync-banner-container').style.display='none';">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-      </div>
-
-      <div class="brand-footer" id="calendar-brand-footer">
-        <img src="/sublify-logo.png" class="brand-footer-logo" alt="Logo">
-        <span class="brand-footer-version">v1.2.9</span>
-      </div>
-    </main>
-
-
-
-    <!-- New iOS 26 Glassmorphic Bottom Bar Container -->
-    <div class="bottom-bar-container">
-      <!-- Top Legend Box (Rounded) -->
-      <div class="calendar-legend-box glass">
-        <div class="legend-labels">
-          <div class="legend-item"><span class="dot monthly"></span><span>MONTHLY</span></div>
-          <div class="legend-item"><span class="dot yearly"></span><span>YEARLY</span></div>
-          <div class="legend-item"><span class="dot trial"></span><span>TRIAL</span></div>
-          <div class="legend-item"><span class="dot one-time"></span><span>OTS</span></div>
-        </div>
-        <div class="sub-stats-text">
-          <span id="sub-count">0</span> SUBSCRIPTIONS / <span id="new-count">0</span> ACTIVE
-        </div>
-      </div>
-
-      <!-- Bottom Controls Row -->
-      <div class="bottom-controls-row">
-        <!-- Buttons Box (Left) -->
-        <div class="feature-buttons-container glass">
-          <button id="search-btn" class="feature-btn" title="Search">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
-          <button id="list-btn" class="feature-btn" title="List View">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
-            </svg>
-          </button>
-          <button id="star-btn" class="feature-btn" title="Star Mode">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z" />
-            </svg>
-          </button>
-          <button id="ai-btn" class="feature-btn" title="AI Analyst">
-            <span style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.45rem; letter-spacing: -0.05em; display: block; margin-top: -2px; opacity: 0.9;">S</span>
-          </button>
         </div>
 
-        <!-- Grand Total Box (Right) -->
-        <div class="grand-total-container glass" id="total-bar-trigger">
-          <span class="total-label">GRAND TOTAL:</span>
-          <span id="total-amount" class="total-amount">$0.00</span>
+        <div class="brand-footer" id="calendar-brand-footer">
+          <img src="/sublify-logo.png" class="brand-footer-logo" alt="Logo">
+          <span class="brand-footer-version">v1.2.9</span>
+        </div>
+      </main>
+
+
+
+      <!-- New iOS 26 Glassmorphic Bottom Bar Container -->
+      <div class="bottom-bar-container">
+        <!-- Top Legend Box (Rounded) -->
+        <div class="calendar-legend-box glass">
+          <div class="legend-labels">
+            <div class="legend-item"><span class="dot monthly"></span><span>MONTHLY</span></div>
+            <div class="legend-item"><span class="dot yearly"></span><span>YEARLY</span></div>
+            <div class="legend-item"><span class="dot trial"></span><span>TRIAL</span></div>
+            <div class="legend-item"><span class="dot one-time"></span><span>OTS</span></div>
+          </div>
+          <div class="sub-stats-text">
+            <span id="sub-count">0</span> SUBSCRIPTIONS / <span id="new-count">0</span> ACTIVE
+          </div>
+        </div>
+
+        <!-- Bottom Controls Row -->
+        <div class="bottom-controls-row">
+          <!-- Buttons Box (Left) -->
+          <div class="feature-buttons-container glass">
+            <button id="search-btn" class="feature-btn" title="Search">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </button>
+            <button id="list-btn" class="feature-btn" title="List View">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+            <button id="star-btn" class="feature-btn" title="Star Mode">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path
+                  d="m12 3 1.912 5.886L20.243 9l-5.115 4.316L17.033 21 12 16.718 6.967 21l1.905-7.684L3.757 9l6.331-.114L12 3z" />
+              </svg>
+            </button>
+            <button id="ai-btn" class="feature-btn" title="AI Analyst">
+              <span
+                style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.45rem; letter-spacing: -0.05em; display: block; margin-top: -2px; opacity: 0.9;">S</span>
+            </button>
+          </div>
+
+          <!-- Grand Total Box (Right) -->
+          <div class="grand-total-container glass" id="total-bar-trigger">
+            <span class="total-label">GRAND TOTAL:</span>
+            <span id="total-amount" class="total-amount">$0.00</span>
+          </div>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- Add Subscription Full-Page View -->
@@ -570,18 +616,23 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         <div class="add-page-header">
           <!-- Real "Back" Button (Matched to Chat Page size) -->
           <button id="close-modal" class="add-page-back-btn" aria-label="Go back">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
 
-          <h2 id="add-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase; text-align: center;">ADD SUBSCRIPTION</h2>
+          <h2 id="add-modal-title"
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase; text-align: center;">
+            ADD SUBSCRIPTION</h2>
 
           <!-- All Subscriptions Feature Button (Icon only) -->
-          <button id="open-all-subs-btn" class="status-icon-btn" aria-label="All Subscriptions" style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <button id="open-all-subs-btn" class="status-icon-btn" aria-label="All Subscriptions"
+            style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
               <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
               <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
@@ -600,20 +651,24 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <div class="platform-picker" id="platform-picker">
                   <button type="button" class="platform-trigger" id="platform-trigger">
                     <div id="selected-platform-icon" class="platform-icon-preview">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
                         <rect width="18" height="18" x="3" y="3" rx="2" />
                         <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
                       </svg>
                     </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </button>
                   <div class="platform-dropdown hidden" id="platform-dropdown">
                     <input type="text" id="platform-search" placeholder="Search apps..." autocomplete="off">
                     <div id="upload-custom-logo-btn" style="border-bottom: 1px solid var(--border-color);">
-                      <div style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 4px;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <div
+                        style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                           <polyline points="17 8 12 3 7 8" />
                           <line x1="12" y1="3" x2="12" y2="15" />
@@ -637,7 +692,8 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                   <button type="button" class="currency-trigger" id="currency-trigger">
                     <span id="currency-symbol">$</span>
                     <span id="currency-code">USD</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </button>
@@ -665,8 +721,124 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <button type="button" class="freq-btn" data-value="trial">Trial</button>
                 <button type="button" class="freq-btn active" data-value="one-time">One time</button>
               </div>
+
+              <!-- Monthly Options Section -->
+              <div id="monthly-options-section" class="form-group hidden"
+                style="margin-top: 15px; animation: slideDown 0.3s ease;">
+                <label>Monthly Selection</label>
+                <div class="freq-selector" id="monthly-recurring-selector">
+                  <button type="button" class="recur-btn" data-value="recurring">Recurring</button>
+                  <button type="button" class="recur-btn" data-value="non-recurring">Non-recurring</button>
+                </div>
+                <input type="hidden" id="sub-recurring-val" value="">
+                <p id="monthly-error" class="hidden"
+                  style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
+                  Please select a monthly option!
+                </p>
+              </div>
+
+              <!-- Trial Duration Section -->
+              <div id="trial-duration-section" class="form-group hidden"
+                style="margin-top: 15px; animation: slideDown 0.3s ease;">
+                <label>Trial Duration</label>
+                <div style="display: flex; gap: 10px;">
+                  <div class="custom-dropdown dropdown-up" id="trial-days-picker" style="flex: 1;">
+                    <button type="button" class="dropdown-trigger" id="trial-days-trigger" style="width: 100%;">
+                      <span id="trial-days-selected">Duration</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <div class="dropdown-content hidden" id="trial-days-dropdown">
+                      <ul id="trial-days-list">
+                        <li data-value="7" data-type="days">7 Days</li>
+                        <li data-value="14" data-type="days">14 Days</li>
+                        <li data-value="1" data-type="months">1 Month</li>
+                        <li data-value="3" data-type="months">3 Months</li>
+                        <li data-value="6" data-type="months">6 Months</li>
+                        <li data-value="12" data-type="months">12 Months</li>
+                      </ul>
+                    </div>
+                    <input type="hidden" id="trial-days-val" value="">
+                    <input type="hidden" id="trial-months-val" value="">
+                  </div>
+
+                  <button type="button" id="free-trial-btn" class="dropdown-trigger"
+                    style="flex: 1; justify-content: center; gap: 8px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    <span style="font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;">Free Trial</span>
+                  </button>
+                </div>
+                <p id="trial-error" class="hidden"
+                  style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
+                  Please select the trial duration!
+                </p>
+              </div>
+
               <input type="hidden" id="sub-type" value="one-time">
             </div>
+
+            <!-- Two-in-one Row: Category & Payment Method -->
+            <div style="display: flex; gap: 15px; margin-top: 15px;">
+              <!-- Category Selection -->
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label>Category</label>
+                <div class="category-selection-container" style="position: relative;">
+                  <button type="button" id="form-category-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div id="form-selected-category-icon" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; opacity: 0.8; font-size: 1.1rem;">
+                        📁
+                      </div>
+                      <span id="form-category-selected-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;">Not set</span>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4; flex-shrink: 0;">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+  
+                  <div class="dropdown-content hidden" id="form-category-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto; width: 180px;">
+                    <ul id="form-category-list">
+                      <!-- Categories will be injected here via JS -->
+                    </ul>
+                  </div>
+                  <input type="hidden" id="sub-category" value="Not set">
+                </div>
+              </div>
+  
+              <!-- Payment Method (Nexus Integration) -->
+              <div class="form-group" style="flex: 1; margin: 0;">
+                <label style="display: block; white-space: nowrap;">Payment Method <span style="opacity: 0.4; font-weight: 400; font-size: 0.65rem;">(Nexus)</span></label>
+                <div class="card-selection-container" style="position: relative;">
+                  <button type="button" id="card-select-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                      <div id="selected-card-status-icon" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; opacity: 0.8; flex-shrink: 0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                      </div>
+                      <span id="card-select-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Select Card</span>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4; flex-shrink: 0;">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+  
+                  <div class="dropdown-content hidden" id="card-select-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto; width: 180px; right: 0;">
+                    <ul id="nexus-cards-dropdown-list">
+                      <!-- Cards will be injected here via JS -->
+                      <li style="padding: 12px; opacity: 0.5; font-size: 0.75rem; pointer-events: none;">No cards found</li>
+                    </ul>
+                  </div>
+                  <input type="hidden" id="selected-card-id" value="">
+                </div>
+              </div>
+            </div>
+
 
             <!-- Monthly Options Section (Hidden by default) -->
             <div id="monthly-options-section" class="form-group hidden"
@@ -727,37 +899,13 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </p>
             </div>
 
-            <!-- Payment Method (Nexus Integration) -->
-            <div class="form-group" style="margin-top: 24px;">
-              <label style="margin-bottom: 8px; display: block;">Payment Method <span style="opacity: 0.4; font-weight: 400; font-size: 0.75rem;">(Nexus)</span></label>
-              <div class="card-selection-container" style="position: relative;">
-                <button type="button" id="card-select-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div id="selected-card-status-icon" style="width: 20px; height: 14px; display: flex; align-items: center; justify-content: center; opacity: 0.8;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                    </div>
-                    <span id="card-select-text" style="font-size: 0.85rem; font-weight: 500;">Select Nexus Card</span>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4;">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-
-                <div class="dropdown-content hidden" id="card-select-dropdown" style="z-index: 1000; bottom: auto; top: calc(100% + 8px); max-height: 250px; overflow-y: auto;">
-                  <ul id="nexus-cards-dropdown-list">
-                    <!-- Cards will be injected here via JS -->
-                    <li style="padding: 12px; opacity: 0.5; font-size: 0.75rem; pointer-events: none;">No cards found in Nexus</li>
-                  </ul>
-                </div>
-                <input type="hidden" id="selected-card-id" value="">
-              </div>
-            </div>
 
             <!-- Notes Section -->
 
             <div class="form-group" style="margin-top: 10px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label for="sub-notes" style="margin-bottom: 0;">Notes <span style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
+                <label for="sub-notes" style="margin-bottom: 0;">Notes <span
+                    style="opacity: 0.4; font-weight: 400;">(optional)</span></label>
                 <div class="notes-counter-container" style="display: flex; align-items: center; gap: 8px;">
                   <div class="progress-ring-container" style="position: relative; width: 20px; height: 20px;">
                     <svg width="20" height="20" viewBox="0 0 20 20">
@@ -793,15 +941,18 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         <!-- Page Header -->
         <div class="catalog-header">
           <button id="close-catalog" class="catalog-back-btn" aria-label="Go back">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
           <h2>ALL SUBSCRIPTIONS</h2>
-          <button id="catalog-plus-btn" class="status-icon-btn" aria-label="New Subscription" style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <button id="catalog-plus-btn" class="status-icon-btn" aria-label="New Subscription"
+            style="position: relative; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
@@ -816,14 +967,16 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         <!-- Sticky Search Bar at Bottom -->
         <div class="catalog-search-wrapper" id="catalog-search-bar">
           <div class="catalog-search-container">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="text" id="catalog-search-input" placeholder="Search subscriptions..." autocomplete="off">
           </div>
           <button id="cancel-catalog-search" class="catalog-search-close-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -868,13 +1021,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <div class="minimal-modal-header">
                   <h3>Export Options</h3>
                   <button id="close-export-choice" class="minimal-close-btn" aria-label="Close">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                   </button>
                 </div>
-                
+
                 <div class="export-minimal-list">
                   <button id="choice-csv" class="export-minimal-btn">
                     <span class="btn-label">Spreadsheet</span>
@@ -920,7 +1074,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                   </div>
                 </div>
                 <div class="statement-divider"
-                   style="height:1px; background:rgba(255,255,255,0.1); margin:25px 0; width:100%;"></div>
+                  style="height:1px; background:rgba(255,255,255,0.1); margin:25px 0; width:100%;"></div>
                 <div id="st-list" class="statement-items-list" style="display:flex; flex-direction:column; gap:12px;">
                   <!-- Items injected here -->
                 </div>
@@ -1014,20 +1168,24 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       <div class="profile-page-container">
         <div class="profile-page-header">
           <button id="close-profile" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Profile</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Profile</h2>
         </div>
 
         <div class="profile-page-scroll">
           <div class="profile-content" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
             <div class="profile-header-card" style="position: relative; overflow: hidden;">
               <!-- Stars Background -->
-              <div class="space-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; background: transparent;">
+              <div class="space-bg"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; background: transparent;">
                 <div class="stars"></div>
                 <div class="stars2"></div>
                 <div class="stars3"></div>
@@ -1043,9 +1201,12 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <img src="" class="hidden" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
               </div>
               <div class="profile-info" style="position: relative; z-index: 1;">
-                <h4 id="profile-name-text" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em;">...</h4>
+                <h4 id="profile-name-text"
+                  style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em;">
+                  ...</h4>
 
-                <p style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">PREMIUM MEMBER</p>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">
+                  PREMIUM MEMBER</p>
               </div>
             </div>
             <div id="profile-stats-container" class="profile-stats"
@@ -1053,43 +1214,67 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <!-- Stats injected via JS -->
             </div>
             <div class="profile-actions" style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
-              <button id="pricing-btn" class="glass-btn" style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
-                
-                <div class="space-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
+              <button id="pricing-btn" class="glass-btn"
+                style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+
+                <div class="space-bg"
+                  style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
                   <div class="stars"></div>
                   <div class="stars2"></div>
                   <div class="stars3"></div>
                 </div>
-                
-                <div style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
-                  <img src="/sublify-logo.png" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
+
+                <div
+                  style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
+                  <img src="/sublify-logo.png"
+                    style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
                 </div>
-                
-                <div style="z-index: 1; display: flex; align-items: center; justify-content: space-between; flex: 1; min-width: 0; gap: 10px;">
-                  <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
-                    <span style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade to Sovereign</span>
+
+                <div
+                  style="z-index: 1; display: flex; align-items: center; justify-content: space-between; flex: 1; min-width: 0; gap: 10px;">
+                  <div
+                    style="display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
+                    <span
+                      style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade
+                      to Sovereign</span>
                     <div style="height: 15px; position: relative; width: 100%;">
-                      <div id="sovereign-text-container" style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;"></div>
+                      <div id="sovereign-text-container"
+                        style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;">
+                      </div>
                     </div>
                   </div>
-                  <span style="background: #fff; color: #000; padding: 10px 22px; border-radius: 99px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; box-shadow: 0 4px 15px rgba(255,255,255,0.25);">Upgrade</span>
+                  <span
+                    style="background: #fff; color: #000; padding: 10px 22px; border-radius: 99px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; box-shadow: 0 4px 15px rgba(255,255,255,0.25);">Upgrade</span>
                 </div>
               </button>
               <style>
-                .sov-word { opacity: 0; display: inline-block; filter: blur(3px); transform: translateY(2px); animation: sovFadeIn 0.5s ease forwards; }
-                @keyframes sovFadeIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
+                .sov-word {
+                  opacity: 0;
+                  display: inline-block;
+                  filter: blur(3px);
+                  transform: translateY(2px);
+                  animation: sovFadeIn 0.5s ease forwards;
+                }
+
+                @keyframes sovFadeIn {
+                  to {
+                    opacity: 1;
+                    filter: blur(0);
+                    transform: translateY(0);
+                  }
+                }
               </style>
               <script>
                 setTimeout(() => {
                   const container = document.getElementById('sovereign-text-container');
                   const phrases = ["Unlock more features", "Break the limits", "Try new features early", "Have a real purpose"];
                   let phraseIdx = 0;
-                  
+
                   if (container) {
                     function animateTypography() {
                       container.innerHTML = '';
                       const words = phrases[phraseIdx].split(' ');
-                      
+
                       words.forEach((word, idx) => {
                         const span = document.createElement('span');
                         span.innerText = word;
@@ -1097,7 +1282,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                         span.style.animationDelay = `${idx * 0.15}s`;
                         container.appendChild(span);
                       });
-                      
+
                       const finishTime = 2200 + (words.length * 150);
                       setTimeout(() => {
                         container.style.transition = 'opacity 0.4s ease';
@@ -1116,32 +1301,65 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </script>
               <button id="account-settings-btn" class="glass-btn"
                 style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
                 Account Settings
               </button>
               <button id="app-settings-btn" class="glass-btn"
                 style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
                 App Settings
               </button>
 
               <button id="nexus-btn" class="glass-btn"
                 style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                 </svg>
                 Sublify Nexus
               </button>
 
+              <button id="categories-btn" class="glass-btn"
+                style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                Categories
+              </button>
+
               <button id="data-management-btn" class="glass-btn"
                 style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; text-align: left;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                  </path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
                 Data
               </button>
 
               <button id="logout-btn" class="glass-btn"
                 style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; color: var(--accent-red); background: rgba(255,51,51,0.06); border: 1px solid rgba(255,51,51,0.15); display: flex; align-items: center; gap: 14px; text-align: left;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
                 Logout
               </button>
 
@@ -1151,116 +1369,174 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       </div>
     </div>
 
-    <!-- App Settings Page (Converted from Modal) -->
-    <div id="app-settings-modal" class="profile-page hidden" style="z-index: 1600;">
-      <div class="profile-page-container">
-        <div class="profile-page-header">
-          <button id="close-app-settings" class="profile-page-back-btn">
+    <!-- Categories Page -->
+    <div id="categories-page" class="nexus-page hidden">
+      <div class="nexus-container">
+        <div class="nexus-header">
+          <button id="close-categories" class="nexus-back-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Preferences</h2>
+          <div class="nexus-title" style="margin-left: auto;">CATEGORIES</div>
         </div>
+
+        <div class="nexus-scroll">
+          <div class="nexus-card-slot" style="margin-top: 0;">
+            <div style="margin-bottom: 12px;">
+              <span style="font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em;">All Categories</span>
+            </div>
+            
+            <div id="categories-collection-box" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+               <!-- Category rows will be injected here -->
+            </div>
+
+            <div class="module-text-row" style="justify-content: space-between;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">Subscription Groups</span>
+                <span style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">Organize apps into custom layers</span>
+              </div>
+              <button id="add-category-sheet-btn" class="nexus-glow-btn" style="padding: 10px 18px;">
+                Add New
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Toast (Cloned from Nexus) -->
+      <div id="categories-toast" class="hidden" style="position: fixed; top: 40px; left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 10000; padding: 12px 24px; border-radius: 100px; display: flex; align-items: center; gap: 10px; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); opacity: 0; white-space: nowrap; pointer-events: none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span id="categories-toast-msg" style="color: #fff; font-size: 0.85rem; font-weight: 600;">Message</span>
+      </div>
+    </div>
+
+
+    <!-- App Settings Page (Converted from Modal) -->
+    <div id="app-settings-modal" class="profile-page hidden" style="z-index: 1600;">
+      <div class="profile-page-container">
+        <div class="profile-page-header">
+          <button id="close-app-settings" class="profile-page-back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back</span>
+          </button>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Preferences</h2>
+        </div>
+
 
         <div class="profile-page-scroll">
           <div class="profile-content"
             style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Notifications</label>
-            <label class="switch">
-              <input type="checkbox" id="notif-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Dark Mode</label>
-            <label class="switch">
-              <input type="checkbox" id="theme-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Automatic Exchange Rates</label>
-            <label class="switch">
-              <input type="checkbox" id="auto-currency-toggle" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
-            <label>Grand Total in Dollars ($)</label>
-            <label class="switch">
-              <input type="checkbox" id="usd-total-toggle">
-              <span class="slider round"></span>
-            </label>
-          </div>
-          
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Notifications</label>
+              <label class="switch">
+                <input type="checkbox" id="notif-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Dark Mode</label>
+              <label class="switch">
+                <input type="checkbox" id="theme-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Automatic Exchange Rates</label>
+              <label class="switch">
+                <input type="checkbox" id="auto-currency-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Grand Total in Dollars ($)</label>
+              <label class="switch">
+                <input type="checkbox" id="usd-total-toggle">
+                <span class="slider round"></span>
+              </label>
+            </div>
 
-          <div class="form-group">
-            <label>Time Zone</label>
-            <div class="custom-dropdown dropdown-up" id="timezone-picker">
-              <button type="button" class="dropdown-trigger" id="timezone-trigger">
-                <span id="timezone-selected">UTC+00:00 (GMT)</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div class="dropdown-content hidden" id="timezone-dropdown">
-                <input type="text" id="timezone-search" placeholder="Search time zones..." autocomplete="off"
-                  style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
-                <ul id="timezone-list" style="max-height: 200px; overflow-y: auto;">
-                  <!-- Injected via JS -->
-                </ul>
+
+            <div class="form-group">
+              <label>Time Zone</label>
+              <div class="custom-dropdown dropdown-up" id="timezone-picker">
+                <button type="button" class="dropdown-trigger" id="timezone-trigger">
+                  <span id="timezone-selected">UTC+00:00 (GMT)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="timezone-dropdown">
+                  <input type="text" id="timezone-search" placeholder="Search time zones..." autocomplete="off"
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
+                  <ul id="timezone-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-timezone" value="UTC+00:00">
               </div>
-              <input type="hidden" id="settings-timezone" value="UTC+00:00">
             </div>
-          </div>
-          <div class="form-group">
-            <label>Preferred Currency</label>
-            <div class="custom-dropdown dropdown-up" id="settings-currency-picker">
-              <button type="button" class="dropdown-trigger" id="settings-currency-trigger">
-                <span id="settings-currency-selected">USD ($)</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div class="dropdown-content hidden" id="settings-currency-dropdown">
-                <ul id="settings-currency-list">
-                  <!-- Injected via JS -->
-                </ul>
+            <div class="form-group">
+              <label>Preferred Currency</label>
+              <div class="custom-dropdown dropdown-up" id="settings-currency-picker">
+                <button type="button" class="dropdown-trigger" id="settings-currency-trigger">
+                  <span id="settings-currency-selected">USD ($)</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="settings-currency-dropdown">
+                  <ul id="settings-currency-list">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-pref-currency" value="USD">
               </div>
-              <input type="hidden" id="settings-pref-currency" value="USD">
             </div>
-          </div>
-          <div class="form-group">
-            <label>Preferred Notification Time</label>
-            <div class="custom-dropdown dropdown-up" id="notif-time-picker">
-              <button type="button" class="dropdown-trigger" id="notif-time-trigger">
-                <span id="notif-time-selected">09:00 AM</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-              <div class="dropdown-content hidden" id="notif-time-dropdown">
-                <input type="text" id="notif-time-search" placeholder="Search time (e.g. 1 PM)..." autocomplete="off"
-                  style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
-                <ul id="notif-time-list" style="max-height: 200px; overflow-y: auto;">
-                  <!-- Injected via JS -->
-                </ul>
+            <div class="form-group">
+              <label>Preferred Notification Time</label>
+              <div class="custom-dropdown dropdown-up" id="notif-time-picker">
+                <button type="button" class="dropdown-trigger" id="notif-time-trigger">
+                  <span id="notif-time-selected">09:00 AM</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="dropdown-content hidden" id="notif-time-dropdown">
+                  <input type="text" id="notif-time-search" placeholder="Search time (e.g. 1 PM)..." autocomplete="off"
+                    style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); outline: none;">
+                  <ul id="notif-time-list" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Injected via JS -->
+                  </ul>
+                </div>
+                <input type="hidden" id="settings-notif-time" value="09:00">
               </div>
-              <input type="hidden" id="settings-notif-time" value="09:00">
             </div>
-          </div>
-            
+
             <button id="test-native-notif-btn" class="glass-btn"
               style="width: 100%; padding: 16px 20px; border-radius: 16px; font-size: 0.95rem; font-weight: 600; background: rgba(80,250,123,0.05); border: 1px solid rgba(80,250,123,0.2); color: #50fa7b; display: flex; align-items: center; gap: 14px; text-align: left;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
               Send Test Notification
             </button>
             <div style="width: 100%;">
-              <button id="save-app-settings" class="submit-btn" style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
+              <button id="save-app-settings" class="submit-btn"
+                style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
             </div>
           </div>
         </div>
@@ -1272,114 +1548,180 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       <div class="profile-page-container">
         <div class="profile-page-header">
           <button id="close-data-modal" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Manage Data</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Manage Data</h2>
         </div>
 
         <div class="profile-page-scroll">
-          <div class="profile-content" style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
-          <div class="data-section-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 36px; height: 36px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-primary);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+          <div class="profile-content"
+            style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+            <div class="data-section-card"
+              style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div
+                  style="width: 36px; height: 36px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-primary);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <span
+                  style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Update
+                  Account Password</span>
               </div>
-              <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Update Account Password</span>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0;">Secure your account by updating your password. Minimum 10 characters required.</p>
-            
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
-              <input type="password" id="settings-new-password" placeholder="New Password" style="width: 100%; height: 48px; margin: 0; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border-color); border-radius: 14px; padding: 0 16px; color: var(--text-primary); font-size: 0.9rem; outline: none;">
-              <button type="button" id="settings-update-pass-btn" class="submit-btn" style="width: 100% !important; height: 48px; margin: 0; padding: 0 20px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; background: var(--text-primary); color: #000;">Update Password</button>
-            </div>
-            <p id="settings-pass-msg" class="hidden" style="font-size: 0.75rem; margin-top: 5px; padding-left: 2px; font-weight: 600;"></p>
-          </div>
+              <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0;">Secure your
+                account by updating your password. Minimum 10 characters required.</p>
 
-            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 10px; margin-bottom: -10px; opacity: 1;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff3333" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              <span style="font-size: 0.7rem; color: #ff3333; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-display);">Danger Zone</span>
-            </div>
-
-            <div class="data-section-card" style="background: rgba(255, 51, 51, 0.03); border: 1px solid rgba(255, 51, 51, 0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 36px; height: 36px; background: rgba(255, 51, 51, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent-red);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <input type="password" id="settings-new-password" placeholder="New Password"
+                  style="width: 100%; height: 48px; margin: 0; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border-color); border-radius: 14px; padding: 0 16px; color: var(--text-primary); font-size: 0.9rem; outline: none;">
+                <button type="button" id="settings-update-pass-btn" class="submit-btn"
+                  style="width: 100% !important; height: 48px; margin: 0; padding: 0 20px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; background: var(--text-primary); color: #000;">Update
+                  Password</button>
               </div>
-              <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Wipe Subscriptions</span>
+              <p id="settings-pass-msg" class="hidden"
+                style="font-size: 0.75rem; margin-top: 5px; padding-left: 2px; font-weight: 600;"></p>
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">This will permanently clear every subscription from your database. Your account and profile settings will remain untouched.</p>
-            <button id="delete-subs-permanently-btn" class="delete-subs-btn" style="margin-top: 5px;">
-              Delete All Subscriptions
-            </button>
-          </div>
 
-          <div class="data-section-card" style="background: rgba(255, 51, 51, 0.06); border: 1px solid rgba(255, 51, 51, 0.15); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 36px; height: 36px; background: rgba(255, 51, 51, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ff3333;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-2-2m-2-2l-2-2m-2-2l-2-2M3 3l2 2m2 2l2 2m2 2l2 2m2 2l2 2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </div>
-              <span style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: #fff;">Destroy Account</span>
+            <div
+              style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 10px; margin-bottom: -10px; opacity: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff3333" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                </path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span
+                style="font-size: 0.7rem; color: #ff3333; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-display);">Danger
+                Zone</span>
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">This will kill your entire account, profile, and all data immediately. This action is terminal and cannot be reversed.</p>
-            <button id="delete-account-btn" class="delete-subs-btn" style="background: rgba(255, 51, 51, 0.2); border-color: rgba(255, 51, 51, 0.3);">
-              Delete Account Permanently
-            </button>
-          </div>
-          
-          <div style="padding: 10px; text-align: center; opacity: 0.5;">
-             <p style="font-size: 0.75rem; color: var(--text-secondary); font-family: 'Roboto Mono', monospace;">DATA VERSION: 1.2.9</p>
+
+            <div class="data-section-card"
+              style="background: rgba(255, 51, 51, 0.03); border: 1px solid rgba(255, 51, 51, 0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 0;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div
+                  style="width: 36px; height: 36px; background: rgba(255, 51, 51, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent-red);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </div>
+                <span
+                  style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Wipe
+                  Subscriptions</span>
+              </div>
+              <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">This will permanently clear
+                every subscription from your database. Your account and profile settings will remain untouched.</p>
+              <button id="delete-subs-permanently-btn" class="delete-subs-btn" style="margin-top: 5px;">
+                Delete All Subscriptions
+              </button>
+            </div>
+
+            <div class="data-section-card"
+              style="background: rgba(255, 51, 51, 0.06); border: 1px solid rgba(255, 51, 51, 0.15); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div
+                  style="width: 36px; height: 36px; background: rgba(255, 51, 51, 0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ff3333;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 21l-2-2m-2-2l-2-2m-2-2l-2-2M3 3l2 2m2 2l2 2m2 2l2 2m2 2l2 2" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </div>
+                <span
+                  style="font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: #fff;">Destroy
+                  Account</span>
+              </div>
+              <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5;">This will kill your entire
+                account, profile, and all data immediately. This action is terminal and cannot be reversed.</p>
+              <button id="delete-account-btn" class="delete-subs-btn"
+                style="background: rgba(255, 51, 51, 0.2); border-color: rgba(255, 51, 51, 0.3);">
+                Delete Account Permanently
+              </button>
+            </div>
+
+            <div style="padding: 10px; text-align: center; opacity: 0.5;">
+              <p style="font-size: 0.75rem; color: var(--text-secondary); font-family: 'Roboto Mono', monospace;">DATA
+                VERSION: 1.2.9</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
     <!-- Delete ALL Subscriptions Confirmation Page (Converted to Bottom Sheet) -->
-    <div id="delete-subs-confirm-modal" class="profile-page hidden" style="z-index: 1800; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 1.0); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
+    <div id="delete-subs-confirm-modal" class="profile-page hidden"
+      style="z-index: 1800; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 1.0); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
       <div class="profile-page-container" style="position: relative;">
         <!-- Bottom Sheet Drag Handle Indicator -->
-        <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;"></div>
-        
-        <div id="delete-subs-drag-area" class="profile-page-header" style="border-radius: 32px 32px 0 0;  cursor: grab;">
+        <div
+          style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;">
+        </div>
+
+        <div id="delete-subs-drag-area" class="profile-page-header"
+          style="border-radius: 32px 32px 0 0;  cursor: grab;">
           <button id="close-subs-delete-confirm" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Wipe Data</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Wipe Data</h2>
         </div>
 
         <div class="profile-page-scroll">
-          <div class="profile-content" style=" padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
-            <div style="background: rgba(255,51,51,0.03); border: 1px solid rgba(255,51,51,0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;">
-              <div style="width: 48px; height: 48px; background: rgba(255,51,51,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-red); margin-bottom: 4px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+          <div class="profile-content"
+            style=" padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+            <div
+              style="background: rgba(255,51,51,0.03); border: 1px solid rgba(255,51,51,0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;">
+              <div
+                style="width: 48px; height: 48px; background: rgba(255,51,51,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-red); margin-bottom: 4px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                  </path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </div>
-              <p style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; font-family: var(--font-display);">Subscription Data Wipe</p>
-              <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0; max-width: 250px;">
+              <p
+                style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; font-family: var(--font-display);">
+                Subscription Data Wipe</p>
+              <p
+                style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0; max-width: 250px;">
                 All your records will be erased forever. Your account and settings will remain.
               </p>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Confirm with your email</label>
+              <label
+                style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Confirm
+                with your email</label>
               <input type="email" id="subs-delete-confirm-email" placeholder="Verification Email" autocomplete="off"
                 style="width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border-color); border-radius: 14px; color: var(--text-primary); outline: none; font-size: 0.9rem; transition: var(--transition);">
               <p id="subs-delete-email-error" class="hidden"
                 style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 Email mismatch detected.
               </p>
@@ -1399,13 +1741,16 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       <div class="profile-page-container">
         <div class="profile-page-header">
           <button id="close-account-settings" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Settings</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Settings</h2>
         </div>
 
         <div class="profile-page-scroll">
@@ -1413,7 +1758,8 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             <!-- Box One: Stars banner card (same as profile page) -->
             <div class="profile-header-card" style="position: relative; overflow: hidden; margin-bottom: 8px;">
               <!-- Stars Background -->
-              <div class="space-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; background: transparent;">
+              <div class="space-bg"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; background: transparent;">
                 <div class="stars"></div>
                 <div class="stars2"></div>
                 <div class="stars3"></div>
@@ -1436,8 +1782,12 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
 
               <!-- Name & Email -->
               <div class="profile-info" style="position: relative; z-index: 1;">
-                <h4 id="settings-banner-name" style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;"></h4>
-                <p id="settings-banner-email" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; margin: 0;"></p>
+                <h4 id="settings-banner-name"
+                  style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;">
+                </h4>
+                <p id="settings-banner-email"
+                  style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; margin: 0;">
+                </p>
               </div>
             </div>
             <input type="file" id="avatar-upload" class="hidden" accept="image/*">
@@ -1452,7 +1802,8 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                 <div class="custom-dropdown gender-picker" id="settings-gender-picker">
                   <button type="button" class="dropdown-trigger" id="settings-gender-trigger">
                     <span id="settings-gender-selected">Male</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2.5">
                       <path d="m6 9 6 6 6-6" />
                     </svg>
                   </button>
@@ -1474,14 +1825,16 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <div class="form-group">
                 <label>Date of Birth</label>
                 <input type="date" id="settings-dob">
-                <span id="dob-locked-msg" class="hidden" style="font-size: 0.65rem; color: var(--text-secondary);">Date of
+                <span id="dob-locked-msg" class="hidden" style="font-size: 0.65rem; color: var(--text-secondary);">Date
+                  of
                   birth cannot be changed</span>
               </div>
 
             </div>
 
             <div style="margin-top: 30px; width: 100%;">
-              <button type="submit" class="submit-btn" style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
+              <button type="submit" class="submit-btn"
+                style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
             </div>
           </form>
         </div>
@@ -1518,44 +1871,65 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
 
     <!-- Delete Account Confirmation Modal -->
     <!-- Delete Account Confirmation Page (Converted to Bottom Sheet) -->
-    <div id="delete-confirm-modal" class="profile-page hidden" style="z-index: 1800; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 1.0); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
+    <div id="delete-confirm-modal" class="profile-page hidden"
+      style="z-index: 1800; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 1.0); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
       <div class="profile-page-container" style="position: relative;">
         <!-- Bottom Sheet Drag Handle Indicator -->
-        <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;"></div>
-        
-        <div id="delete-account-drag-area" class="profile-page-header" style="border-radius: 32px 32px 0 0;  cursor: grab;">
+        <div
+          style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;">
+        </div>
+
+        <div id="delete-account-drag-area" class="profile-page-header"
+          style="border-radius: 32px 32px 0 0;  cursor: grab;">
           <button id="close-delete-confirm" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase; color: #fff;">Destroy Account</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase; color: #fff;">
+            Destroy Account</h2>
         </div>
 
         <div class="profile-page-scroll">
-          <div class="profile-content" style=" padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
-            <div style="background: rgba(255,51,51,0.03); border: 1px solid rgba(255,51,51,0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;">
-              <div style="width: 48px; height: 48px; background: rgba(255,51,51,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-red); margin-bottom: 4px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+          <div class="profile-content"
+            style=" padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+            <div
+              style="background: rgba(255,51,51,0.03); border: 1px solid rgba(255,51,51,0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;">
+              <div
+                style="width: 48px; height: 48px; background: rgba(255,51,51,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-red); margin-bottom: 4px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                  </path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </div>
-              <p style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; font-family: var(--font-display);">Terminal Destruction</p>
-              <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0; max-width: 250px;">
+              <p
+                style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; font-family: var(--font-display);">
+                Terminal Destruction</p>
+              <p
+                style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; margin: 0; max-width: 250px;">
                 Everything—records, settings, profile—will be erased forever. This cannot be undone.
               </p>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Confirm with your email</label>
+              <label
+                style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Confirm
+                with your email</label>
               <input type="email" id="delete-confirm-email" placeholder="Verification Email" autocomplete="off"
                 style="width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border-color); border-radius: 14px; color: var(--text-primary); outline: none; font-size: 0.9rem; transition: var(--transition);">
               <p id="delete-email-error" class="hidden"
                 style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 Email mismatch detected.
               </p>
@@ -1571,26 +1945,33 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
     </div>
 
     <!-- Avatar Selection Page (Converted from Modal -> Bottom Sheet) -->
-    <div id="avatar-modal" class="profile-page hidden" style="z-index: 1700; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 0.98); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
+    <div id="avatar-modal" class="profile-page hidden"
+      style="z-index: 1700; top: auto; bottom: 0; height: 60vh; border-radius: 32px 32px 0 0; background: rgba(13, 13, 13, 0.98); backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5);">
       <div class="profile-page-container" style="position: relative;">
         <!-- Bottom Sheet Drag Handle Indicator -->
-        <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;"></div>
-        
+        <div
+          style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; z-index: 200;">
+        </div>
+
         <div id="avatar-drag-area" class="profile-page-header" style="border-radius: 32px 32px 0 0;  cursor: grab;">
 
           <button id="close-avatar-modal" class="profile-page-back-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             <span>Back</span>
           </button>
-          <h2 style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">Select Picture</h2>
+          <h2
+            style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em; font-family: 'Inter', sans-serif; text-transform: uppercase;">
+            Select Picture</h2>
         </div>
 
         <div class="profile-page-scroll">
-          <div class="profile-content" style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 24px; width: 100%;">
-            
+          <div class="profile-content"
+            style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 24px; width: 100%;">
+
             <button id="upload-custom-btn" class="glass-btn"
               style="width: 100%; padding: 18px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: var(--text-primary); font-weight: 600; font-family: var(--font-main); transition: all 0.2s ease;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -1686,231 +2067,305 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
       </div>
     </div>
   </div>
-    <!-- Filter Modal (Premium Glass) -->
-    <div id="filter-modal" class="modal-overlay hidden">
-      <div class="modal-content glass" style="max-width: 400px; padding: 25px;">
-        <div class="modal-header">
-          <h2>Filter Dashboard</h2>
-          <button class="nav-arrow" onclick="window.toggleFilterModal(false)"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+  <!-- Filter Modal (Premium Glass) -->
+  <div id="filter-modal" class="modal-overlay hidden">
+    <div class="modal-content glass" style="max-width: 400px; padding: 25px;">
+      <div class="modal-header">
+        <h2>Filter Dashboard</h2>
+        <button class="nav-arrow" onclick="window.toggleFilterModal(false)"
+          style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
 
-        <div class="filter-body" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px;">
-          <!-- Platform Filter -->
-          <div class="filter-section">
-            <label class="filter-label">Platform Name</label>
-            <div class="platform-row">
-                <div class="platform-picker" id="filter-platform-picker">
-                  <button type="button" class="platform-trigger" id="filter-platform-trigger">
-                    <div id="filter-platform-icon" class="platform-icon-preview">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect width="18" height="18" x="3" y="3" rx="2" />
-                        <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
-                      </svg>
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div class="platform-dropdown hidden" id="filter-platform-dropdown">
-                    <input type="text" id="filter-platform-search" placeholder="Search apps..." autocomplete="off">
-                    <ul id="filter-platform-list"></ul>
-                  </div>
+      <div class="filter-body" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- Platform Filter -->
+        <div class="filter-section">
+          <label class="filter-label">Platform Name</label>
+          <div class="platform-row">
+            <div class="platform-picker" id="filter-platform-picker">
+              <button type="button" class="platform-trigger" id="filter-platform-trigger">
+                <div id="filter-platform-icon" class="platform-icon-preview">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+                  </svg>
                 </div>
-                <input type="text" id="filter-platform-name" placeholder="Search by name..." class="filter-input" style="flex: 1;">
-            </div>
-          </div>
-
-          <!-- Status Filter -->
-          <div class="filter-section">
-            <label class="filter-label">Status</label>
-            <div class="filter-tags-row">
-              <button type="button" class="filter-status-tag filter-tag active" data-value="all">All</button>
-              <button type="button" class="filter-status-tag filter-tag" data-value="paid">Paid</button>
-              <button type="button" class="filter-status-tag filter-tag" data-value="unpaid">Unpaid</button>
-              <button type="button" class="filter-status-tag filter-tag" data-value="active">Active</button>
-              <button type="button" class="filter-status-tag filter-tag" data-value="cancelled">Cancel</button>
-              <button type="button" class="filter-status-tag filter-tag" data-value="ended">Ended</button>
-            </div>
-          </div>
-
-          <!-- Frequency Filter -->
-          <div class="filter-section">
-            <label class="filter-label">Frequency</label>
-            <div class="filter-tags-row">
-              <button type="button" class="filter-freq-tag filter-tag active" data-value="all">All</button>
-              <button type="button" class="filter-freq-tag filter-tag" data-value="monthly">Monthly</button>
-              <button type="button" class="filter-freq-tag filter-tag" data-value="yearly">Yearly</button>
-              <button type="button" class="filter-freq-tag filter-tag" data-value="trial">Trial</button>
-            </div>
-          </div>
-
-          <!-- Currency Filter -->
-          <div class="filter-section">
-            <label class="filter-label">Currency</label>
-            <div class="currency-picker dropdown-up" id="filter-currency-picker" style="width: 100%;">
-              <button type="button" class="currency-trigger" id="filter-currency-trigger" style="width: 100%; justify-content: space-between; padding: 12px 14px;">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span id="filter-currency-symbol" style="color: var(--text-primary); font-weight: 700; width: 20px; text-align: center;">?</span>
-                    <span id="filter-currency-code" style="color: var(--text-secondary);">Any Currency</span>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </button>
-              <div class="currency-dropdown hidden" id="filter-currency-dropdown" style="width: 100%;">
-                <input type="text" id="filter-currency-search" placeholder="Search currency..." autocomplete="off">
-                <ul id="filter-currency-list"></ul>
+              <div class="platform-dropdown hidden" id="filter-platform-dropdown">
+                <input type="text" id="filter-platform-search" placeholder="Search apps..." autocomplete="off">
+                <ul id="filter-platform-list"></ul>
               </div>
             </div>
-            <input type="hidden" id="filter-currency-val" value="all">
+            <input type="text" id="filter-platform-name" placeholder="Search by name..." class="filter-input"
+              style="flex: 1;">
           </div>
         </div>
 
-        <div class="modal-footer" style="display: flex; gap: 12px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-          <button class="filter-btn-secondary" onclick="window.clearFilters()" style="flex: 1; font-size: 0.7rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(255, 255, 255, 0.1);">Clear</button>
-          <button class="filter-btn-primary" onclick="window.applyFilters()" style="flex: 1; font-size: 0.7rem; color: var(--accent-blue); background: rgba(0, 162, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(0, 162, 255, 0.1);">Apply View</button>
+        <!-- Status Filter -->
+        <div class="filter-section">
+          <label class="filter-label">Status</label>
+          <div class="filter-tags-row">
+            <button type="button" class="filter-status-tag filter-tag active" data-value="all">All</button>
+            <button type="button" class="filter-status-tag filter-tag" data-value="paid">Paid</button>
+            <button type="button" class="filter-status-tag filter-tag" data-value="unpaid">Unpaid</button>
+            <button type="button" class="filter-status-tag filter-tag" data-value="active">Active</button>
+            <button type="button" class="filter-status-tag filter-tag" data-value="cancelled">Cancel</button>
+            <button type="button" class="filter-status-tag filter-tag" data-value="ended">Ended</button>
+          </div>
+        </div>
+
+        <!-- Frequency Filter -->
+        <div class="filter-section">
+          <label class="filter-label">Frequency</label>
+          <div class="filter-tags-row">
+            <button type="button" class="filter-freq-tag filter-tag active" data-value="all">All</button>
+            <button type="button" class="filter-freq-tag filter-tag" data-value="monthly">Monthly</button>
+            <button type="button" class="filter-freq-tag filter-tag" data-value="yearly">Yearly</button>
+            <button type="button" class="filter-freq-tag filter-tag" data-value="trial">Trial</button>
+          </div>
+        </div>
+
+        <!-- Currency Filter -->
+        <div class="filter-section">
+          <label class="filter-label">Currency</label>
+          <div class="currency-picker dropdown-up" id="filter-currency-picker" style="width: 100%;">
+            <button type="button" class="currency-trigger" id="filter-currency-trigger"
+              style="width: 100%; justify-content: space-between; padding: 12px 14px;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="filter-currency-symbol"
+                  style="color: var(--text-primary); font-weight: 700; width: 20px; text-align: center;">?</span>
+                <span id="filter-currency-code" style="color: var(--text-secondary);">Any Currency</span>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div class="currency-dropdown hidden" id="filter-currency-dropdown" style="width: 100%;">
+              <input type="text" id="filter-currency-search" placeholder="Search currency..." autocomplete="off">
+              <ul id="filter-currency-list"></ul>
+            </div>
+          </div>
+          <input type="hidden" id="filter-currency-val" value="all">
         </div>
       </div>
+
+      <div class="modal-footer"
+        style="display: flex; gap: 12px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+        <button class="filter-btn-secondary" onclick="window.clearFilters()"
+          style="flex: 1; font-size: 0.7rem; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(255, 255, 255, 0.1);">Clear</button>
+        <button class="filter-btn-primary" onclick="window.applyFilters()"
+          style="flex: 1; font-size: 0.7rem; color: var(--accent-blue); background: rgba(0, 162, 255, 0.05); padding: 12px; border-radius: 12px; font-weight: 600; text-transform: uppercase; border: 1px solid rgba(0, 162, 255, 0.1);">Apply
+          View</button>
+      </div>
     </div>
+  </div>
 
-    <div id="tooltip" class="tooltip hidden"></div>
+  <div id="tooltip" class="tooltip hidden"></div>
 
-    <!-- Offline Action Modal -->
-    <div id="offline-modal" class="modal-overlay hidden">
-      <div class="modal-content glass" style="max-width: 350px; padding: 30px; text-align: center; border-radius: 28px;">
-        <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
-            <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+  <!-- Offline Action Modal -->
+  <div id="offline-modal" class="modal-overlay hidden">
+    <div class="modal-content glass" style="max-width: 350px; padding: 30px; text-align: center; border-radius: 28px;">
+      <div
+        style="width: 56px; height: 56px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.8;">
+          <path
+            d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+        </svg>
+      </div>
+      <h2 style="font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; margin-bottom: 12px;">
+        Selection Unavailable</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; margin-bottom: 24px;">
+        Changing your profile picture requires an active cloud connection to synchronize across your devices. Please
+        reconnect to continue.
+      </p>
+      <button id="close-offline-modal" class="submit-btn"
+        style="width: 100%; margin: 0; height: 48px; border-radius: 14px;">Understood</button>
+    </div>
+  </div>
+
+  <!-- Sublify Nexus Page -->
+  <div id="nexus-page" class="nexus-page hidden">
+    <div class="nexus-container">
+      <div class="nexus-header">
+        <button id="close-nexus" class="nexus-back-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
+          <span>Back</span>
+        </button>
+        <h2 class="nexus-title" style="margin-left: auto;">Sublify Nexus</h2>
+      </div>
+
+
+      <div class="nexus-scroll">
+        <div class="nexus-card-slot">
+          <div id="nexus-cards-list" class="nexus-cards-stack">
+            <!-- Initial placeholder or real cards go here -->
+            <div class="premium-physical-card placeholder-card">
+              <div class="card-chip"></div>
+              <div class="card-brand-logo">
+                <img src="/sublify-logo.png" alt="Sublify">
+              </div>
+              <div class="card-number">•••• •••• •••• 4242</div>
+              <div class="card-footer-info">
+                <div class="card-holder">Nexus Member</div>
+                <div class="card-expiry">12/29</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="module-text-row">
+            <div style="flex: 1;">
+              <h3 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff;">Physical Cards</h3>
+              <p style="margin: 2px 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 500;">Link
+                credit and debit cards to subscriptions.</p>
+            </div>
+            <button id="nexus-add-card-btn" class="nexus-glow-btn" style="white-space: nowrap; padding: 10px 18px;">Add
+              Card</button>
+          </div>
+
+          <div class="module-text-row"
+            style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+            <div style="flex: 1;">
+              <h3 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff;">Digital Wallets</h3>
+              <p style="margin: 2px 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 500;">Connect
+                PayPal, Apple Pay, or Bank.</p>
+            </div>
+            <button id="nexus-add-digital-btn" class="nexus-glow-btn"
+              style="white-space: nowrap; padding: 10px 18px; background: rgba(255,255,255,0.05); color: #fff;">Add
+              Digital</button>
+          </div>
         </div>
-        <h2 style="font-family: var(--font-display); font-size: 1.25rem; letter-spacing: -0.02em; margin-bottom: 12px;">Selection Unavailable</h2>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; margin-bottom: 24px;">
-          Changing your profile picture requires an active cloud connection to synchronize across your devices. Please reconnect to continue.
-        </p>
-        <button id="close-offline-modal" class="submit-btn" style="width: 100%; margin: 0; height: 48px; border-radius: 14px;">Understood</button>
+
+
+
+        <!-- Future placeholder -->
+        <div style="text-align: center; margin-top: 20px; opacity: 0.3;">
+          <p style="font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;">More Nexus Modules Coming Soon
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Nexus Card Detail Page -->
+  <div id="nexus-card-detail" class="nexus-page hidden" style="z-index: 5005;">
+    <div class="nexus-header"
+      style="background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); justify-content: space-between;">
+      <button id="close-card-detail" class="nexus-back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+      <h2 class="nexus-title" style="text-align: right; flex: 1;">Card Details</h2>
+    </div>
+
+    <!-- Hero Card Section (Static) -->
+    <div class="nexus-card-hero-section"
+      style="width: 100%; display: flex; justify-content: center; padding: 20px 0 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); z-index: 5;">
+
+      <div id="detail-card-container"
+        style="width: 80%; max-width: 400px; transform: scale(1.15); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <!-- Selected card will be clone here -->
       </div>
     </div>
 
-    <!-- Sublify Nexus Page -->
-    <div id="nexus-page" class="nexus-page hidden">
-        <div class="nexus-container">
-            <div class="nexus-header">
-                <button id="close-nexus" class="nexus-back-btn">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>Back</span>
-                </button>
-                <h2 class="nexus-title" style="margin-left: auto;">Sublify Nexus</h2>
-            </div>
-
-
-            <div class="nexus-scroll">
-                <div class="nexus-card-slot">
-                    <div id="nexus-cards-list" class="nexus-cards-stack">
-                        <!-- Initial placeholder or real cards go here -->
-                        <div class="premium-physical-card placeholder-card">
-                            <div class="card-chip"></div>
-                            <div class="card-brand-logo">
-                                <img src="/sublify-logo.png" alt="Sublify">
-                            </div>
-                            <div class="card-number">•••• •••• •••• 4242</div>
-                            <div class="card-footer-info">
-                                <div class="card-holder">Nexus Member</div>
-                                <div class="card-expiry">12/29</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="module-text-row">
-                        <div style="flex: 1;">
-                            <h3 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff;">Physical Cards</h3>
-                            <p style="margin: 2px 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 500;">Link credit and debit cards to subscriptions.</p>
-                        </div>
-                        <button id="nexus-add-card-btn" class="nexus-glow-btn" style="white-space: nowrap; padding: 10px 18px;">Add Card</button>
-                    </div>
-
-                    <div class="module-text-row" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
-                        <div style="flex: 1;">
-                            <h3 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff;">Digital Wallets</h3>
-                            <p style="margin: 2px 0 0; font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 500;">Connect PayPal, Apple Pay, or Bank.</p>
-                        </div>
-                        <button id="nexus-add-digital-btn" class="nexus-glow-btn" style="white-space: nowrap; padding: 10px 18px; background: rgba(255,255,255,0.05); color: #fff;">Add Digital</button>
-                    </div>
-                </div>
-
-
-
-                <!-- Future placeholder -->
-                <div style="text-align: center; margin-top: 20px; opacity: 0.3;">
-                    <p style="font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;">More Nexus Modules Coming Soon</p>
-                </div>
-            </div>
+    <!-- Scrollable Subscriptions Section -->
+    <div class="nexus-detail-body"
+      style="flex: 1; width: 100%; overflow-y: auto; padding: 0 20px 140px; position: relative; z-index: 1;">
+      <div id="card-linked-subs-section" style="width: 100%;">
+        <h3
+          style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 20px; font-weight: 700; opacity: 0.8;">
+          Linked Subscriptions</h3>
+        <div id="card-linked-subs-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Subscriptions will be injected here -->
+          <div
+            style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+            <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6;">No subscriptions linked to this
+              card</p>
+          </div>
         </div>
+      </div>
     </div>
 
 
+    <!-- Fixed Bottom Action Bar -->
+    <div class="nexus-detail-footer"
+      style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; border-radius: 0 0 32px 32px;">
+      <button id="delete-card-btn" class="glass-btn"
+        style="width: 100%; padding: 18px; border-radius: 20px; color: #ff453a; border-color: rgba(255, 69, 58, 0.2); font-weight: 700; background: rgba(255, 69, 58, 0.08); font-size: 1rem; letter-spacing: -0.01em; box-sizing: border-box;">
+        Remove from Nexus
+      </button>
+    </div>
+  </div>
+  
+  <!-- Category Explorer Page -->
+  <div id="category-explorer" class="nexus-page hidden" style="z-index: 5010;">
+    <div class="nexus-header" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); justify-content: space-between;">
+      <button id="close-category-explorer" class="nexus-back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+      <h2 class="nexus-title" id="explorer-category-name" style="text-align: right; flex: 1;">Category Name</h2>
+    </div>
 
-    <!-- Nexus Card Detail Page -->
-    <div id="nexus-card-detail" class="nexus-page hidden" style="z-index: 5005;">
-        <div class="nexus-header" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); justify-content: space-between;">
-            <button id="close-card-detail" class="nexus-back-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-            </button>
-            <h2 class="nexus-title" style="text-align: right; flex: 1;">Card Details</h2>
+    <!-- Hero Header Section -->
+    <div class="category-hero-section" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent); z-index: 5; gap: 15px;">
+        <div id="explorer-category-icon-box" style="width: 90px; height: 90px; border-radius: 28px; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 2.8rem; box-shadow: 0 25px 50px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.2s ease;">
+            📁
         </div>
-
-        <!-- Hero Card Section (Static) -->
-        <div class="nexus-card-hero-section" style="width: 100%; display: flex; justify-content: center; padding: 20px 0 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); z-index: 5;">
-
-            <div id="detail-card-container" style="width: 80%; max-width: 400px; transform: scale(1.15); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
-                <!-- Selected card will be clone here -->
-            </div>
-        </div>
-
-        <!-- Scrollable Subscriptions Section -->
-        <div class="nexus-detail-body" style="flex: 1; width: 100%; overflow-y: auto; padding: 0 20px 140px; position: relative; z-index: 1;">
-            <div id="card-linked-subs-section" style="width: 100%;">
-                <h3 style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 20px; font-weight: 700; opacity: 0.8;">Linked Subscriptions</h3>
-                <div id="card-linked-subs-list" style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- Subscriptions will be injected here -->
-                    <div style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
-                        <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6;">No subscriptions linked to this card</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Fixed Bottom Action Bar -->
-        <div class="nexus-detail-footer" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; border-radius: 0 0 32px 32px;">
-             <button id="delete-card-btn" class="glass-btn" style="width: 100%; padding: 18px; border-radius: 20px; color: #ff453a; border-color: rgba(255, 69, 58, 0.2); font-weight: 700; background: rgba(255, 69, 58, 0.08); font-size: 1rem; letter-spacing: -0.01em; box-sizing: border-box;">
-                Remove from Nexus
-            </button>
+        <div style="text-align: center;">
+            <p id="explorer-category-stats" style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.6; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 800;">0 SUBSCRIPTIONS</p>
         </div>
     </div>
 
-
-
-
-
-    <!-- Nexus Custom Toast -->
-
-    <div id="nexus-toast" class="hidden" style="position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 10000; background: rgba(255, 59, 48, 0.9); backdrop-filter: blur(10px); color: #fff; padding: 12px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: none; transition: all 0.3s ease;">
-        <span id="nexus-toast-msg"></span>
+    <!-- Scrollable Subscriptions Section -->
+    <div class="nexus-detail-body" style="flex: 1; width: 100%; overflow-y: auto; padding: 0 20px 140px; position: relative; z-index: 1;">
+      <div id="category-subs-section" style="width: 100%;">
+        <h3 style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 20px; font-weight: 700; opacity: 0.8; padding-left: 5px;">
+          Categorized Subscriptions</h3>
+        <div id="category-subs-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Subscriptions will be injected here -->
+        </div>
+      </div>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
+    <!-- Fixed Bottom Action Bar -->
+    <div class="nexus-detail-footer" id="category-explorer-footer" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; border-radius: 0 0 32px 32px;">
+      <button id="delete-category-explorer-btn" class="glass-btn" style="width: 100%; padding: 18px; border-radius: 20px; color: #ff453a; border-color: rgba(255, 69, 58, 0.2); font-weight: 700; background: rgba(255, 69, 58, 0.08); font-size: 1rem; letter-spacing: -0.01em; box-sizing: border-box;">
+        Remove Category
+      </button>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- Nexus Custom Toast -->
+
+  <div id="nexus-toast" class="hidden"
+    style="position: fixed; top: 50px; left: 50%; transform: translateX(-50%); z-index: 10000; background: rgba(255, 59, 48, 0.9); backdrop-filter: blur(10px); color: #fff; padding: 12px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: none; transition: all 0.3s ease;">
+    <span id="nexus-toast-msg"></span>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
 
 
 </body>

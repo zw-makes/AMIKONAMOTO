@@ -66,7 +66,8 @@ export async function initNexus() {
     setTimeout(() => renderStoredCards(), 1500);
 }
 
-async function getStoredCards() {
+window.getStoredCards = getStoredCards;
+export async function getStoredCards() {
     try {
         // 1. INSTANT OFFLINE LOAD: No blocking auth checks!
         const cache = localStorage.getItem('nexus_cards');

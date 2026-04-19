@@ -158,7 +158,7 @@
 /* The Hero Card Container (Pricing Card Vibe) */
 .detail-premium-card {
   width: 340px; 
-  height: 480px; 
+  height: 550px; 
   flex-shrink: 0; /* Important for scroll track */
   scroll-snap-align: center;
   scroll-snap-stop: always; /* Force snap on every card (Fixes iOS stuck issue) */

@@ -1,5 +1,5 @@
 
-const CATALOG_DATA = [
+export const CATALOG_DATA = [
   {
     category: 'Streaming',
     apps: [
@@ -153,6 +153,41 @@ export function initCatalog() {
   const cancelSearchBtn = document.getElementById('cancel-catalog-search');
 
   if (!catalogModal || !openCatalogBtn || !catalogGrid) return;
+
+  window.CATALOG_DATA = CATALOG_DATA;
+
+  // Global helper to find category for an app
+  window.getCategoryForApp = (name, domain) => {
+    const lowerName = name?.toLowerCase() || '';
+    const lowerDomain = domain?.toLowerCase() || '';
+
+    // 1. Search in Catalog
+    for (const group of CATALOG_DATA) {
+        let targetCat = group.category;
+        // Map catalog names to our new DEFAULT_CATEGORIES names if different
+        if (targetCat === 'AI Tools') targetCat = 'AI Tools';
+        if (targetCat === 'Creative') targetCat = 'Creative';
+        if (targetCat === 'Development') targetCat = 'Development';
+        if (targetCat === 'Productivity') targetCat = 'Productivity';
+        if (targetCat === 'Streaming') targetCat = 'Streaming';
+
+        const found = group.apps.find(app => 
+            app.name.toLowerCase() === lowerName || 
+            app.domain.toLowerCase() === lowerDomain ||
+            (lowerDomain && app.domain.toLowerCase().includes(lowerDomain))
+        );
+        if (found) return targetCat;
+    }
+
+    // 2. Keyword Fallbacks
+    if (lowerName.includes('music') || lowerName.includes('spotify') || lowerName.includes('audio') || lowerName.includes('soundcloud') || lowerName.includes('tidal')) return 'Music & Audio';
+    if (lowerName.includes('stream') || lowerName.includes('netflix') || lowerName.includes('video') || lowerName.includes('hbo') || lowerName.includes('plus') || lowerName.includes('disney')) return 'Streaming';
+    if (lowerName.includes('gpt') || lowerName.includes('ai ') || lowerName.includes('bot') || lowerName.includes('openai') || lowerName.includes('claude') || lowerName.includes('gemini') || lowerName.includes('perplexity')) return 'AI Tools';
+    if (lowerName.includes('game') || lowerName.includes('play') || lowerName.includes('xbox') || lowerName.includes('psn') || lowerName.includes('nintendo') || lowerName.includes('steam')) return 'Gaming';
+    if (lowerName.includes('node') || lowerName.includes('api') || lowerName.includes('dev') || lowerName.includes('host') || lowerName.includes('cloud') || lowerName.includes('sever')) return 'Development';
+    
+    return 'Not set';
+  };
 
   // Global helper for the Smart Import banner button injected inside the grid
   window.catalogModalCloseAndOpenSmartImport = () => {

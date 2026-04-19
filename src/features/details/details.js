@@ -273,7 +273,7 @@ function updateActiveDot(index) {
 
 function createCardHTML(s, viewDate = new Date()) {
     const domain = window.getDomain ? window.getDomain(s) : (s.domain || 'example.com');
-    const price = `${s.symbol || '$'}${s.price.toFixed(2)}`;
+    const price = `${s.symbol || '$'}${(parseFloat(s.price) || 0).toFixed(2)}`;
     
     // Real world today
     const today = new Date();
@@ -337,6 +337,22 @@ function createCardHTML(s, viewDate = new Date()) {
     // Currency Exchange (if applicable)
     const exchangeInfo = s.displayPrice && s.displayPrice.includes('→') ? s.displayPrice : null;
 
+    // --- Category Healing & Icon Recovery ---
+    const allCats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
+    let displayCatName = s.category || 'Not set';
+    let catIcon = '📁';
+
+    const foundCat = allCats.find(c => c.name === displayCatName);
+    if (foundCat) {
+        catIcon = foundCat.icon || '📁';
+    } else if (displayCatName !== 'Not set') {
+        // Self-heal: category was deleted
+        displayCatName = 'Not set';
+        catIcon = '📁';
+        s.category = 'Not set';
+        if (window.saveToSupabase) window.saveToSupabase(s);
+    }
+
     return `
         <div class="detail-premium-card" data-sub-id="${s.id}">
             <div class="detail-bg-text">${(s.name || 'INFO').toUpperCase()}</div>
@@ -372,6 +388,13 @@ function createCardHTML(s, viewDate = new Date()) {
                 <div class="info-card">
                     <span class="info-label">Frequency</span>
                     <span class="info-value">${s.type.charAt(0).toUpperCase() + s.type.slice(1)}</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label">Category</span>
+                    <span class="info-value" style="display: flex; align-items: center; gap: 6px;">
+                        <span>${catIcon}</span>
+                        ${displayCatName}
+                    </span>
                 </div>
                 <div class="info-card">
                     <span class="info-label">Current Status</span>

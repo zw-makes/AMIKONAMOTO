@@ -35,6 +35,8 @@ import './features/data-management/data-management.css';
 import { initDataManagement } from './features/data-management/data-management.js';
 import { initNexus, populatePaymentCardsDropdown } from './features/nexus/nexus.js';
 window.populatePaymentCardsDropdown = populatePaymentCardsDropdown;
+import { initCategories, getCategories } from './features/categories/categories.js';
+window.getCategories = getCategories;
 
 
 
@@ -106,6 +108,9 @@ initDataManagement();
 
 // Initialize Nexus
 initNexus();
+
+// Initialize Categories
+initCategories();
 
 
 // --- Sublify Sync Calendar Banner Logic ---
@@ -683,6 +688,28 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
       }
     }
   }
+
+  // --- AUTO-CATEGORIZATION ---
+  if (window.getCategoryForApp) {
+    const name = document.getElementById('sub-name').value;
+    const domain = document.getElementById('sub-domain').value;
+    const suggestedCat = window.getCategoryForApp(name, domain);
+    
+    if (suggestedCat && suggestedCat !== 'Not set') {
+        const catInput = document.getElementById('sub-category');
+        const catText = document.getElementById('form-category-selected-text');
+        const catIcon = document.getElementById('form-selected-category-icon');
+        
+        if (catInput) catInput.value = suggestedCat;
+        if (catText) catText.textContent = suggestedCat;
+        
+        if (catIcon) {
+            const allCats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
+            const found = allCats.find(c => c.name === suggestedCat);
+            catIcon.textContent = found ? (found.icon || '📁') : '📁';
+        }
+    }
+  }
 });
 
 document.addEventListener('click', (e) => {
@@ -905,6 +932,7 @@ async function saveToSupabase(sub) {
     recurring: sub.recurring,
     startDate: sub.startDate,
     notes: sub.notes || null,
+    category: sub.category || 'Not set',
     nexus_card_id: sub.nexus_card_id || null,
     user_id: currentUser.id
   };
@@ -933,6 +961,44 @@ async function saveToSupabase(sub) {
     return null;
   }
 }
+
+async function saveProfileToSupabase() {
+  if (!currentUser || !userProfile) return;
+  
+  // 1. Update Local Cache IMMEDIATELY
+  safeSetLocalStorage(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+
+  try {
+    // 2. Attempt network sync
+    if (!navigator.onLine) {
+      console.log('[Profile] Offline — queuing sync');
+      if (window.queueOperation) {
+        window.queueOperation('upsert_profile', userProfile);
+        if (window.showNexusToast || window.showCategoriesToast) {
+           const toast = window.showNexusToast || window.showCategoriesToast;
+           toast('Saved locally — will sync when online.', false);
+        }
+      }
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({ id: currentUser.id, ...userProfile });
+
+    if (error) {
+      console.warn('[Profile] Sync failed, queuing...', error.message);
+      if (window.queueOperation) window.queueOperation('upsert_profile', userProfile);
+      return;
+    }
+    
+    console.log('[Supabase] Profile synced successfully');
+  } catch (err) {
+    console.error('[Supabase] Profile sync error:', err.message);
+    if (window.queueOperation) window.queueOperation('upsert_profile', userProfile);
+  }
+}
+window.saveProfileToSupabase = saveProfileToSupabase;
 
 async function removeFromSupabase(id) {
   try {
@@ -989,6 +1055,9 @@ window.getDisplaySubscriptions = function() {
             const filterCurr = f.currency.toUpperCase();
             if (subCurr !== filterCurr) return false;
         }
+
+        // Filter by category
+        if (f.category && f.category !== 'all' && s.category !== f.category) return false;
 
         // Filter by status
         if (f.status && f.status !== 'all') {
@@ -1416,7 +1485,8 @@ async function showTooltip(e, subs) {
   }
 
   tooltip.innerHTML = subs.map(s => {
-    const originalPriceStr = `${s.symbol || '$'}${s.price.toFixed(2)}`;
+    const priceNum = parseFloat(s.price) || 0;
+    const originalPriceStr = `${s.symbol || '$'}${priceNum.toFixed(2)}`;
     let price = s.price;
     let symbol = s.symbol || '$';
     let displayPrice = originalPriceStr;
@@ -1661,76 +1731,136 @@ window.deleteSubscription = async function (id, e) {
   updateStats();
   if (!document.getElementById('stats-modal').classList.contains('hidden')) {
     showMonthlyBreakdown(currentStatsFilter);
-  } else {
     dayDetailModal.classList.add('hidden');
   }
 };
 
-window.editSubscription = function (id) {
+window.editSubscription = function (id, e) {
+  if (e) e.stopPropagation();
   const sub = subscriptions.find(s => s.id === id);
   if (!sub) return;
 
-  // Fill the add-modal with sub data
-  document.getElementById('sub-name').value = sub.name;
-  document.getElementById('sub-price').value = sub.price;
-  document.getElementById('sub-date').value = sub.date;
-  document.getElementById('sub-domain').value = sub.domain;
-  document.getElementById('sub-currency').value = sub.currency || 'USD';
-  document.getElementById('sub-currency-symbol').value = sub.symbol || '$';
-  document.getElementById('currency-symbol').textContent = sub.symbol || '$';
-  document.getElementById('currency-code').textContent = sub.currency || 'USD';
+  console.log('[Edit] Loading subscription:', sub);
+
+  window.editingSubId = sub.id;
+  const addModal = document.getElementById('add-modal');
+  
+  // Set Modal Title
+  const titleEl = addModal.querySelector('h2');
+  if (titleEl) {
+    titleEl.innerHTML = `
+      <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">EDIT</span>
+      <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
+    `;
+  }
+
+  // Basic Fields
+  document.getElementById('sub-name').value = sub.name || '';
+  document.getElementById('sub-price').value = sub.price || '0';
+  document.getElementById('sub-date').value = sub.date || '';
+  document.getElementById('sub-domain').value = sub.domain || '';
+  document.getElementById('sub-notes').value = sub.notes || '';
+  
+  // Currency
+  const currency = sub.currency || 'USD';
+  const symbol = sub.symbol || '$';
+  document.getElementById('sub-currency').value = currency;
+  document.getElementById('sub-currency-symbol').value = symbol;
+  document.getElementById('currency-symbol').textContent = symbol;
+  document.getElementById('currency-code').textContent = currency;
 
   // Platform icon
-  updatePlatformIcon(sub.domain);
+  if (window.updatePlatformIcon) window.updatePlatformIcon(sub.domain);
 
-  // Freq
-  document.getElementById('sub-type').value = sub.type;
+  // Frequency logic
+  document.getElementById('sub-type').value = sub.type || 'monthly';
   document.querySelectorAll('.freq-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.value === sub.type);
   });
 
-  // Notes
-  document.getElementById('sub-notes').value = sub.notes || '';
-
-  // Handle specific frequency sections
   const monthlySec = document.getElementById('monthly-options-section');
   const trialSec = document.getElementById('trial-duration-section');
-  monthlySec.classList.add('hidden');
-  trialSec.classList.add('hidden');
+  if (monthlySec) monthlySec.classList.add('hidden');
+  if (trialSec) trialSec.classList.add('hidden');
 
-  if (sub.type === 'monthly') {
+  if (sub.type === 'monthly' && monthlySec) {
     monthlySec.classList.remove('hidden');
-    document.getElementById('sub-recurring-val').value = sub.recurring;
+    document.getElementById('sub-recurring-val').value = sub.recurring || '';
     document.querySelectorAll('.recur-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.value === sub.recurring);
     });
-  } else if (sub.type === 'trial') {
-    trialSec.classList.remove('remove'); // Typo fix from existing code if any, or just ensuring visible
+  } else if (sub.type === 'trial' && trialSec) {
     trialSec.classList.remove('hidden');
     document.getElementById('trial-days-val').value = sub.trialDays || '';
     document.getElementById('trial-months-val').value = sub.trialMonths || '';
-    if (sub.trialDays) {
-      document.getElementById('trial-days-selected').innerText = `${sub.trialDays} Days`;
-    } else if (sub.trialMonths) {
-      document.getElementById('trial-days-selected').innerText = sub.trialMonths === '1' || sub.trialMonths === 1 ? '1 Month' : `${sub.trialMonths} Months`;
-    } else {
-      document.getElementById('trial-days-selected').innerText = 'Duration';
+    const trialLabel = document.getElementById('trial-days-selected');
+    if (trialLabel) {
+        if (sub.trialDays) trialLabel.innerText = `${sub.trialDays} Days`;
+        else if (sub.trialMonths) trialLabel.innerText = `${sub.trialMonths} Month${sub.trialMonths > 1 ? 's' : ''}`;
+        else trialLabel.innerText = 'Duration';
     }
   }
 
-  // Set as editing (temp property for the form submit)
-  window.editingSubId = id;
-  
-  // Show modal
-  const addModal = document.getElementById('add-modal');
-  addModal.querySelector('h2').innerHTML = `
-    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">EDIT</span>
-    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
-  `;
+  // --- PROTECTED CATEGORY RECOVERY ---
+  try {
+    const allCats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
+    let subCatName = sub.category || 'Not set';
+    
+    // Self-Healing: If category no longer exists, reset to Not set
+    const found = allCats.find(c => c.name === subCatName);
+    if (!found && subCatName !== 'Not set') {
+        console.log(`[Edit] Healing ghost category: ${subCatName} -> Not set`);
+        subCatName = 'Not set';
+        sub.category = 'Not set';
+        if (window.saveToSupabase) window.saveToSupabase(sub);
+    }
+
+    const catInput = document.getElementById('sub-category');
+    const catText = document.getElementById('form-category-selected-text');
+    const catIcon = document.getElementById('form-selected-category-icon');
+
+    if (catInput) catInput.value = subCatName;
+    if (catText) catText.textContent = subCatName;
+    if (catIcon) catIcon.textContent = found ? (found.icon || '📁') : '👤';
+  } catch (catErr) {
+    console.warn('[Edit] Category recovery failed:', catErr);
+  }
+
+  // --- PROTECTED NEXUS CARD RECOVERY ---
+  try {
+    const cardId = sub.nexus_card_id;
+    const cardIdInput = document.getElementById('selected-card-id');
+    const cardText = document.getElementById('card-select-text');
+    const cardIcon = document.getElementById('selected-card-status-icon');
+
+    if (cardId && cardId !== 'null') {
+      if (cardIdInput) cardIdInput.value = cardId;
+      const getCards = window.getStoredCards || (window.getStoredCardsFromCache);
+      if (getCards) {
+          Promise.resolve(getCards()).then(cards => {
+              const card = cards.find(c => c.id === cardId);
+              if (card && cardText) {
+                  const isPhys = ['visa','mastercard','amex','discover','jcb','debit','credit'].includes(card.type);
+                  cardText.textContent = `Nexus: ${isPhys ? '•••• ' + card.last4 : card.name || card.type}`;
+                  if (cardIcon) {
+                      const logoMap = { 'visa': 'https://cdn.simpleicons.org/visa/white', 'mastercard': 'https://cdn.simpleicons.org/mastercard/white', 'amex': 'https://cdn.simpleicons.org/americanexpress/white', 'discover': 'https://cdn.simpleicons.org/discover/white', 'jcb': 'https://cdn.simpleicons.org/jcb/white', 'paypal': 'https://cdn.simpleicons.org/paypal/white', 'applepay': 'https://cdn.simpleicons.org/applepay/white', 'googlepay': 'https://cdn.simpleicons.org/googlepay/white' };
+                      cardIcon.innerHTML = `<img src="${logoMap[card.type] || '/sublify-logo.png'}" style="width: 100%; height: 100%; object-fit: contain;">`;
+                  }
+              }
+          });
+      }
+    } else {
+      if (cardIdInput) cardIdInput.value = '';
+      if (cardText) cardText.textContent = 'Associate Nexus Card';
+      if (cardIcon) cardIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>';
+    }
+  } catch (cardErr) {
+    console.warn('[Edit] Nexus recovery failed:', cardErr);
+  }
+
+  if (window.updateNotesCounter) window.updateNotesCounter();
   addModal.classList.remove('hidden');
-  
-  // Close the detail views if open
-  document.getElementById('day-detail-modal').classList.add('hidden');
+  if (window.dayDetailModal) window.dayDetailModal.classList.add('hidden');
 };
 
 window.stopSubscription = function (id, e) {
@@ -2033,7 +2163,7 @@ async function updateStats() {
   }
 
   activeSubs.forEach(s => {
-    let price = s.price; // Show full price impact, not average commitment
+    let price = parseFloat(s.price) || 0; // Show full price impact, not average commitment
 
     // Background math uses mathRates
     if (mathRates) {
@@ -2199,6 +2329,55 @@ document.querySelectorAll('.freq-btn').forEach(btn => {
   });
 });
 
+// --- Category Picker for Form ---
+function initFormCategoryPicker() {
+    const trigger = document.getElementById('form-category-trigger');
+    const dropdown = document.getElementById('form-category-dropdown');
+    const list = document.getElementById('form-category-list');
+    const hiddenInput = document.getElementById('sub-category');
+    const selectedIcon = document.getElementById('form-selected-category-icon');
+    const selectedText = document.getElementById('form-category-selected-text');
+
+    if (!trigger || !dropdown || !list) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            renderFormCategoryList();
+        }
+    });
+
+    window.selectFormCategory = function(name, icon) {
+        hiddenInput.value = name;
+        selectedIcon.textContent = icon;
+        selectedText.textContent = name;
+        dropdown.classList.add('hidden');
+    };
+
+    function renderFormCategoryList() {
+        const categories = window.getCategories ? window.getCategories() : [];
+        if (categories.length === 0) return;
+
+        list.innerHTML = categories.map(cat => `
+            <li onclick="window.selectFormCategory('${cat.name}', '${cat.icon || '📁'}')" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;">
+                <span style="font-size: 1.1rem;">${cat.icon || '📁'}</span>
+                <span style="font-size: 0.85rem; font-weight: 500;">${cat.name}</span>
+            </li>
+        `).join('');
+    }
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+        if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Call it
+initFormCategoryPicker();
+
 // Monthly Recurring Logic
 document.querySelectorAll('.recur-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -2314,6 +2493,7 @@ subForm.addEventListener('submit', (e) => {
   const trialDays = type === 'trial' ? document.getElementById('trial-days-val').value : null;
   const trialMonths = type === 'trial' ? document.getElementById('trial-months-val').value : null;
   const recurring = type === 'monthly' ? document.getElementById('sub-recurring-val').value : null;
+  const subCategory = document.getElementById('sub-category').value || 'Not set';
   const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), subDate).toISOString();
 
   const subNotes = document.getElementById('sub-notes').value.trim();
@@ -2333,6 +2513,7 @@ subForm.addEventListener('submit', (e) => {
       subObj.recurring = recurring;
       subObj.startDate = startDate;
       subObj.notes = subNotes;
+      subObj.category = subCategory;
       subObj.nexus_card_id = document.getElementById('selected-card-id').value || null;
       // Keep existing properties like color, stopped, paid
 
@@ -2355,6 +2536,7 @@ subForm.addEventListener('submit', (e) => {
       recurring: recurring,
       startDate: startDate,
       notes: subNotes,
+      category: subCategory,
       nexus_card_id: document.getElementById('selected-card-id').value || null,
       paid: false
 
@@ -2539,7 +2721,7 @@ const updateProfilePageData = async () => {
         <span style="font-size: 0.5rem; color: var(--text-dim); opacity: 0.6; display: block; margin-top: 2px;">${currentMonthName}</span>
      </div>
      <div style="flex: 1; text-align: center; border-left: 1px solid var(--border-color);">
-        <span style="display: block; font-size: 1.1rem; font-weight: 700;">${finalSymbol}${totalMonthlyImpact.toFixed(2)}</span>
+        <span style="display: block; font-size: 1.1rem; font-weight: 700;">${finalSymbol}${(parseFloat(totalMonthlyImpact) || 0).toFixed(2)}</span>
         <span style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Per Month</span>
         <span style="font-size: 0.5rem; color: var(--text-dim); opacity: 0.6; display: block; margin-top: 2px;">${currentMonthName}</span>
      </div>
@@ -3534,7 +3716,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     }
 
     // Use full price for modal lists, not averaged commitment
-    let itemPrice = s.price;
+    let itemPrice = parseFloat(s.price) || 0;
     const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)} `;
     let convertedMathPrice = itemPrice;
     let symbol = s.symbol || '$';
@@ -4323,69 +4505,11 @@ window.showSubDetail = function(id, e) {
   }
 };
 
-window.editSubscription = function(id, e) {
-  if (e) e.stopPropagation();
-  const sub = subscriptions.find(s => s.id === id);
-  if (!sub) return;
-
-  window.editingSubId = sub.id;
-  addModal.querySelector('h2').innerHTML = `
-    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">EDIT</span>
-    <span style="font-size: 1.1rem; font-weight: 300; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">SUBSCRIPTION</span>
-  `;
-  
-  // Fill form
-  document.getElementById('sub-name').value = sub.name;
-  document.getElementById('sub-price').value = sub.price;
-  document.getElementById('sub-date').value = sub.date;
-  document.getElementById('sub-domain').value = sub.domain || '';
-  document.getElementById('sub-type').value = sub.type;
-  document.getElementById('sub-notes').value = sub.notes || '';
-  
-  updatePlatformIcon(sub.domain);
-  selectCurrency(sub.currency || 'USD', sub.symbol || '$');
-  
-  // Update freq buttons
-  document.querySelectorAll('.freq-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.value === sub.type);
-  });
-  
-  // Show/hide sections based on type
-  const trialSection = document.getElementById('trial-duration-section');
-  const monthlySection = document.getElementById('monthly-options-section');
-  
-  trialSection.classList.add('hidden');
-  monthlySection.classList.add('hidden');
-  
-  if (sub.type === 'trial') {
-    trialSection.classList.remove('hidden');
-    document.getElementById('trial-days-val').value = sub.trialDays || '';
-    document.getElementById('trial-months-val').value = sub.trialMonths || '';
-    if (sub.trialDays) {
-      document.getElementById('trial-days-selected').innerText = `${sub.trialDays} Days`;
-    } else if (sub.trialMonths) {
-      document.getElementById('trial-days-selected').innerText = sub.trialMonths === '1' || sub.trialMonths === 1 ? '1 Month' : `${sub.trialMonths} Months`;
-    } else {
-      document.getElementById('trial-days-selected').innerText = 'Duration';
-    }
-  } else if (sub.type === 'monthly') {
-    monthlySection.classList.remove('hidden');
-    document.getElementById('sub-recurring-val').value = sub.recurring || '';
-    document.querySelectorAll('.recur-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.value === sub.recurring);
-    });
-  }
-  
-  updateNotesCounter();
-  addModal.classList.remove('hidden');
-  
-  // Close the detail modal if it's open
-  dayDetailModal.classList.add('hidden');
-};
 
 function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {
   let itemPrice = s.price;
-  const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)}`;
+  const priceNum = parseFloat(itemPrice) || 0;
+  const originalPriceStr = `${s.symbol || '$'}${priceNum.toFixed(2)}`;
   if (useAutoCurrency && displayRates && (s.currency || 'USD') !== targetCurrency) {
     const convertedDisplayPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, displayRates);
     const targetSymbol = (CURRENCIES.find(c => c.code === targetCurrency) || {}).symbol || '$';
