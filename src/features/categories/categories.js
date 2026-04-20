@@ -663,7 +663,7 @@ export function toggleCategoryExplorer(show, catName = '') {
     }
 }
 
-async function renderCategorySubscriptions(catName) {
+export async function renderCategorySubscriptions(catName) {
     const nameEl = document.getElementById('explorer-category-name');
     const iconBox = document.getElementById('explorer-category-icon-box');
     const statsEl = document.getElementById('explorer-category-stats');
@@ -680,17 +680,19 @@ async function renderCategorySubscriptions(catName) {
     }
 
     if (!list) return;
-    list.innerHTML = `<p style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 20px;">Fetching subscriptions...</p>`;
 
-    try {
-        const { data: subs, error } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('category', catName)
-            .order('name', { ascending: true });
+    // --- Optimization: Use local data for instant "Live" feel ---
+    let subsToRender = [];
+    if (window.subscriptions && window.subscriptions.length > 0) {
+        subsToRender = window.subscriptions
+            .filter(s => {
+                const sCat = s.category || 'Not set';
+                return sCat === catName;
+            })
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
 
-        if (error) throw error;
-
+    const renderList = (subs) => {
         if (statsEl) statsEl.textContent = `${subs.length} SUBSCRIPTION${subs.length !== 1 ? 'S' : ''}`;
 
         if (!subs || subs.length === 0) {
@@ -705,7 +707,6 @@ async function renderCategorySubscriptions(catName) {
         list.innerHTML = `
             <div class="latest-list" style="margin-top: 0; padding: 0;">
                 ${subs.map(sub => {
-                    // Use report data for display formatting if available
                     const report = window.lastReport || { total: 0, symbol: '$', currency: 'USD', rates: null };
                     const settings = (window.userProfile && window.userProfile.settings) || {};
                     const targetCurrency = report.currency;
@@ -713,29 +714,40 @@ async function renderCategorySubscriptions(catName) {
                     const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
 
                     let displayPrice = `${sub.symbol || '$'}${parseFloat(sub.price).toFixed(2)}`;
-                    
                     if (useAutoCurrency && report.rates && (sub.currency || 'USD') !== targetCurrency) {
                         const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(sub.price), sub.currency || 'USD', targetCurrency, report.rates) : parseFloat(sub.price);
                         displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
                     }
 
                     sub.displayPrice = displayPrice;
-
-                    if (window.getSwipeTemplate) {
-                        return window.getSwipeTemplate(sub);
-                    }
-                    return `<div style="padding: 10px; color: white;">${sub.name}</div>`;
+                    return window.getSwipeTemplate ? window.getSwipeTemplate(sub) : `<div style="padding: 10px; color: white;">${sub.name}</div>`;
                 }).join('')}
             </div>
         `;
 
-        // Attach Swipe Events if available
-        if (window.attachSwipeEvents) {
-            window.attachSwipeEvents();
-        }
+        if (window.attachSwipeEvents) window.attachSwipeEvents();
+    };
 
-    } catch (err) {
-        console.error('[Explorer] Error:', err);
-        list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Failed to load subscriptions</p>`;
+    // If we have local data, render it immediately
+    if (subsToRender.length > 0) {
+        renderList(subsToRender);
+    } else {
+        // Fallback to Remote Fetch if local is empty or hasn't loaded
+        list.innerHTML = `<p style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 20px;">Fetching subscriptions...</p>`;
+        try {
+            const { data: subs, error } = await supabase
+                .from('subscriptions')
+                .select('*')
+                .eq('category', catName)
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+            renderList(subs || []);
+        } catch (err) {
+            console.error('[Explorer] Error:', err);
+            list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Failed to load subscriptions</p>`;
+        }
     }
 }
+
+window.renderCategorySubscriptions = renderCategorySubscriptions;

@@ -336,7 +336,10 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
                     </div>
                     <div class="detail-price" style="text-align:right;">
                         <div style="font-weight:700; font-size:0.9rem;">${displayPrice}</div>
-                        <div style="font-size:0.55rem; color:var(--text-dim); opacity:0.7;">Started: ${new Date(s.startDate).toISOString().split('T')[0]}</div>
+                        <div style="font-size:0.55rem; color:var(--text-dim); opacity:0.7;">Started: ${(() => {
+                            const d = new Date(s.startDate);
+                            return isNaN(d.getTime()) ? 'N/A' : d.toISOString().split('T')[0];
+                        })()}</div>
                     </div>
                 </div>
                 `;
@@ -564,7 +567,11 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
 }
 
 function calculateSubTimeline(s) {
-    const startObj = new Date(s.startDate);
+    let startObj = new Date(s.startDate);
+    if (isNaN(startObj.getTime())) {
+        // Fallback for corrupt or missing data to prevent app crashes
+        startObj = new Date();
+    }
     const start = startObj.toISOString().split('T')[0];
     let end = 'N/A';
 

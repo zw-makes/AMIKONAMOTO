@@ -350,10 +350,15 @@ const PAID_AVATARS = [
 // --- State Management ---
 let currentUser = null;
 let subscriptions = [];
+const cachedInitial = localStorage.getItem('subscriptions');
+if (cachedInitial) {
+  try { subscriptions = JSON.parse(cachedInitial); } catch(e) {}
+}
 let currentDate = new Date();
 let currentStatsFilter = 'all';
 
-window.isInitialDataLoading = true;
+// Set initial loading state based on local cache availability
+window.isInitialDataLoading = !localStorage.getItem('subscriptions');
 
 Object.defineProperty(window, 'subscriptions', {
   get: () => subscriptions,
@@ -791,18 +796,19 @@ async function fetchExchangeRates(base = 'USD') {
 }
 
 function getConvertedPrice(price, fromCurrency, targetCurrency, rates) {
-  if (!rates) return price;
+  const p = parseFloat(price) || 0;
+  if (!rates) return p;
   const from = fromCurrency || 'USD';
-  if (from === targetCurrency) return price;
+  if (from === targetCurrency) return p;
   
   // If the rates object is directly the from-to link
-  if (typeof rates === 'number') return price * rates;
+  if (typeof rates === 'number') return p * rates;
   
   // Standard extraction from rates object
   const rate = rates[from];
-  if (rate !== undefined) return price / rate;
+  if (rate !== undefined) return p / rate;
   
-  return price;
+  return p;
 }
 window.fetchExchangeRates = fetchExchangeRates;
 window.getConvertedPrice = getConvertedPrice;
@@ -840,8 +846,19 @@ function updateTime() {
 }
 
 window.loadSubscriptions = loadSubscriptions;
-async function loadSubscriptions() {
+let lastFetchTimestamp = 0;
+
+async function loadSubscriptions(force = false) {
   if (!currentUser) return;
+
+  // Faster than Light: If we just fetched successfully in the last 15 seconds, skip background sync
+  // unless explicitly forced (e.g. manual refresh or auth change).
+  const now = Date.now();
+  if (!force && lastFetchTimestamp && (now - lastFetchTimestamp < 15000)) {
+     console.log('[Sync] Skipping redundant background sync (speed optimization)');
+     return;
+  }
+  lastFetchTimestamp = now;
 
   const footTotal = document.getElementById('total-amount');
   // Show a subtle skeleton bar instead of a jarring "Loading..." text
@@ -1726,7 +1743,7 @@ window.showDayDetails = async function (day, subs) {
     let sum = 0;
     let allPaid = activeList.length > 0;
     activeList.forEach(s => {
-      let p = s.price;
+      let p = parseFloat(s.price) || 0;
       if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
       if (!s.stopped) sum += p;
       if (!window.isSubPaid(s, currentDate)) allPaid = false;
@@ -1808,6 +1825,13 @@ window.deleteSubscription = async function (id, e) {
   if (!document.getElementById('stats-modal').classList.contains('hidden')) {
     showMonthlyBreakdown(currentStatsFilter);
     dayDetailModal.classList.add('hidden');
+  }
+
+  // Refresh Category Explorer if open
+  const explorer = document.getElementById('category-explorer');
+  if (explorer && !explorer.classList.contains('hidden')) {
+      const catName = document.getElementById('explorer-category-name')?.textContent;
+      if (catName && window.renderCategorySubscriptions) window.renderCategorySubscriptions(catName);
   }
 };
 
@@ -1958,31 +1982,24 @@ window.stopSubscription = function (id, e) {
     // Background sync (Optimistic)
     saveToSupabase(sub);
 
-    renderCalendar();
-
-    // Re-render the correct view so they see the state change
-    updateStats();
-    if (!document.getElementById('stats-modal').classList.contains('hidden')) {
-      showMonthlyBreakdown(currentStatsFilter);
-    } else {
-      const daySubs = subscriptions.filter(s => s.date === sub.date);
-      showDayDetails(sub.date, daySubs);
-    }
-
-    // Keep the action 'revealed' after refreshing
+    // 1. Smoothly slide back to center for a premium feel
     const wrapper = document.getElementById(`sw-wrapper-${id}`);
     if (wrapper) {
       const item = wrapper.querySelector('.detail-item');
-      item.style.transition = 'none';
-      item.style.transform = 'translateX(-120px)';
-      wrapper.querySelector('.stop').style.opacity = '1';
+      item.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      item.style.transform = 'translateX(0)';
+      // Hide buttons as it closes
+      const stopBtn = wrapper.querySelector('.stop');
+      if (stopBtn) stopBtn.style.opacity = '0';
     }
 
-    // Refresh Nexus Detail if open
-    const nexusDetail = document.getElementById('nexus-card-detail');
-    if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
-        window.renderLinkedSubscriptions(window._currentNexusCardId);
-    }
+    // 2. Refresh everything after animation completes
+    setTimeout(() => {
+      if (window.refreshUniversalUI) window.refreshUniversalUI(id);
+    }, 300);
+
+    // 3. Trigger sync in background
+    if (window.saveToSupabase) window.saveToSupabase(sub);
   }
 };
 
@@ -2054,35 +2071,32 @@ window.togglePaidStatus = async function (id, e, forceStatus = null) {
       });
     }
 
-    // Save profile settings to persist paid history
-    await supabase.from('profiles').update({ settings: userProfile.settings }).eq('id', currentUser.id);
-    
-    // Background sync for subscription object if changed (non-recurring)
-    if (sub.recurring !== 'recurring') {
-      saveToSupabase(sub);
-    }
-    
-    renderCalendar();
-    updateStats();
-    if (!document.getElementById('stats-modal').classList.contains('hidden')) {
-      showMonthlyBreakdown(currentStatsFilter);
-    } else {
-      const daySubs = subscriptions.filter(s => s.date === sub.date);
-      showDayDetails(sub.date, daySubs);
-    }
+    // 1. Smoothly slide back to center for a premium feel
     const wrapper = document.getElementById(`sw-wrapper-${id}`);
     if (wrapper) {
       const item = wrapper.querySelector('.detail-item');
-      item.style.transition = 'none';
-      item.style.transform = 'translateX(-105px)';
-      wrapper.querySelector('.paid').style.opacity = '1';
-      wrapper.querySelector('.freq').style.opacity = '1';
+      item.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      item.style.transform = 'translateX(0)';
+      // Hide buttons as it closes
+      const paidBtn = wrapper.querySelector('.paid');
+      const freqBtn = wrapper.querySelector('.freq');
+      if (paidBtn) paidBtn.style.opacity = '0';
+      if (freqBtn) freqBtn.style.opacity = '0';
     }
 
-    // Refresh Nexus Detail if open
-    const nexusDetail = document.getElementById('nexus-card-detail');
-    if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
-        window.renderLinkedSubscriptions(window._currentNexusCardId);
+    // 2. Refresh everything after animation
+    setTimeout(() => {
+      if (window.refreshUniversalUI) window.refreshUniversalUI(id);
+    }, 300);
+    // --- 2. BACKGROUND PERSISTENCE ---
+    if (window.saveProfileToSupabase) {
+      window.saveProfileToSupabase();
+    } else {
+      supabase.from('profiles').update({ settings: userProfile.settings }).eq('id', currentUser.id);
+    }
+
+    if (sub.recurring !== 'recurring') {
+      saveToSupabase(sub);
     }
   }
 };
@@ -2310,6 +2324,41 @@ async function updateStats() {
     window.renderListView();
   }
 }
+
+window.refreshUniversalUI = async function (targetSubId = null) {
+  renderCalendar();
+  await updateStats(); // Ensures totals and rates are ready
+
+  const isStatsOpen = !document.getElementById('stats-modal').classList.contains('hidden');
+  const explorer = document.getElementById('category-explorer');
+  const isExplorerOpen = explorer && !explorer.classList.contains('hidden');
+  const isDayDetailOpen = !document.getElementById('day-detail-modal')?.classList.contains('hidden');
+  const nexusDetail = document.getElementById('nexus-card-detail');
+  const isNexusDetailOpen = nexusDetail && !nexusDetail.classList.contains('hidden');
+
+  if (isStatsOpen && window.showMonthlyBreakdown) {
+    window.showMonthlyBreakdown(window.currentStatsFilter || 'all');
+  }
+
+  if (isExplorerOpen) {
+    const catName = document.getElementById('explorer-category-name')?.textContent;
+    if (catName && window.renderCategorySubscriptions) {
+      await window.renderCategorySubscriptions(catName);
+    }
+  }
+
+  if (isNexusDetailOpen && window.renderLinkedSubscriptions) {
+    window.renderLinkedSubscriptions(window._currentNexusCardId);
+  }
+
+  if (isDayDetailOpen && targetSubId && window.showDayDetails) {
+    const sub = subscriptions.find(s => s.id === targetSubId);
+    if (sub) {
+      const daySubs = (window.subscriptions || []).filter(s => s.date === sub.date);
+      window.showDayDetails(sub.date, daySubs);
+    }
+  }
+};
 
 // --- Event Listeners ---
 
@@ -2634,6 +2683,20 @@ subForm.addEventListener('submit', (e) => {
 
   // Update UI Instantly
   renderCalendar();
+  updateStats();
+
+  // Refresh Category Explorer if open
+  const explorer = document.getElementById('category-explorer');
+  if (explorer && !explorer.classList.contains('hidden')) {
+      const catName = document.getElementById('explorer-category-name')?.textContent;
+      if (catName && window.renderCategorySubscriptions) window.renderCategorySubscriptions(catName);
+  }
+
+  // Refresh Nexus Detail if open
+  const nexusDetail = document.getElementById('nexus-card-detail');
+  if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
+      window.renderLinkedSubscriptions(window._currentNexusCardId);
+  }
   addModal.classList.add('hidden');
   document.getElementById('trial-duration-section').classList.add('hidden');
   document.getElementById('monthly-options-section').classList.add('hidden');
@@ -3283,7 +3346,7 @@ setTimeout(() => {
           }
            
            updateProfileUI();
-           loadSubscriptions();
+           loadSubscriptions(true);
            return;
         }
       } catch (e) {
@@ -3380,7 +3443,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
             renderSkeletonCalendar();
           }
         }
-        loadSubscriptions();
+        loadSubscriptions(true);
         return;
       }
 
@@ -3475,7 +3538,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           }
           
           // Load subscriptions (it has its own cache-first logic)
-          loadSubscriptions();
+          loadSubscriptions(true);
         }
       }
     };
@@ -3644,7 +3707,7 @@ document.getElementById('onboard-finish').addEventListener('click', async () => 
 
 function showWelcomeScreen() {
   if (!userProfile) {
-    loadSubscriptions();
+    loadSubscriptions(true);
     return;
   }
 
@@ -3668,7 +3731,7 @@ function showWelcomeScreen() {
   // Auto-advance to main app after 2.5s
   setTimeout(() => {
     welcomeScreen.classList.add('hidden');
-    loadSubscriptions();
+    loadSubscriptions(true);
   }, 2600);
 }
 
@@ -3900,7 +3963,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       }
 
       if (!skip) {
-        let p = s.price;
+        let p = parseFloat(s.price) || 0;
         if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
         sumAll += p;
         if (s.stopped) sumStopped += p;
@@ -3933,7 +3996,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       }
 
       if (!skip) {
-        let p = s.price;
+        let p = parseFloat(s.price) || 0;
         if (mathRates) p = getConvertedPrice(p, s.currency || 'USD', targetCurrency, mathRates);
         sumStopped += p;
       }
@@ -4420,8 +4483,11 @@ function renderAvatars() {
 window.selectAvatar = function (url) {
   userProfile.avatar_url = url;
   updateProfileUI();
-  renderAvatars();
-  avatarModal.classList.add('hidden');
+  if (typeof renderAvatars === 'function') renderAvatars();
+  if (window.saveProfileToSupabase) window.saveProfileToSupabase();
+  
+  const avatarModal = document.getElementById('avatar-modal');
+  if (avatarModal) avatarModal.classList.add('hidden');
 };
 
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
@@ -4527,48 +4593,33 @@ settingsForm.addEventListener('submit', async (e) => {
   const updatedDob = document.getElementById('settings-dob').value;
 
   try {
-    // Apply local changes immediately
+    // 1. Update Local Memory
     userProfile.name = updatedName;
     userProfile.gender = updatedGender;
-    userProfile.dob = updatedDob;
+    userProfile.dob = updatedDob || null; // Explicit null for SQL consistency
+    userProfile.onboarding_completed = true;
 
-    localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+    // 2. Sync Everywhere (Local, Cache, Cloud) Instantly
+    if (window.saveProfileToSupabase) {
+      await window.saveProfileToSupabase();
+    } else {
+       // Fallback if utility not found
+       localStorage.setItem(`profile_${currentUser.id}`, JSON.stringify(userProfile));
+       await supabase.from('profiles').upsert({ id: currentUser.id, ...userProfile });
+    }
 
-    // Update main profile name display
+    // 3. UI Feedback
     const infoH4 = document.querySelector('.profile-info h4');
     if (infoH4) infoH4.innerText = updatedName.toUpperCase();
-
-    showToast('Settings saved successfully! 🎉');
-
-    // Convert empty string to null for Postgres DATE compatibility
-    const safeDob = updatedDob || null;
-
-    // Then attempt cloud sync
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
-        id: currentUser.id,
-        name: updatedName,
-        gender: updatedGender,
-        dob: safeDob, // Send null instead of ""
-        avatar_url: userProfile.avatar_url, // Save Base64 or URL
-        onboarding_completed: true // Ensure flag is set on manual save too
-      });
-
-    if (error) throw error;
+    updateProfileUI();
+    
+    showToast('Profile updated & synced! 🎉');
   } catch (err) {
-    console.error('Error saving settings to cloud:', err.message);
-    // Network assumed failed -> queue operation
-    queueOperation('upsert_profile', {
-        name: updatedName,
-        gender: updatedGender,
-        dob: updatedDob || null, // Atomic safety for queue as well
-        avatar_url: userProfile.avatar_url,
-        onboarding_completed: true
-    });
+    console.error('Profile sync failed:', err.message);
+    showToast('Saved locally — will sync when online. 📶', 'info');
   } finally {
     submitBtn.disabled = false;
-    submitBtn.innerText = 'Save Settings';
+    submitBtn.innerText = 'Save Changes';
   }
 });
 
@@ -4680,6 +4731,19 @@ updateTime();
 setInterval(updateTime, 30000); // Update every 30s
 renderHeader();
 loadSubscriptions(); // Fetch from Supabase
+
+// --- Background/Foreground Speed of Light Sync ---
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        // Only trigger if it's been at least 1 minute since last fetch to avoid spamming
+        // but ensure data is "fresh" when coming back from background.
+        if (now - lastFetchTimestamp > 60000) {
+            console.log('[App] Resumed from background. Syncing for correctness...');
+            loadSubscriptions();
+        }
+    }
+});
 initNotifications();
 initProfilePage();
 initAccountSettingsPage();
@@ -4886,7 +4950,7 @@ initGlass();
 // Stage 2: Reload subscriptions after offline queue flushes to cloud
 window.addEventListener('syncqueue:flushed', (e) => {
   console.log(`[App] Sync queue flushed ${e.detail.synced} item(s) — refreshing data...`);
-  loadSubscriptions();
+  loadSubscriptions(true);
 });
 
 // --- Header Options Menu Logic (Outside click only) ---

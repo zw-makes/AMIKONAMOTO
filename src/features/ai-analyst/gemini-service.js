@@ -74,7 +74,7 @@ export async function askGroq(userPrompt, subscriptionData = [], selectedSub = n
             };
             let duplicates = [];
             Object.values(categories).forEach(cat => {
-                const found = subscriptionData.filter(s => cat.some(word => s.name.toLowerCase().includes(word)));
+                const found = subscriptionData.filter(s => s.name && cat.some(word => s.name.toLowerCase().includes(word)));
                 if (found.length > 1) {
                     duplicates.push(`${found.map(s => s.name).join(' AND ')} (Potential Duplication)`);
                 }
