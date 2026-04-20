@@ -108,6 +108,16 @@
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+@keyframes card-shrink-out {
+    0% { transform: scale(1); opacity: 1; filter: blur(0); }
+    100% { transform: scale(0.8) translateY(-20px); opacity: 0; filter: blur(10px); }
+}
+
+.premium-physical-card.deleting {
+    animation: card-shrink-out 0.3s forwards cubic-bezier(0.4, 0, 1, 1);
+    pointer-events: none;
+}
+
 .premium-physical-card::before {
     content: '';
     position: absolute;
@@ -236,8 +246,16 @@
     box-shadow: 0 20px 60px rgba(0,0,0,0.8);
 }
 
+.placeholder-card {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border: 2px dashed rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+    animation: none !important;
+}
+
 .placeholder-card:hover {
-    transform: none !important; /* No effect for placeholder */
+    transform: none !important;
     cursor: default;
 }
 

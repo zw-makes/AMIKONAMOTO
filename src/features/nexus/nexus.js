@@ -160,18 +160,11 @@ async function renderStoredCards() {
     stack.innerHTML = '';
     
     if (cards.length === 0) {
-        // Add back a dummy/placeholder if empty? 
-        // For now just leave it empty or add the original one
         stack.innerHTML = `
-            <div class="premium-physical-card placeholder-card" style="opacity: 0.8;">
-                <div class="card-chip"></div>
-                <div class="card-brand-logo">
-                    <img src="/sublify-logo.png" alt="Sublify">
-                </div>
-                <div class="card-number">•••• •••• •••• 4242</div>
-                <div class="card-footer-info">
-                    <div class="card-holder">Nexus Member</div>
-                    <div class="card-expiry">12/29</div>
+            <div class="premium-physical-card placeholder-card">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.4;">Vault Empty</div>
+                    <div style="width: 30px; height: 1px; background: rgba(255,255,255,0.1);"></div>
                 </div>
             </div>
         `;
@@ -246,7 +239,8 @@ function initFormSubmit() {
         }
 
         // Optimized: Save is now non-blocking (Optimistic)
-        const tempId = Date.now().toString(); // Temporary ID for instant UI
+        // Use a formal UUID to ensure database compatibility (400 error prevention)
+        const tempId = crypto.randomUUID(); 
         const success = await saveCardToStorage({ 
             id: tempId, 
             type, 
@@ -534,44 +528,46 @@ function showDeleteCardConfirm(cardId) {
     document.getElementById('nexus-confirm-delete-no').onclick = () => modal.remove();
 
     // Confirm delete
-    document.getElementById('nexus-confirm-delete-yes').onclick = async () => {
-        const yesBtn = document.getElementById('nexus-confirm-delete-yes');
-        if (yesBtn) {
-            yesBtn.disabled = true;
-            yesBtn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,69,58,0.3);border-top-color:#ff453a;border-radius:50%;animation:nexusSpin 0.7s linear infinite;"></span>`;
-        }
+    document.getElementById('nexus-confirm-delete-yes').onclick = () => {
+        if (window.HapticsService) window.HapticsService.medium();
+        
+        // 1. Instant Visual Feedback
+        const cardToAnimate = document.querySelector(`.premium-physical-card[data-id="${cardId}"]`);
+        if (cardToAnimate) cardToAnimate.classList.add('deleting');
+        
+        // Close detail modal instantly
+        const detailModal = document.getElementById('nexus-card-detail');
+        if (detailModal) detailModal.classList.add('hidden');
+        modal.remove();
 
-        // 1. Update Local Storage Immediately
+        // 2. Update Local Cache Instantly
         const cache = localStorage.getItem('nexus_cards');
         if (cache) {
             const cards = JSON.parse(cache).filter(c => c.id !== cardId);
             localStorage.setItem('nexus_cards', JSON.stringify(cards));
         }
 
-        // 2. Optimistic UI update
-        modal.remove();
-        await renderStoredCards();
-        document.getElementById('nexus-card-detail')?.classList.add('hidden');
-
-        // 3. Attempt network delete
-        if (!navigator.onLine) {
-            queueOperation('delete_nexus_card', { id: cardId });
-            showNexusToast('Offline — change queued locally.', false);
-            return;
-        }
-
-        const { error } = await supabase
-            .from('nexus_cards')
-            .delete()
-            .eq('id', cardId);
-
-        if (error) {
-            console.warn('[Nexus] Network delete failed, queuing...', error.message);
-            queueOperation('delete_nexus_card', { id: cardId });
-            showNexusToast('Action queued locally.', false);
+        // 3. Background Database Sync
+        if (navigator.onLine) {
+            supabase
+                .from('nexus_cards')
+                .delete()
+                .eq('id', cardId)
+                .then(({ error }) => {
+                    if (error) {
+                        console.warn('[Nexus] Background delete failed, queuing...', error.message);
+                        queueOperation('delete_nexus_card', { id: cardId });
+                    }
+                });
         } else {
-            showNexusToast('Card removed from Nexus', false);
+            queueOperation('delete_nexus_card', { id: cardId });
         }
+
+        // 4. Final UI Refresh (delayed slightly for animation)
+        setTimeout(() => {
+            renderStoredCards();
+            showNexusToast('Card removed from Nexus', false);
+        }, 300);
     };
 }
 
