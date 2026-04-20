@@ -353,6 +353,8 @@ let subscriptions = [];
 let currentDate = new Date();
 let currentStatsFilter = 'all';
 
+window.isInitialDataLoading = true;
+
 Object.defineProperty(window, 'subscriptions', {
   get: () => subscriptions,
   set: (val) => { subscriptions = val; }
@@ -842,16 +844,32 @@ async function loadSubscriptions() {
   if (!currentUser) return;
 
   const footTotal = document.getElementById('total-amount');
-  if (footTotal) footTotal.innerText = 'Loading...';
+  // Show a subtle skeleton bar instead of a jarring "Loading..." text
+  if (footTotal) {
+    footTotal.innerHTML = '<span class="total-amount-skeleton">&nbsp;</span>';
+  }
 
   // 1. OFFLINE-FIRST OPTIMISTIC LOAD: Always render what's in local storage first!
   const cached = localStorage.getItem('subscriptions');
   if (cached) {
     subscriptions = JSON.parse(cached);
+    window.isInitialDataLoading = false;
     renderCalendar();
     updateStats();
   } else {
+    // No cache → show skeleton grid so the calendar doesn't look completely empty
+    window.isInitialDataLoading = true;
     subscriptions = [];
+
+    // Skeletonize stats in the legend box
+    const subCountEl = document.getElementById('sub-count');
+    const newCountEl = document.getElementById('new-count');
+    if (subCountEl) subCountEl.innerHTML = '<span class="skeleton-lv-pill" style="width:15px; height:10px; display:inline-block; margin:0 2px;"></span>';
+    if (newCountEl) newCountEl.innerHTML = '<span class="skeleton-lv-pill" style="width:15px; height:10px; display:inline-block; margin:0 2px;"></span>';
+    
+    // Always prepare both skeletons so toggling between views during load is seamless
+    if (typeof window.renderSkeletonListView === 'function') window.renderSkeletonListView();
+    renderSkeletonCalendar();
   }
 
   // If literally offline mode, stop here.
@@ -898,11 +916,12 @@ async function loadSubscriptions() {
     // Always sync local cache with the exact DB state (plus pending changes)
     localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
 
-    // Auto-generate reminders only on fresh loads
+    window.isInitialDataLoading = false;
     updateReminders();
     renderCalendar();
     updateStats();
   } catch (err) {
+    
     console.warn('[Sync] Subscriptions sync delayed/failed:', err.message);
   }
 }
@@ -1095,7 +1114,64 @@ function getFirstDayOfMonth(year, month) {
 window.renderCalendar = renderCalendar;
 window.updateStats = updateStats;
 
+// --- Skeleton Calendar (shown while data is loading) ---
+function renderSkeletonCalendar() {
+  calendarGrid.innerHTML = '';
+  const daysInMonth = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+  const firstDay   = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+
+  // Days of the week that "feel" like they'd have subs — add a fake circle on a few
+  // to make the calendar look naturally populated rather than bare.
+  const pseudoSubDays = new Set();
+  // Sprinkle ~5 days across the month as visual hints
+  const spread = [3, 7, 12, 18, 25].filter(d => d <= daysInMonth);
+  spread.forEach(d => pseudoSubDays.add(d));
+
+  function makeSkeletonCell(day, isOtherMonth, isToday) {
+    const cell = document.createElement('div');
+    cell.className = `calendar-cell skeleton-cell ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
+    const span = document.createElement('span');
+    span.className = 'cell-date';
+    if (day) span.innerText = day;
+    cell.appendChild(span);
+
+    // Add a fake circular icon placeholder on select days
+    if (!isOtherMonth && pseudoSubDays.has(day)) {
+      const circle = document.createElement('div');
+      circle.className = 'skeleton-circle';
+      cell.appendChild(circle);
+
+      // Fake dot in top-right (like a subscription colour dot)
+      const dot = document.createElement('div');
+      dot.style.cssText = 'position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.1);';
+      cell.appendChild(dot);
+    }
+
+    return cell;
+  }
+
+  // leading other-month cells
+  for (let i = firstDay - 1; i >= 0; i--) {
+    calendarGrid.appendChild(makeSkeletonCell(null, true, false));
+  }
+
+  // current-month cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === new Date().getDate() &&
+      currentDate.getMonth() === new Date().getMonth() &&
+      currentDate.getFullYear() === new Date().getFullYear();
+    calendarGrid.appendChild(makeSkeletonCell(d, false, isToday));
+  }
+
+  // trailing cells to fill 42 slots
+  const remaining = 42 - calendarGrid.children.length;
+  for (let i = 1; i <= remaining; i++) {
+    calendarGrid.appendChild(makeSkeletonCell(null, true, false));
+  }
+}
+
 function renderCalendar() {
+  if (window.isInitialDataLoading) return;
   calendarGrid.innerHTML = '';
   // Close tooltip on render to be safe
   hideTooltip();
@@ -3200,6 +3276,11 @@ setTimeout(() => {
            
            const appCont = document.getElementById('app-container');
            if (appCont) appCont.classList.remove('hidden');
+           if (typeof window.listViewActive === 'function' && window.listViewActive()) {
+            if (typeof window.renderSkeletonListView === 'function') window.renderSkeletonListView();
+          } else {
+            renderSkeletonCalendar();
+          }
            
            updateProfileUI();
            loadSubscriptions();
@@ -3278,6 +3359,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (loadingScreen) loadingScreen.classList.add('hidden');
         const appCont = document.getElementById('app-container');
         if (appCont) appCont.classList.remove('hidden');
+        if (typeof window.listViewActive === 'function' && window.listViewActive()) {
+            if (typeof window.renderSkeletonListView === 'function') window.renderSkeletonListView();
+          } else {
+            renderSkeletonCalendar();
+          }
       }
 
       if (!navigator.onLine) {
@@ -3288,6 +3374,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           if (loadingScreen) loadingScreen.classList.add('hidden');
           const appCont = document.getElementById('app-container');
           if (appCont) appCont.classList.remove('hidden');
+          if (typeof window.listViewActive === 'function' && window.listViewActive()) {
+            if (typeof window.renderSkeletonListView === 'function') window.renderSkeletonListView();
+          } else {
+            renderSkeletonCalendar();
+          }
         }
         loadSubscriptions();
         return;
@@ -3377,6 +3468,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           if (loadingScreen) loadingScreen.classList.add('hidden');
           const appCont = document.getElementById('app-container');
           if (appCont) appCont.classList.remove('hidden');
+          if (typeof window.listViewActive === 'function' && window.listViewActive()) {
+            if (typeof window.renderSkeletonListView === 'function') window.renderSkeletonListView();
+          } else {
+            renderSkeletonCalendar();
+          }
           
           // Load subscriptions (it has its own cache-first logic)
           loadSubscriptions();
@@ -4174,17 +4270,17 @@ saveAppSettingsBtn.addEventListener('click', async () => {
 
 // Close app settings currency and timezone dropdowns on outside click
 document.addEventListener('click', (e) => {
-  if (!settingsCurrencyPicker.contains(e.target)) {
-    settingsCurrencyDropdown.classList.add('hidden');
+  if (settingsCurrencyPicker && !settingsCurrencyPicker.contains(e.target)) {
+    if (settingsCurrencyDropdown) settingsCurrencyDropdown.classList.add('hidden');
   }
-  if (!timezonePicker.contains(e.target)) {
-    timezoneDropdown.classList.add('hidden');
+  if (timezonePicker && !timezonePicker.contains(e.target)) {
+    if (timezoneDropdown) timezoneDropdown.classList.add('hidden');
   }
-  if (!notifTimePicker.contains(e.target)) {
-    notifTimeDropdown.classList.add('hidden');
+  if (notifTimePicker && !notifTimePicker.contains(e.target)) {
+    if (notifTimeDropdown) notifTimeDropdown.classList.add('hidden');
   }
-  if (!genderPicker.contains(e.target)) {
-    genderDropdown.classList.add('hidden');
+  if (genderPicker && !genderPicker.contains(e.target)) {
+    if (genderDropdown) genderDropdown.classList.add('hidden');
   }
 });
 
@@ -4194,8 +4290,8 @@ document.addEventListener('click', (e) => {
 
 // Close custom dropdowns on outside click
 document.addEventListener('click', (e) => {
-  if (!genderPicker.contains(e.target)) {
-    genderDropdown.classList.add('hidden');
+  if (genderPicker && !genderPicker.contains(e.target)) {
+    if (genderDropdown) genderDropdown.classList.add('hidden');
   }
 });
 

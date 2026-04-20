@@ -162,11 +162,18 @@
 }
 
 .chart-bar.empty {
-    /* More "symmetrical" placeholder */
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.05);
+    /* Subtle dashed line indicating $0, completely distinct from skeletons */
+    background: transparent;
+    border: none;
+    border-top: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 0;
     box-shadow: none;
-    animation: none; 
+    animation: none;
+    height: 2px !important;
+}
+
+.chart-bar.empty::after {
+    display: none !important; /* Remove glossy shine so it doesn't look like a 3D pill */
 }
 
 
@@ -272,4 +279,128 @@
 /* Hide Frequency Action in List View */
 #list-view-container .swipe-action.freq {
     display: none !important;
+}
+
+/* ── List View Skeleton Loading ── */
+.skeleton-lv-pill {
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    display: block;
+}
+
+.skeleton-lv-pill::after,
+.skeleton-bar::after { height: 100% !important; } .skeleton-bar::after,
+.skeleton-mini-circle::after,
+.skeleton-list-icon::after,
+.skeleton-list-name::after,
+.skeleton-list-sub::after,
+.skeleton-list-price::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.07) 40%,
+        rgba(255,255,255,0.14) 60%,
+        rgba(255,255,255,0)
+    );
+    animation: lv-sweep 1.6s infinite ease-in-out;
+}
+
+@keyframes lv-sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Skeleton chart bars */
+.chart-bar.skeleton-bar {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border: none !important;
+    box-shadow: none !important;
+    animation: growUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Skeleton mini circles under bars */
+.skeleton-mini-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Skeleton subscription rows */
+.skeleton-list-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skeleton-list-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-list-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.skeleton-list-name {
+    height: 12px;
+    width: 55%;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-list-sub {
+    height: 9px;
+    width: 35%;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-list-price {
+    height: 14px;
+    width: 44px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Fix shimmer height inheritance issue for skeleton bars */
+.skeleton-bar::after {
+    height: 100% !important;
+    background: transparent !important;
+    background-image: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.07) 40%,
+        rgba(255,255,255,0.14) 60%,
+        rgba(255,255,255,0)
+    ) !important;
 }

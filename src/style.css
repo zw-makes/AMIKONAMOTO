@@ -647,6 +647,84 @@ button:active {
   }
 }
 
+/* ── Skeleton Loading State ── */
+.skeleton-cell {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    rgba(255, 255, 255, 0.12) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: skeleton-sweep 1.6s infinite ease-in-out;
+}
+
+@keyframes skeleton-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Date number faint in skeleton mode */
+.skeleton-cell .cell-date {
+  opacity: 0.18;
+}
+
+/* Fake circular icon placeholder inside skeleton cells */
+.skeleton-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Grand Total skeleton pulse */
+.total-amount-skeleton {
+  display: inline-block;
+  width: 72px;
+  height: 1.1em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+  animation: skeleton-pulse 1.8s ease-in-out infinite;
+}
+
+.total-amount-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: skeleton-sweep 1.4s infinite ease-in-out;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
+}
+
+
 /* Legend */
 .calendar-legend {
   padding: var(--spacing-md);

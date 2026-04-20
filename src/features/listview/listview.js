@@ -76,6 +76,12 @@ export function toggleListView(btn) {
         const calFooter = document.getElementById('calendar-brand-footer');
         if (calFooter) calFooter.classList.add('hidden');
         listViewContainer.classList.remove('hidden');
+        
+        // ONLY show the skeleton if we are actually still waiting for data!
+        if (window.isInitialDataLoading) {
+            renderSkeletonListView();
+        }
+        
         renderListView();
     } else {
         btn.innerHTML = LIST_ICON;
@@ -93,8 +99,69 @@ export function toggleListView(btn) {
     }
 }
 
+function renderSkeletonListView() {
+    if (!listViewContainer) return;
+
+    // Fake bar heights to mimic a realistic irregular chart
+    const fakeHeights = [20, 55, 35, 80, 45, 15, 60];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const barsHtml = fakeHeights.map((h, i) => `
+        <div class="chart-bar-group">
+            <div class="chart-bar skeleton-bar" style="height:${h}%; animation-delay:${i * 0.07}s;"></div>
+            <span class="chart-day-label" style="opacity:0.3;">${days[i]}</span>
+            <div class="chart-logos-container">
+                <div class="skeleton-mini-circle"></div>
+            </div>
+        </div>
+    `).join('');
+
+    // Fake subscription rows
+    const fakeRows = [4, 7, 12, 18, 22].map(day => `
+        <div class="skeleton-list-row">
+            <div class="skeleton-list-icon"></div>
+            <div class="skeleton-list-text">
+                <div class="skeleton-list-name"></div>
+                <div class="skeleton-list-sub"></div>
+            </div>
+            <div class="skeleton-list-price"></div>
+        </div>
+    `).join('');
+
+    listViewContainer.innerHTML = `
+        <div class="spending-card skeleton-spending-card">
+            <div class="spending-header">
+                <div class="skeleton-lv-pill" style="width:120px; height:11px; margin-bottom:10px;"></div>
+                <div class="skeleton-lv-pill" style="width:80px; height:36px; border-radius:10px;"></div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-grid-lines">
+                    <div class="chart-grid-line"></div>
+                    <div class="chart-grid-line"></div>
+                    <div class="chart-grid-line"></div>
+                    <div class="chart-grid-line"></div>
+                    <div class="chart-grid-line"></div>
+                </div>
+                <div class="chart-bars">${barsHtml}</div>
+            </div>
+        </div>
+
+        <div class="latest-section">
+            <div class="latest-header">
+                <div class="skeleton-lv-pill" style="width:110px; height:14px;"></div>
+                <div class="skeleton-lv-pill" style="width:70px; height:10px;"></div>
+            </div>
+            <div class="latest-list" style="gap:10px;">
+                ${fakeRows}
+            </div>
+        </div>
+    `;
+}
+
+window.renderSkeletonListView = renderSkeletonListView;
 export function renderListView() {
     if (!listViewContainer || !listViewActive) return;
+    if (window.isInitialDataLoading) return;
 
     const currentDate = window.currentDate || new Date();
     const settings = (window.userProfile && window.userProfile.settings) || {};
@@ -155,7 +222,9 @@ export function renderListView() {
         weekSpending[dayOfWeek] += p;
 
         const domain = window.getDomain ? window.getDomain(s) : (s.domain || 'example.com');
-        weekLogos[dayOfWeek].push({ domain, price: p, sub: s });
+        if (dayOfWeek >= 0 && dayOfWeek <= 6 && Array.isArray(weekLogos[dayOfWeek])) {
+          weekLogos[dayOfWeek].push({ domain, price: p, sub: s });
+        }
     });
 
 
@@ -166,7 +235,7 @@ export function renderListView() {
     const monthName = currentDate.toLocaleString('default', { month: 'long' });
 
     // --- SMART RENDERING: Patch existing card if possible to preserve transitions ---
-    let spendingCard = listViewContainer.querySelector('.spending-card');
+    let spendingCard = listViewContainer.querySelector('.spending-card:not(.skeleton-spending-card)');
     
     // Generate the HTML for non-persistent sections
     const latestSectionHtml = `
@@ -345,7 +414,7 @@ export function renderListView() {
                             return `
                             <div class="chart-bar-group">
                                 <div class="chart-bar ${amount === 0 ? 'empty' : ''}" 
-                                     style="height: ${Math.max(amount === 0 ? 5 : height, 5)}%; animation-delay: ${i * 0.08}s;"></div>
+                                     style="height: ${amount === 0 ? '2px' : Math.max(height, 5) + '%'}; animation-delay: ${i * 0.08}s;"></div>
                                 <span class="chart-day-label">${days[i]}</span>
                                 <div class="chart-logos-container">
                                     ${topLogos}
