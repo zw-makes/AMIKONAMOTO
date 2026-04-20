@@ -896,13 +896,17 @@ async function loadSubscriptions(force = false) {
     return;
   }
 
-  // 2. BACKGROUND SYNC with a timeout
-  try {
-    const subPromise = supabase.from('subscriptions').select('*').eq('user_id', currentUser.id);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
-    
-    const { data, error } = await Promise.race([subPromise, timeoutPromise]);
-    if (error) throw error;
+    // 2. BACKGROUND SYNC with a longer 15s timeout for stability
+    try {
+      const subPromise = supabase.from('subscriptions').select('*').eq('user_id', currentUser.id);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
+      
+      const { data, error } = await Promise.race([subPromise, timeoutPromise]);
+      if (error) {
+        // If it's a transient 400/404, we log it but don't crash
+        console.error('[Sync] Supabase request failed:', error.message);
+        throw error;
+      }
 
     if (data && data.length > 0) {
       subscriptions = data;
@@ -3457,7 +3461,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           .single();
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 15000)
         );
 
         const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);

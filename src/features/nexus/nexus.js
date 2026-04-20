@@ -127,22 +127,20 @@ async function saveCardToStorage(cardData) {
         else cards.push(fullCard);
         localStorage.setItem('nexus_cards', JSON.stringify(cards));
 
-        // 2. Attempt Supabase Write Asynchronously
-        if (!navigator.onLine || !user) {
-            console.log('[Nexus] Queuing offline card upsert');
+        // 2. BACKGROUND SYNC: Trigger in parallel, do NOT await
+        if (navigator.onLine && user) {
+            supabase
+                .from('nexus_cards')
+                .upsert([fullCard])
+                .then(({ error }) => {
+                    if (error) {
+                        console.warn('[Nexus] Background sync failed, queuing...', error.message);
+                        queueOperation('upsert_nexus_card', fullCard);
+                    }
+                });
+        } else {
+            console.log('[Nexus] Offline — queuing card upsert');
             queueOperation('upsert_nexus_card', fullCard);
-            showNexusToast('Saved locally — will sync when online.', false);
-            return true;
-        }
-
-        const { error } = await supabase
-            .from('nexus_cards')
-            .upsert([fullCard]);
-
-        if (error) {
-            console.warn('[Nexus] Supabase upsert failed, queuing...', error.message);
-            queueOperation('upsert_nexus_card', fullCard);
-            return true;
         }
 
         return true;
@@ -247,10 +245,21 @@ function initFormSubmit() {
             submitBtn.innerHTML = `<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:nexusSpin 0.7s linear infinite;"></span>`;
         }
 
-        const success = await saveCardToStorage({ type, last4: identifier, expiry: isCard ? expiry : 'N/A' });
+        // Optimized: Save is now non-blocking (Optimistic)
+        const tempId = Date.now().toString(); // Temporary ID for instant UI
+        const success = await saveCardToStorage({ 
+            id: tempId, 
+            type, 
+            last4: identifier, 
+            expiry: isCard ? expiry : 'N/A',
+            created_at: new Date().toISOString()
+        });
+
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+        
         if (success) {
-            await renderStoredCards();
+            // Instant UI Refresh
+            renderStoredCards();
             showNexusToast('Payment method added!', false);
             toggleAddCardModal(false);
         }
