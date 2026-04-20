@@ -310,16 +310,16 @@ function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
     const isCard = CARD_TYPES.includes(type);
 
     const logoMap = {
-        'visa': 'https://cdn.simpleicons.org/visa/white',
-        'mastercard': 'https://cdn.simpleicons.org/mastercard/white',
-        'amex': 'https://cdn.simpleicons.org/americanexpress/white',
-        'discover': 'https://cdn.simpleicons.org/discover/white',
-        'jcb': 'https://cdn.simpleicons.org/jcb/white',
+        'visa': '/src/assets/nexus/visa.svg',
+        'mastercard': '/src/assets/nexus/mastercard.svg',
+        'amex': '/src/assets/nexus/amex.svg',
+        'discover': '/src/assets/nexus/discover.svg',
+        'jcb': '/src/assets/nexus/jcb.svg',
         'debit': '/sublify-logo.png',
         'credit': '/sublify-logo.png',
-        'paypal': 'https://cdn.simpleicons.org/paypal/white',
-        'applepay': 'https://cdn.simpleicons.org/applepay/white',
-        'googlepay': 'https://cdn.simpleicons.org/googlepay/white',
+        'paypal': '/src/assets/nexus/paypal.svg',
+        'applepay': '/src/assets/nexus/applepay.svg',
+        'googlepay': '/src/assets/nexus/googlepay.svg',
         'bank': '/sublify-logo.png',
     };
 
@@ -674,16 +674,16 @@ export async function populatePaymentCardsDropdown() {
     }
 
     const logoMap = {
-        'visa': 'https://cdn.simpleicons.org/visa/white',
-        'mastercard': 'https://cdn.simpleicons.org/mastercard/white',
-        'amex': 'https://cdn.simpleicons.org/americanexpress/white',
-        'discover': 'https://cdn.simpleicons.org/discover/white',
-        'jcb': 'https://cdn.simpleicons.org/jcb/white',
+        'visa': '/src/assets/nexus/visa.svg',
+        'mastercard': '/src/assets/nexus/mastercard.svg',
+        'amex': '/src/assets/nexus/amex.svg',
+        'discover': '/src/assets/nexus/discover.svg',
+        'jcb': '/src/assets/nexus/jcb.svg',
         'debit': '/sublify-logo.png',
         'credit': '/sublify-logo.png',
-        'paypal': 'https://cdn.simpleicons.org/paypal/white',
-        'applepay': 'https://cdn.simpleicons.org/applepay/white',
-        'googlepay': 'https://cdn.simpleicons.org/googlepay/white',
+        'paypal': '/src/assets/nexus/paypal.svg',
+        'applepay': '/src/assets/nexus/applepay.svg',
+        'googlepay': '/src/assets/nexus/googlepay.svg',
         'bank': '/sublify-logo.png'
     };
 
