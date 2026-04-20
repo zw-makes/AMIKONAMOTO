@@ -310,16 +310,16 @@ function createCardElement(type, last4, expiry, isNew = true, cardId = null) {
     const isCard = CARD_TYPES.includes(type);
 
     const logoMap = {
-        'visa': '/src/assets/nexus/visa.svg',
-        'mastercard': '/src/assets/nexus/mastercard.svg',
-        'amex': '/src/assets/nexus/amex.svg',
-        'discover': '/src/assets/nexus/discover.svg',
-        'jcb': '/src/assets/nexus/jcb.svg',
+        'visa': '/nexus/visa.svg',
+        'mastercard': '/nexus/mastercard.svg',
+        'amex': '/nexus/amex.svg',
+        'discover': '/nexus/discover.svg',
+        'jcb': '/nexus/jcb.svg',
         'debit': '/sublify-logo.png',
         'credit': '/sublify-logo.png',
-        'paypal': '/src/assets/nexus/paypal.svg',
-        'applepay': '/src/assets/nexus/applepay.svg',
-        'googlepay': '/src/assets/nexus/googlepay.svg',
+        'paypal': '/nexus/paypal.svg',
+        'applepay': '/nexus/applepay.svg',
+        'googlepay': '/nexus/googlepay.svg',
         'bank': '/sublify-logo.png',
     };
 
@@ -674,16 +674,16 @@ export async function populatePaymentCardsDropdown() {
     }
 
     const logoMap = {
-        'visa': '/src/assets/nexus/visa.svg',
-        'mastercard': '/src/assets/nexus/mastercard.svg',
-        'amex': '/src/assets/nexus/amex.svg',
-        'discover': '/src/assets/nexus/discover.svg',
-        'jcb': '/src/assets/nexus/jcb.svg',
+        'visa': '/nexus/visa.svg',
+        'mastercard': '/nexus/mastercard.svg',
+        'amex': '/nexus/amex.svg',
+        'discover': '/nexus/discover.svg',
+        'jcb': '/nexus/jcb.svg',
         'debit': '/sublify-logo.png',
         'credit': '/sublify-logo.png',
-        'paypal': '/src/assets/nexus/paypal.svg',
-        'applepay': '/src/assets/nexus/applepay.svg',
-        'googlepay': '/src/assets/nexus/googlepay.svg',
+        'paypal': '/nexus/paypal.svg',
+        'applepay': '/nexus/applepay.svg',
+        'googlepay': '/nexus/googlepay.svg',
         'bank': '/sublify-logo.png'
     };
 
