@@ -383,6 +383,14 @@ function showDeleteCategoryConfirm(id, name) {
     };
 
     document.getElementById('cat-confirm-delete-yes').onclick = async () => {
+        if (!navigator.onLine) {
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => {
+                modal.remove();
+                if (window.showOfflineWarning) window.showOfflineWarning();
+            }, 250);
+            return;
+        }
         if (window.HapticsService) window.HapticsService.medium();
         
         const { error } = await supabase.from('categories').delete().eq('id', id);
@@ -663,6 +671,10 @@ function showAddCategorySheet() {
     window.addEventListener('touchend', endDrag);
 
     submitBtn.onclick = async () => {
+        if (!navigator.onLine) {
+            if (window.showOfflineWarning) window.showOfflineWarning();
+            return;
+        }
         const name = input.value.trim();
         if (!name) return;
 

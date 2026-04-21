@@ -34,6 +34,7 @@
   /* Fonts */
   --font-main: 'Inter', sans-serif;
   --font-display: 'Outfit', sans-serif;
+  --font-sci-fi: 'Orbitron', sans-serif;
 
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -3284,4 +3285,16 @@ input:checked+.slider:before {
   white-space: nowrap;
 }
 
-
+/* Settings & Profile Headers - Futuristic Orbitron Upgrade */
+.profile-page-header h2,
+.add-page-header h2,
+.modal-header h2,
+.nexus-header h2,
+.nexus-title,
+.category-explorer h2, 
+.pricing-header-section h1 {
+  font-family: var(--font-sci-fi) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-weight: 700 !important;
+}

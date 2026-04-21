@@ -529,6 +529,11 @@ function showDeleteCardConfirm(cardId) {
 
     // Confirm delete
     document.getElementById('nexus-confirm-delete-yes').onclick = () => {
+        if (!navigator.onLine) {
+            modal.remove(); // Close the delete confirmation
+            if (window.showOfflineWarning) window.showOfflineWarning();
+            return;
+        }
         if (window.HapticsService) window.HapticsService.medium();
         
         // 1. Instant Visual Feedback

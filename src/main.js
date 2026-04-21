@@ -82,6 +82,56 @@ window.getLogoUrl = function(domainOrUrl) {
     return `https://icon.horse/icon/${domain}`;
 };
 
+// --- GLOBAL OFFLINE WARNING ---
+window.showOfflineWarning = function() {
+    document.getElementById('offline-warning-sheet')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'offline-warning-sheet';
+    modal.style.cssText = `position: fixed; inset: 0; z-index: 11000; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); animation: fadeIn 0.2s ease;`;
+
+    modal.innerHTML = `
+        <div class="category-sheet-inner" style="
+            width: 100%; max-width: 450px;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 32px 32px 0 0;
+            padding: 28px 24px 45px;
+            animation: nexusSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        ">
+            <div style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 32px;"></div>
+            
+            <div style="width: 66px; height: 66px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; opacity: 0.6; filter: grayscale(1);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                    <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+            </div>
+
+            <h2 style="text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; color: #fff; font-family: var(--font-sci-fi);">
+                Connection Required
+            </h2>
+            <p style="text-align: center; font-size: 0.88rem; color: rgba(255,255,255,0.4); line-height: 1.6; margin-bottom: 35px; padding: 0 40px;">
+                Please connect to the internet to perform cloud-sync operations like adding or removing categories and payment cards.
+            </p>
+
+            <button id="close-offline-warning" style="width: 100%; padding: 19px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em;">
+                UNDERSTOOD
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    if (window.HapticsService) window.HapticsService.medium();
+    
+    document.getElementById('close-offline-warning').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+};
+
 
 // Initialize List View
 initListView();
@@ -696,6 +746,24 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
     }
   }
 
+    // --- UNIVERSAL HAPTIC ENGINE ---
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn');
+        if (!target) return;
+
+        if (window.HapticsService) {
+            // Priority 1: Heavy/Success Actions (Deletions/Confirmations)
+            if (target.id?.includes('delete') || target.id?.includes('confirm') || target.classList.contains('submit-btn')) {
+                window.HapticsService.medium();
+            } 
+            // Priority 2: Standard Interactions
+            else {
+                window.HapticsService.light();
+            }
+        }
+    }, { capture: true }); // Capture ensures we catch it before other handlers
+
+    // --- RE-RENDER DEBOUNCE LOGIC ---
   // --- AUTO-CATEGORIZATION ---
   if (window.getCategoryForApp) {
     const name = document.getElementById('sub-name').value;
