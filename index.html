@@ -1806,6 +1806,21 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             <input type="file" id="avatar-upload" class="hidden" accept="image/*">
 
             <div class="profile-actions" style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+
+              <!-- Offline Read-Only Badge — shown by JS when offline -->
+              <div id="profile-offline-badge" style="display: none; align-items: center; gap: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px 14px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                  <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                  <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                  <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+                <span style="font-size: 0.78rem; color: rgba(255,255,255,0.35); font-weight: 600; letter-spacing: 0.03em;">Offline — changes unavailable</span>
+              </div>
+
               <div class="form-group">
                 <label>Full Name</label>
                 <input type="text" id="settings-name" placeholder="Alex Johnson" maxlength="30">
@@ -1851,7 +1866,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         <!-- Fixed Bottom Action Bar (Nexus-Style) -->
         <div class="settings-footer"
           style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; pointer-events: none;">
-          <button id="save-profile-settings" type="submit" class="submit-btn"
+          <button id="save-profile-settings" type="submit" form="settings-form" class="submit-btn"
             style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700; pointer-events: auto;">Save Profile</button>
         </div>
       </div>

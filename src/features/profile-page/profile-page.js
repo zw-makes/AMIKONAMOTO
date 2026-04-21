@@ -29,8 +29,8 @@ export function toggleProfilePage(show) {
 
     if (profilePageActive) {
         profilePage.classList.remove('hidden');
-        // If other pages are active, we might want to close them or just overlay
-        // For now, following user request to keep it simple and just make it a page
+        // Re-check network state every time the page opens
+        if (window.syncProfileFieldsToNetworkState) window.syncProfileFieldsToNetworkState();
     } else {
         profilePage.classList.add('hidden');
     }

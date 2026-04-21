@@ -4690,9 +4690,9 @@ settingsForm.addEventListener('submit', async (e) => {
     if (window.showOfflineWarning) window.showOfflineWarning();
     return;
   }
-  const submitBtn = settingsForm.querySelector('.submit-btn');
-  submitBtn.disabled = true;
-  submitBtn.innerText = 'Saving...';
+  const submitBtn = document.getElementById('save-profile-settings');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
+
 
   const updatedName = document.getElementById('settings-name').value.trim();
   const updatedGender = document.getElementById('settings-gender').value;
@@ -4724,8 +4724,7 @@ settingsForm.addEventListener('submit', async (e) => {
     console.error('Profile sync failed:', err.message);
     showToast('Saved locally — will sync when online. 📶', 'info');
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerText = 'Save Changes';
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Save Profile'; }
   }
 });
 
@@ -5067,6 +5066,45 @@ document.addEventListener('click', (e) => {
         optionsDropdown.classList.add('hidden');
     }
 });
+
+// --- PROFILE FIELDS: Network-Aware Lock/Unlock ---
+function syncProfileFieldsToNetworkState() {
+  const nameInput     = document.getElementById('settings-name');
+  const genderPicker  = document.getElementById('settings-gender-picker');  // correct ID
+  const dobInput      = document.getElementById('settings-dob');
+  const avatarPreview = document.getElementById('settings-avatar-preview');
+  const saveBtn       = document.getElementById('save-profile-settings');
+  const badge         = document.getElementById('profile-offline-badge');
+
+  const fields = [nameInput, genderPicker, dobInput, avatarPreview, saveBtn].filter(Boolean);
+
+  if (!navigator.onLine) {
+    // Show the "Offline" badge
+    if (badge) badge.style.display = 'flex';
+    fields.forEach(el => {
+      el.style.opacity       = '0.35';
+      el.style.pointerEvents = 'none';
+      el.style.filter        = 'grayscale(0.6)';
+      el.style.transition    = 'opacity 0.3s ease, filter 0.3s ease';
+      el.style.cursor        = 'not-allowed';
+    });
+  } else {
+    // Hide the "Offline" badge
+    if (badge) badge.style.display = 'none';
+    fields.forEach(el => {
+      el.style.opacity       = '';
+      el.style.pointerEvents = '';
+      el.style.filter        = '';
+      el.style.cursor        = '';
+    });
+  }
+}
+
+// Run on load and wire to network events
+syncProfileFieldsToNetworkState();
+window.syncProfileFieldsToNetworkState = syncProfileFieldsToNetworkState;
+window.addEventListener('offline', syncProfileFieldsToNetworkState);
+window.addEventListener('online',  syncProfileFieldsToNetworkState);
 
 // --- Add Subscription Page "Catalog" Header Button ---
 // Handled in src/features/catalog/catalog.js
