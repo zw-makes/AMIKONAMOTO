@@ -748,12 +748,13 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
 
     // --- UNIVERSAL HAPTIC ENGINE ---
     document.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn');
+        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn, .add-page-back-btn, .status-icon-btn, [id$="-btn"]');
         if (!target) return;
 
         if (window.HapticsService) {
-            // Priority 1: Heavy/Success Actions (Deletions/Confirmations)
-            if (target.id?.includes('delete') || target.id?.includes('confirm') || target.classList.contains('submit-btn')) {
+            const id = target.id?.toLowerCase() || '';
+            // Priority 1: Heavy/Success/Danger Actions
+            if (id.includes('delete') || id.includes('confirm') || id.includes('wipe') || target.classList.contains('submit-btn')) {
                 window.HapticsService.medium();
             } 
             // Priority 2: Standard Interactions
@@ -761,7 +762,7 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
                 window.HapticsService.light();
             }
         }
-    }, { capture: true }); // Capture ensures we catch it before other handlers
+    }, { capture: true });
 
     // --- RE-RENDER DEBOUNCE LOGIC ---
   // --- AUTO-CATEGORIZATION ---

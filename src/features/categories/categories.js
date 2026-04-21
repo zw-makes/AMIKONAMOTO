@@ -33,7 +33,13 @@ export async function initCategories() {
         closeBtn.addEventListener('click', () => toggleCategoriesPage(false));
     }
     if (addSheetBtn) {
-        addSheetBtn.addEventListener('click', () => toggleAddCategorySheet(true));
+        addSheetBtn.addEventListener('click', () => {
+            if (!navigator.onLine) {
+                if (window.showOfflineWarning) window.showOfflineWarning();
+                return;
+            }
+            toggleAddCategorySheet(true);
+        });
     }
 
     const closeExplorerBtn = document.getElementById('close-category-explorer');
@@ -44,6 +50,10 @@ export async function initCategories() {
     const explorerDeleteBtn = document.getElementById('delete-category-explorer-btn');
     if (explorerDeleteBtn) {
         explorerDeleteBtn.addEventListener('click', () => {
+            if (!navigator.onLine) {
+                if (window.showOfflineWarning) window.showOfflineWarning();
+                return;
+            }
             const catName = document.getElementById('explorer-category-name').textContent;
             const cat = localizedCategories.find(c => c.name === catName);
             if (cat) {

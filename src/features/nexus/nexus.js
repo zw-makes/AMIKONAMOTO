@@ -21,6 +21,10 @@ export async function initNexus() {
     
     if (addCardBtn) {
         addCardBtn.addEventListener('click', async () => {
+            if (!navigator.onLine) {
+                if (window.showOfflineWarning) window.showOfflineWarning();
+                return;
+            }
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
@@ -32,6 +36,10 @@ export async function initNexus() {
 
     if (addDigitalBtn) {
         addDigitalBtn.addEventListener('click', async () => {
+            if (!navigator.onLine) {
+                if (window.showOfflineWarning) window.showOfflineWarning();
+                return;
+            }
             const cards = await getStoredCards();
             if (cards.length >= 6) {
                 showNexusToast('Maximum limit of 6 payment methods.');
