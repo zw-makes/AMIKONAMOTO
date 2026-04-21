@@ -17,6 +17,7 @@ export function initDataManagement() {
 
     // Global toggle function
     window.showDataModal = function(show = true) {
+        if (window.HapticsService) window.HapticsService.medium();
         if (show) {
             dataModal.classList.remove('hidden');
         } else {

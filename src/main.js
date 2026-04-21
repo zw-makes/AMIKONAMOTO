@@ -4189,6 +4189,7 @@ function applyTheme(isDark) {
 }
 
 window.showAppSettings = function () {
+  if (window.HapticsService) window.HapticsService.medium();
   if (!userProfile) return;
 
   // Load current settings from userProfile or defaults
@@ -4547,6 +4548,7 @@ document.getElementById('data-management-btn')?.addEventListener('click', () => 
 appSettingsBtn.addEventListener('click', () => window.showAppSettings());
 
 closeAppSettingsBtn.addEventListener('click', () => {
+  if (window.HapticsService) window.HapticsService.medium();
   appSettingsModal.classList.add('hidden');
 });
 
