@@ -2,21 +2,26 @@ import './categories.css';
 import { supabase } from '../../supabase.js';
 
 let categoriesVisible = false;
-const DEFAULT_CATEGORIES = [
-    { id: 'cat-1', name: 'Not set', icon: '📁', color: 'linear-gradient(135deg, #1a1a1a 0%, #000 100%)' },
-    { id: 'cat-ai', name: 'AI Tools', icon: '🤖', color: 'linear-gradient(135deg, #3b82f6 0%, #000 100%)' },
-    { id: 'cat-stream', name: 'Streaming', icon: '🎬', color: 'linear-gradient(135deg, #ef4444 0%, #000 100%)' },
-    { id: 'cat-prod', name: 'Productivity', icon: '⚡', color: 'linear-gradient(135deg, #f59e0b 0%, #000 100%)' },
-    { id: 'cat-creative', name: 'Creative', icon: '🎨', color: 'linear-gradient(135deg, #ec4899 0%, #000 100%)' },
-    { id: 'cat-dev', name: 'Development', icon: '💻', color: 'linear-gradient(135deg, #10b981 0%, #000 100%)' },
-    { id: 'cat-music', name: 'Music & Audio', icon: '🎵', color: 'linear-gradient(135deg, #8b5cf6 0%, #000 100%)' },
-    { id: 'cat-gaming', name: 'Gaming', icon: '🎮', color: 'linear-gradient(135deg, #4b5563 0%, #000 100%)' },
-    { id: 'cat-family', name: 'Family', icon: '🏠', color: 'linear-gradient(135deg, #2c3e50 0%, #000 100%)' },
-    { id: 'cat-work', name: 'Work', icon: '💼', color: 'linear-gradient(135deg, #1e3a8a 0%, #000 100%)' },
-    { id: 'cat-free', name: 'Free Apps', icon: '📱', color: 'linear-gradient(135deg, #065f46 0%, #000 100%)' }
+let localizedCategories = []; // Real-time local cache of the DB state
+
+// Expanded System Categories (Inherited from Catalog + Essentials)
+// These will be seeded into the DB with is_system: true
+const SYSTEM_CATEGORIES_SEED = [
+    { name: 'AI Tools', icon: '🤖', color: 'linear-gradient(135deg, #3b82f6 0%, #000 100%)', is_system: true },
+    { name: 'Streaming', icon: '🎬', color: 'linear-gradient(135deg, #ef4444 0%, #000 100%)', is_system: true },
+    { name: 'Productivity', icon: '⚡', color: 'linear-gradient(135deg, #f59e0b 0%, #000 100%)', is_system: true },
+    { name: 'Creative', icon: '🎨', color: 'linear-gradient(135deg, #ec4899 0%, #000 100%)', is_system: true },
+    { name: 'Development', icon: '💻', color: 'linear-gradient(135deg, #10b981 0%, #000 100%)', is_system: true },
+    { name: 'Work', icon: '💼', color: 'linear-gradient(135deg, #1e3a8a 0%, #000 100%)', is_system: true },
+    { name: 'Essentials', icon: '🏠', color: 'linear-gradient(135deg, #2c3e50 0%, #000 100%)', is_system: true },
+    { name: 'Health & Fitness', icon: '🏃', color: 'linear-gradient(135deg, #10b981 0%, #000 100%)', is_system: true }
 ];
 
-export function initCategories() {
+const NOT_SET_CAT = { id: 'cat-1', name: 'Not set', icon: '📁', color: 'linear-gradient(135deg, #1a1a1a 0%, #000 100%)', is_system: true };
+
+export async function initCategories() {
+    await fetchCategoriesFromDB();
+
     const categoriesBtn = document.getElementById('categories-btn');
     const closeBtn = document.getElementById('close-categories');
     const addSheetBtn = document.getElementById('add-category-sheet-btn');
@@ -24,11 +29,9 @@ export function initCategories() {
     if (categoriesBtn) {
         categoriesBtn.addEventListener('click', () => toggleCategoriesPage(true));
     }
-
     if (closeBtn) {
         closeBtn.addEventListener('click', () => toggleCategoriesPage(false));
     }
-
     if (addSheetBtn) {
         addSheetBtn.addEventListener('click', () => toggleAddCategorySheet(true));
     }
@@ -42,12 +45,13 @@ export function initCategories() {
     if (explorerDeleteBtn) {
         explorerDeleteBtn.addEventListener('click', () => {
             const catName = document.getElementById('explorer-category-name').textContent;
-            const categories = getCategories();
-            const cat = categories.find(c => c.name === catName);
+            const cat = localizedCategories.find(c => c.name === catName);
             if (cat) {
-                showDeleteCategoryConfirm(cat.id, cat.name);
-                // Also close explorer when delete is triggered
-                toggleCategoryExplorer(false);
+                if (cat.is_system) {
+                    showCategoriesToast('System categories cannot be deleted');
+                } else {
+                    showDeleteCategoryConfirm(cat.id, cat.name);
+                }
             }
         });
     }
@@ -56,12 +60,647 @@ export function initCategories() {
     if (iconBox) {
         iconBox.addEventListener('click', () => {
             const catName = document.getElementById('explorer-category-name').textContent;
+            const cat = getCategories().find(c => c.name === catName);
+            
+            // Block emoji update for system categories (except "Not set")
+            if (cat && cat.is_system && cat.id !== 'cat-1') {
+                showCategoriesToast('System icons are locked');
+                if (window.HapticsService) window.HapticsService.heavy();
+                return;
+            }
+            
             showEmojiPicker(catName);
         });
     }
 
-    // Initial render
+    const togglePresetsBtn = document.getElementById('toggle-presets-btn');
+    if (togglePresetsBtn) {
+        togglePresetsBtn.addEventListener('click', () => {
+            const container = document.getElementById('presets-container');
+            const isHidden = container.classList.contains('hidden');
+            if (isHidden) {
+                container.classList.remove('hidden');
+                togglePresetsBtn.textContent = 'Hide Presets';
+                togglePresetsBtn.style.color = 'var(--accent-blue)';
+            } else {
+                container.classList.add('hidden');
+                togglePresetsBtn.textContent = 'View Presets';
+                togglePresetsBtn.style.color = 'rgba(255,255,255,0.5)';
+            }
+            if (window.HapticsService) window.HapticsService.light();
+        });
+    }
+
+    const toggleCreationsBtn = document.getElementById('toggle-creations-btn');
+    if (toggleCreationsBtn) {
+        toggleCreationsBtn.addEventListener('click', () => {
+            const container = document.getElementById('my-categories-collection-box');
+            const isHidden = container.classList.contains('hidden');
+            if (isHidden) {
+                container.classList.remove('hidden');
+                toggleCreationsBtn.textContent = 'Hide Creations';
+                toggleCreationsBtn.style.color = 'var(--accent-blue)';
+            } else {
+                container.classList.add('hidden');
+                toggleCreationsBtn.textContent = 'See Creations';
+                toggleCreationsBtn.style.color = 'rgba(255,255,255,0.5)';
+            }
+            if (window.HapticsService) window.HapticsService.light();
+        });
+    }
+
     renderStoredCategories();
+}
+
+async function fetchCategoriesFromDB() {
+    try {
+        const { data: userResp } = await supabase.auth.getUser();
+        if (!userResp.user) return;
+        const userId = userResp.user.id;
+
+        let { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        // Auto-Seed System Categories if missing
+        const systemNames = SYSTEM_CATEGORIES_SEED.map(s => s.name);
+        const existingNames = data ? data.map(d => d.name) : [];
+        const missing = SYSTEM_CATEGORIES_SEED.filter(s => !existingNames.includes(s.name));
+
+        if (missing.length > 0) {
+            console.log(`[Categories] Seeding ${missing.length} system categories...`);
+            const seedData = missing.map(c => ({ ...c, user_id: userId }));
+            const { data: seeded, error: seedError } = await supabase
+                .from('categories')
+                .insert(seedData)
+                .select();
+            
+            if (!seedError && seeded) {
+                data = [...(data || []), ...seeded].sort((a,b) => a.name.localeCompare(b.name));
+            }
+        }
+
+        localizedCategories = data || [];
+        renderStoredCategories();
+    } catch (err) {
+        console.error('[Categories] DB Fetch error:', err.message);
+        localizedCategories = [];
+    }
+}
+
+export function getCategories() {
+    return [NOT_SET_CAT, ...localizedCategories];
+}
+
+async function updateCategoryEmoji(catId, newEmoji) {
+    if (window.HapticsService) window.HapticsService.medium();
+    
+    // 1. Optimistic UI update
+    const idx = localizedCategories.findIndex(c => c.id === catId);
+    if (idx !== -1) localizedCategories[idx].icon = newEmoji;
+    renderStoredCategories();
+    
+    // 2. Database Sync
+    const { error } = await supabase
+        .from('categories')
+        .update({ icon: newEmoji })
+        .eq('id', catId);
+
+    if (error) {
+        console.error('[Categories] Sync failed:', error.message);
+    }
+
+    const explorer = document.getElementById('category-explorer');
+    if (explorer && !explorer.classList.contains('hidden')) {
+        const catName = document.getElementById('explorer-category-name').textContent;
+        renderCategorySubscriptions(catName);
+    }
+    if (window.refreshUniversalUI) window.refreshUniversalUI();
+}
+
+export function toggleCategoriesPage(show) {
+    const page = document.getElementById('categories-page');
+    if (!page) return;
+    categoriesVisible = show;
+    if (window.HapticsService) window.HapticsService.medium();
+    if (show) {
+        page.classList.remove('hidden');
+        renderStoredCategories();
+    } else {
+        page.classList.add('hidden');
+    }
+}
+
+function renderStoredCategories() {
+    const presetsContainer = document.getElementById('presets-container');
+    const myCatsBox = document.getElementById('my-categories-collection-box');
+    if (!presetsContainer || !myCatsBox) return;
+
+    const all = getCategories();
+    const presets = all.filter(c => c.is_system === true);
+    const custom = all.filter(c => !c.is_system);
+
+    const renderTo = (list, container) => {
+        container.innerHTML = '';
+        if (list.length === 0) {
+           container.innerHTML = `<div style="padding: 20px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); font-size: 0.7rem;">None yet</div>`;
+           return;
+        }
+
+        list.forEach((cat) => {
+            const row = document.createElement('div');
+            row.className = 'category-collection-row';
+            row.style.cssText = `
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 14px 16px; background: rgba(255,255,255,0.03);
+                border: 1px solid rgba(255,255,255,0.04); border-radius: 18px;
+                transition: all 0.2s ease;
+            `;
+
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: ${cat.color || 'rgba(255,255,255,0.04)'}; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                        ${cat.icon || '📁'}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">${cat.name}</span>
+                        <span style="font-size: 0.6rem; font-weight: 600; color: ${cat.is_system ? 'var(--accent-blue)' : 'rgba(255,255,255,0.3)'}; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">
+                            ${cat.is_system ? 'System Layer' : 'Custom Layer'}
+                        </span>
+                    </div>
+                </div>
+                ${cat.id !== 'cat-1' ? `
+                    <button class="open-cat-btn" style="
+                        padding: 8px 16px; border-radius: 12px; 
+                        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+                        color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 700;
+                        text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s ease;
+                    ">Open</button>
+                ` : `
+                    <div style="padding: 6px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        Default
+                    </div>
+                `}
+            `;
+
+            const openBtn = row.querySelector('.open-cat-btn');
+            if (openBtn) {
+                openBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCategoryExplorer(true, cat.name);
+                };
+            }
+            container.appendChild(row);
+        });
+    };
+
+    renderTo(presets, presetsContainer);
+    renderTo(custom, myCatsBox);
+}
+
+function showDeleteCategoryConfirm(id, name) {
+    document.getElementById('cat-delete-confirm')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'cat-delete-confirm';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 10002;
+        display: flex; align-items: flex-end; justify-content: center;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+        animation: fadeIn 0.2s ease;
+    `;
+
+    modal.innerHTML = `
+        <div class="category-sheet-inner" style="
+            width: 100%; max-width: 450px;
+            background: rgba(13,13,13,0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 32px 32px 0 0;
+            padding: 28px 24px 40px;
+            animation: nexusSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        ">
+            <div id="cat-delete-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 24px; cursor: grab;"></div>
+            
+            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                </svg>
+            </div>
+
+            <h2 style="text-align: center; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 15px; color: #fff;">
+                Remove ${name}?
+            </h2>
+            
+            <p style="text-align: center; font-size: 0.88rem; color: rgba(255,255,255,0.45); line-height: 1.6; margin: 0 0 24px; padding: 0 20px;">
+                This category will be permanently removed from your account. Any subscriptions currently linked to this category will be <span style="color: #ffb340; font-weight: 700;">automatically recategorized</span>.
+            </p>
+
+            <!-- Image-matched Safety Box -->
+            <div style="background: rgba(255, 179, 64, 0.05); border: 1px solid rgba(255, 179, 64, 0.15); border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: center; margin-bottom: 32px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffb340" stroke-width="2.5">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <p style="color: #ffb340; font-size: 0.78rem; font-weight: 600; line-height: 1.4; margin: 0;">
+                    Linked subscriptions will not be deleted — only the category will be unlinked.
+                </p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="cat-confirm-delete-yes" style="
+                    width: 100%; padding: 19px; border-radius: 20px;
+                    background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.05);
+                    color: #ff453a; font-size: 0.95rem; font-weight: 700;
+                    cursor: pointer; transition: all 0.2s ease;
+                ">Remove Category</button>
+                <button id="cat-confirm-delete-no" style="
+                    width: 100%; padding: 19px; border-radius: 20px;
+                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.01);
+                    color: rgba(255,255,255,0.6); font-size: 0.95rem; font-weight: 600;
+                    cursor: pointer; transition: all 0.2s ease;
+                ">Keep Category</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const sheet = modal.querySelector('.category-sheet-inner');
+    
+    // --- NEXUS DRAG LOGIC ---
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    const handle = document.getElementById('cat-delete-drag-handle');
+    
+    const startDrag = (e) => {
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        isDragging = true;
+        sheet.style.transition = 'none';
+    };
+
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        const nowY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const deltaY = nowY - startY;
+        if (deltaY > 0) {
+            currentY = deltaY;
+            sheet.style.transform = `translateY(${currentY}px)`;
+            modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+        }
+    };
+
+    const endDrag = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (currentY > 120) {
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => modal.remove(), 300);
+        } else {
+            sheet.style.transform = 'translateY(0)';
+            modal.style.background = 'rgba(0,0,0,0.6)';
+        }
+    };
+
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('touchstart', startDrag, { passive: true });
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('touchmove', onDrag, { passive: false });
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
+
+    document.getElementById('cat-confirm-delete-no').onclick = () => {
+        sheet.style.transform = 'translateY(110%)';
+        setTimeout(() => modal.remove(), 250);
+    };
+
+    document.getElementById('cat-confirm-delete-yes').onclick = async () => {
+        if (window.HapticsService) window.HapticsService.medium();
+        
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        
+        if (!error) {
+            localizedCategories = localizedCategories.filter(c => c.id !== id);
+            renderStoredCategories();
+            toggleCategoryExplorer(false);
+            
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => {
+                modal.remove();
+                if (window.HapticsService) window.HapticsService.success();
+                showCategoriesToast('Category removed from cloud', false);
+            }, 250);
+        } else {
+            showCategoriesToast('Error: ' + error.message);
+        }
+    };
+
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+async function addNewCategory(name) {
+    try {
+        const { data: userResp } = await supabase.auth.getUser();
+        if (!userResp.user) return false;
+
+        const newCatData = {
+            user_id: userResp.user.id,
+            name: name,
+            icon: '📁',
+            color: 'linear-gradient(135deg, #1f2937 0%, #000 100%)',
+            is_system: false 
+        };
+
+        const { data, error } = await supabase
+            .from('categories')
+            .insert([newCatData])
+            .select()
+            .single();
+
+        if (error) throw error;
+        localizedCategories.push(data);
+        renderStoredCategories();
+        return true;
+    } catch (err) {
+        console.error('[Categories] Error adding:', err.message);
+        return false;
+    }
+}
+
+function showCategoriesToast(message, isError = true) {
+    const toast = document.getElementById('categories-toast');
+    const msgSpan = document.getElementById('categories-toast-msg');
+    if (!toast || !msgSpan) return;
+    msgSpan.textContent = message;
+    toast.style.background = isError ? '#ff3b30' : '#34c759';
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function toggleCategoryExplorer(show, catName = '') {
+    const explorer = document.getElementById('category-explorer');
+    const footer = document.getElementById('category-explorer-footer');
+    if (!explorer) return;
+    if (show) {
+        explorer.classList.remove('hidden');
+        renderCategorySubscriptions(catName);
+        
+        const cat = getCategories().find(c => c.name === catName);
+        if (footer) footer.classList.toggle('hidden', cat?.is_system === true);
+    } else {
+        explorer.classList.add('hidden');
+    }
+}
+
+export async function renderCategorySubscriptions(catName) {
+    const nameEl = document.getElementById('explorer-category-name');
+    const iconBox = document.getElementById('explorer-category-icon-box');
+    const list = document.getElementById('category-subs-list');
+    const statsEl = document.getElementById('explorer-category-stats');
+    if (nameEl) nameEl.textContent = catName;
+
+    const catInfo = getCategories().find(c => c.name === catName) || NOT_SET_CAT;
+    if (iconBox) {
+        iconBox.textContent = catInfo.icon;
+        iconBox.style.background = catInfo.color;
+    }
+
+    if (!list) return;
+    
+    // Initial fetch from "Real" DB table
+    list.innerHTML = `<p style="text-align: center; opacity: 0.5; padding: 40px; font-size: 0.8rem;">Accessing Cloud Table...</p>`;
+
+    try {
+        const { data: subs, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('category', catName)
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        if (statsEl) statsEl.textContent = `${subs.length} SUBSCRIPTION${subs.length !== 1 ? 'S' : ''}`;
+
+        if (!subs || subs.length === 0) {
+            list.innerHTML = `
+                <div style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6;">No items found in ${catName}</p>
+                </div>
+            `;
+            return;
+        }
+
+        // --- NEXUS MIRRORED RENDERING ENGINE ---
+        list.innerHTML = `
+            <div class="latest-list" style="margin-top: 0; padding: 0;">
+                ${subs.map(sub => {
+                    const report = window.lastReport || { total: 0, activeSubs: [], symbol: '$', currency: 'USD', rates: null };
+                    const settings = (window.userProfile && window.userProfile.settings) || {};
+                    const targetCurrency = report.currency;
+                    const targetSymbol = report.symbol;
+                    const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
+
+                    let displayPrice = `${sub.symbol || '$'}${parseFloat(sub.price).toFixed(2)}`;
+                    
+                    if (useAutoCurrency && report.rates && (sub.currency || 'USD') !== targetCurrency) {
+                        const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(sub.price), sub.currency || 'USD', targetCurrency, report.rates) : parseFloat(sub.price);
+                        displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
+                    }
+
+                    sub.displayPrice = displayPrice;
+
+                    if (window.getSwipeTemplate) {
+                        return window.getSwipeTemplate(sub);
+                    }
+                    return `<div style="padding: 16px; background: rgba(255,255,255,0.05); border-radius: 12px;">${sub.name}</div>`;
+                }).join('')}
+            </div>
+        `;
+
+        if (window.attachSwipeEvents) {
+            window.attachSwipeEvents();
+        }
+
+    } catch (err) {
+        console.error('[Explorer] Fetch failed:', err.message);
+        list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Remote fetch failed</p>`;
+    }
+}
+
+function toggleAddCategorySheet(show) {
+    if (show) {
+        showAddCategorySheet();
+    } else {
+        const sheet = document.getElementById('category-add-sheet');
+        if (sheet) sheet.remove();
+    }
+}
+
+function showAddCategorySheet() {
+    // Remove existing
+    document.getElementById('category-add-sheet')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'category-add-sheet';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 10001;
+        display: flex; align-items: flex-end; justify-content: center;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+        animation: fadeIn 0.2s ease;
+    `;
+
+    modal.innerHTML = `
+        <div class="category-sheet-inner" style="
+            width: 100%; max-width: 450px;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 32px 32px 0 0;
+            padding: 28px 24px 40px;
+            animation: nexusSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        ">
+            <div id="cat-add-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 24px; cursor: grab;"></div>
+            
+            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(0, 162, 255, 0.08); border: 1px solid rgba(0, 162, 255, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    <line x1="12" y1="11" x2="12" y2="17"></line>
+                    <line x1="9" y1="14" x2="15" y2="14"></line>
+                </svg>
+            </div>
+
+            <h2 style="text-align: center; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 10px; color: #fff;">
+                Create New Layer
+            </h2>
+            <p style="text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.4); line-height: 1.6; margin: 0 0 28px;">
+                Organize your dashboard by grouping your unique subscriptions into custom categories.
+            </p>
+
+            <div class="form-group" style="margin-bottom: 32px;">
+                <input type="text" id="cat-name-input" placeholder="Category Name (e.g. Work Tools)" autocomplete="off" style="
+                    width: 100%; height: 60px; background: rgba(255,255,255,0.03) !important;
+                    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
+                    color: #fff; padding: 0 20px; font-size: 1rem; outline: none;
+                    transition: border-color 0.2s;
+                ">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="submit-new-cat" style="
+                    width: 100%; padding: 19px; border-radius: 20px;
+                    background: #fff; border: none;
+                    color: #000; font-size: 0.95rem; font-weight: 800;
+                    cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;
+                    display: flex; align-items: center; justify-content: center; gap: 10px;
+                ">Create Category</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const sheet = modal.querySelector('.category-sheet-inner');
+    const input = document.getElementById('cat-name-input');
+    const submitBtn = document.getElementById('submit-new-cat');
+    
+    // Focus input slightly delayed for animation smoothness
+    setTimeout(() => input.focus(), 400);
+
+    input.onfocus = () => { input.style.borderColor = 'rgba(0, 162, 255, 0.3)'; };
+    input.onblur = () => { input.style.borderColor = 'rgba(255,255,255,0.08)'; };
+
+    // --- NEXUS DRAG LOGIC ---
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    const handle = document.getElementById('cat-add-drag-handle');
+    
+    const startDrag = (e) => {
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        isDragging = true;
+        sheet.style.transition = 'none';
+        document.activeElement?.blur();
+    };
+
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        const nowY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const deltaY = nowY - startY;
+        if (deltaY > 0) {
+            currentY = deltaY;
+            sheet.style.transform = `translateY(${currentY}px)`;
+            modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+        }
+    };
+
+    const endDrag = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (currentY > 120) {
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => modal.remove(), 300);
+        } else {
+            sheet.style.transform = 'translateY(0)';
+            modal.style.background = 'rgba(0,0,0,0.6)';
+        }
+    };
+
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('touchstart', startDrag, { passive: true });
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('touchmove', onDrag, { passive: false });
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
+
+    submitBtn.onclick = async () => {
+        const name = input.value.trim();
+        if (!name) return;
+
+        // 1. Enter Loading State
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.innerHTML = `
+            <div style="width: 18px; height: 18px; border: 2.5px solid rgba(0,0,0,0.1); border-top-color: #000; border-radius: 50%; animation: nexusSpin 0.8s linear infinite;"></div>
+            SYNCING...
+        `;
+
+        if (window.HapticsService) window.HapticsService.medium();
+
+        try {
+            const ok = await addNewCategory(name);
+            if (ok) {
+                // Success State
+                submitBtn.innerHTML = `✅ CREATED`;
+                submitBtn.style.color = '#34c759';
+                if (window.HapticsService) window.HapticsService.success();
+                
+                setTimeout(() => {
+                    sheet.style.transform = 'translateY(110%)';
+                    setTimeout(() => modal.remove(), 250);
+                }, 400);
+            } else {
+                throw new Error('Failed');
+            }
+        } catch (err) {
+            // Restore button on error
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.color = '#000';
+            submitBtn.innerHTML = 'RETRY CREATION';
+        }
+    };
+
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
 function showEmojiPicker(catName) {
@@ -75,55 +714,49 @@ function showEmojiPicker(catName) {
     const modal = document.createElement('div');
     modal.id = 'cat-emoji-picker';
     modal.style.cssText = `
-        position: fixed; inset: 0; z-index: 99999;
+        position: fixed; inset: 0; z-index: 10001;
         display: flex; align-items: flex-end; justify-content: center;
         background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
-        animation: fadeIn 0.2s ease;
+        animation: fadeIn 0.3s ease;
     `;
 
     const emojiCategories = [
-        { name: 'Essentials', color: 'rgba(148, 163, 184, 0.12)', emojis: ['📁','🏠','💼','💰','🏦','📊','📈','📉','💳','💸','💎','🔒','🔑','📢','🔔','📅','📍','🏷️','📌'] },
-        { name: 'Tech & AI', color: 'rgba(59, 130, 246, 0.18)', emojis: ['🤖','💻','⚡','📡','🧠','🔌','🔋','🖥️','📱','🖱️','⌨️','🛰️','🚀','🛸','🛸','🌌','🧪','🔭','🧬','👾'] },
-        { name: 'Entertainment', color: 'rgba(236, 72, 153, 0.18)', emojis: ['🎬','🎵','🎮','🍿','📺','🎙️','🎧','🎨','🖌️','📸','🎥','🎭','🎪','🎫','🎹','🎸','🎷','🥁','🎻'] },
-        { name: 'Service & Apps', color: 'rgba(20, 184, 166, 0.18)', emojis: ['📱','📶','☁️','🌐','📧','📩','📨','📬','📦','🚚','🛒','🛍️','👔','👕','👗','👡','👠','👞','👟','👓'] },
-        { name: 'Food & Drink', color: 'rgba(245, 158, 11, 0.18)', emojis: ['🍕','🍔','🍟','🍱','🍣','🍝','🍜','🥘','🍛','🍲','🥗','🥙','🥪','🌮','🌯','🧇','🥞','🍕','🍩','🍦','🍰','🧁','🍪','☕','🍵','🥤','🥤','🍺','🥂','🍹','🍸','🍾','🥃'] },
-        { name: 'Activities', color: 'rgba(239, 68, 68, 0.18)', emojis: ['🏃','🏋️','🚴','🏊','⚽','🏀','🎾','🏉','🏐','🎱','🎳','🏌️','🏄','⛸️','🎿','🧗','🚣','🚴','🧗','🏋️','🧘'] },
-        { name: 'Travel & Places', color: 'rgba(6, 182, 212, 0.18)', emojis: ['🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚐','🚚','🚲','🛵','🏍️','🛴','🚇','🚉','🚅','🚄','✈️','🛫','🛬','🛥️','🛳️','⛴️','🗺️','🏔️','🌋','🏖️','🏙️','🌃','🏰','⛲'] },
-        { name: 'Symbols', color: 'rgba(139, 92, 246, 0.18)', emojis: ['❤️','🔥','🌈','✨','⭐','🌟','💥','💯','✅','❌','➕','➖','✖️','➗','❓','‼️','💤','💢','💭','💬','💡','💢','🛡️','🏹','🗡️','🔱','⚖️','⚕️','☯️','☮️'] },
-        { name: 'Nature', color: 'rgba(34, 197, 94, 0.18)', emojis: ['🪐','🌍','🌜','☀️','⭐','⛅','☁️','⚡','❄️','⛄','🌀','🌊','🌬️','🍀','🌿','🌵','🌴','🌳','🌲','🍂','🍁','🌸','🌼','🌻','🌷','🌹'] },
-        { name: 'Animals', color: 'rgba(120, 113, 108, 0.18)', emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🦁','🐯','🐮','🐷','🐵','🐧','🦜','🦉','🐥','🦆','🦢','🦅','蝙蝠','🦋','蜗牛','蜜蜂','甲虫','贝壳','乌龟','蛇','恐龙','章鱼','海豚','河豚','鲸鱼','鳄鱼','斑马'] }
+        { name: 'Essentials', emojis: ['📁','🏠','💼','💰','🏦','📊','📈','📉','💸','💎','🔒','🔑','📢','🔔','📅','📍','⚙️','🛡️','⚖️','🏹'] },
+        { name: 'Tech & AI', emojis: ['🤖','💻','⚡','📡','🧠','🔌','🔋','🖥️','📱','🖱️','键盘','🛰️','🚀','🛸','🧪','🔭','🧬','👾','🕹️','🎛️'] },
+        { name: 'Entertainment', emojis: ['🎬','🎵','🎮','🍿','📺','🎙️','🎧','🎨','🖌️','📸','🎥','🎭','🎪','🎫','🎹','🎸','🎷','🥁','🎻','🎧'] },
+        { name: 'Apps & Travel', emojis: ['📱','📶','☁️','🌐','📧','📩','📨','📬','📦','🚚','🛒','🛍️','👔','👕','🚗','🚕','🚲','🛵','✈️','🛫'] }
     ];
 
     modal.innerHTML = `
-        <div style="
+        <div class="category-sheet-inner" style="
             width: 100%; max-width: 450px;
-            background: #111;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            border-radius: 28px 28px 0 0;
+            background: rgba(13, 13, 13, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 32px 32px 0 0;
             padding: 24px 24px 40px;
-            animation: nexusSlideIn 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            animation: nexusSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
-            height: 65vh;
+            height: 70vh;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         ">
-            <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 20px; flex-shrink: 0;"></div>
+            <div id="emoji-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 20px; flex-shrink: 0; cursor: grab;"></div>
             
             <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; text-align: center; letter-spacing: -0.01em; flex-shrink: 0;">
-                Choose Icon for ${catName}
+                Choose ${catName} Icon
             </h3>
 
-            <div style="flex: 1; overflow-y: auto; padding-right: 5px; -webkit-overflow-scrolling: touch;">
+            <div style="flex: 1; overflow-y: auto; padding: 0 10px 20px; -webkit-overflow-scrolling: touch;" class="custom-scroll">
                 ${emojiCategories.map(group => `
-                    <div style="margin-bottom: 24px;">
-                        <p style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; font-weight: 800; opacity: 0.6;">${group.name}</p>
+                    <div style="margin-bottom: 32px;">
+                        <p style="font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; font-weight: 800; padding-left: 4px;">${group.name}</p>
                         <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;">
                             ${group.emojis.map(emoji => `
                                 <button class="emoji-opt-btn" data-emoji="${emoji}" style="
-                                    aspect-ratio: 1; border-radius: 14px; background: ${group.color};
-                                    border: 1.5px solid rgba(255,255,255,0.05); font-size: 1.4rem; cursor: pointer;
-                                    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-                                    box-shadow: inset 0 0 12px ${group.color.replace('0.18', '0.1')};
+                                    aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.02);
+                                    border: 1px solid rgba(255,255,255,0.04); font-size: 1.3rem; cursor: pointer;
+                                    display: flex; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
                                 ">${emoji}</button>
                             `).join('')}
                         </div>
@@ -132,21 +765,23 @@ function showEmojiPicker(catName) {
             </div>
             
             <button id="save-emoji-picker" style="width: 100%; padding: 18px; border-radius: 20px; background: #fff; border: none; color: #000; font-weight: 800; cursor: pointer; margin-top: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em;">
-                SAVE
+                SAVE CHANGES
             </button>
         </div>
     `;
 
     document.body.appendChild(modal);
 
+    const sheet = modal.querySelector('.category-sheet-inner');
     let selectedEmoji = cat.icon || '📁';
 
     const updateBtns = () => {
         modal.querySelectorAll('.emoji-opt-btn').forEach(btn => {
             const isSelected = btn.dataset.emoji === selectedEmoji;
-            btn.style.background = isSelected ? 'rgba(0,122,255,0.2)' : 'rgba(255,255,255,0.03)';
-            btn.style.borderColor = isSelected ? 'rgba(0,122,255,0.5)' : 'rgba(255,255,255,0.05)';
+            btn.style.background = isSelected ? 'rgba(0,122,255,0.15)' : 'rgba(255,255,255,0.03)';
+            btn.style.borderColor = isSelected ? 'rgba(0,122,255,0.4)' : 'rgba(255,255,255,0.05)';
             btn.style.transform = isSelected ? 'scale(1.1)' : 'scale(1)';
+            btn.style.boxShadow = isSelected ? '0 0 20px rgba(0,122,255,0.2)' : 'none';
         });
     };
     updateBtns();
@@ -163,37 +798,28 @@ function showEmojiPicker(catName) {
     saveBtn.onclick = async () => {
         saveBtn.disabled = true;
         saveBtn.style.opacity = '0.7';
-        saveBtn.innerHTML = `
-            <div class="spinner" style="width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #000; border-radius: 50%; animation: nexusSpin 0.8s linear infinite;"></div>
-            SYNCING...
-        `;
+        saveBtn.innerHTML = `<div class="spinner" style="width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #000; border-radius: 50%; animation: nexusSpin 0.8s linear infinite;"></div> SYNCING...`;
 
         try {
             await updateCategoryEmoji(cat.id, selectedEmoji);
-            
-            saveBtn.innerHTML = `✅ SYNCED`;
+            saveBtn.innerHTML = `✅ SAVED`;
             saveBtn.style.color = '#34c759';
             if (window.HapticsService) window.HapticsService.success();
-            
-            setTimeout(() => {
-                modal.remove();
-            }, 500);
+            setTimeout(() => modal.remove(), 400);
         } catch (err) {
-            console.error('Save failed:', err);
             saveBtn.disabled = false;
             saveBtn.style.opacity = '1';
-            saveBtn.innerHTML = 'SAVE CHANGES (RETRY)';
+            saveBtn.innerHTML = 'RETRY';
         }
     };
 
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-
-    // --- GRAB AND PULL DISMISS LOGIC ---
-    const sheet = modal.querySelector('div');
+    // --- NEXUS DRAG LOGIC ---
     let startY = 0;
     let currentY = 0;
     let isDragging = false;
 
+    const handle = document.getElementById('emoji-drag-handle');
+    
     const startDrag = (e) => {
         startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         isDragging = true;
@@ -204,550 +830,35 @@ function showEmojiPicker(catName) {
         if (!isDragging) return;
         const nowY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         const deltaY = nowY - startY;
-        
         if (deltaY > 0) {
             currentY = deltaY;
             sheet.style.transform = `translateY(${currentY}px)`;
+            modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
         }
     };
 
     const endDrag = () => {
         if (!isDragging) return;
         isDragging = false;
-        sheet.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
-        
-        if (currentY > 100) {
-            sheet.style.transform = 'translateY(100%)';
+        sheet.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (currentY > 120) {
+            sheet.style.transform = 'translateY(110%)';
             setTimeout(() => modal.remove(), 300);
         } else {
             sheet.style.transform = 'translateY(0)';
+            modal.style.background = 'rgba(0,0,0,0.6)';
         }
-        currentY = 0;
     };
 
-    // Attach to the handle area specifically for better UX, but allow entire sheet header too
-    const handle = sheet.querySelector('div:first-child');
-    handle.style.cursor = 'grab';
-    
     handle.addEventListener('mousedown', startDrag);
-    handle.addEventListener('touchstart', startDrag, { passive: true });
-    
     window.addEventListener('mousemove', onDrag);
-    window.addEventListener('touchmove', onDrag, { passive: false });
-    
     window.addEventListener('mouseup', endDrag);
+
+    handle.addEventListener('touchstart', startDrag, { passive: true });
+    window.addEventListener('touchmove', onDrag, { passive: false });
     window.addEventListener('touchend', endDrag);
-}
 
-async function updateCategoryEmoji(catId, newEmoji) {
-    if (window.HapticsService) window.HapticsService.medium();
-    
-    const profile = window.userProfile;
-    if (!profile.settings) profile.settings = {};
-    
-    const isSystem = DEFAULT_CATEGORIES.some(d => d.id === catId);
-    
-    if (isSystem) {
-        if (!profile.settings.categoryCustomizations) profile.settings.categoryCustomizations = {};
-        profile.settings.categoryCustomizations[catId] = { 
-            ...(profile.settings.categoryCustomizations[catId] || {}),
-            icon: newEmoji 
-        };
-    } else {
-        // Custom category - update directly in the categories array
-        if (profile.settings.categories) {
-            const idx = profile.settings.categories.findIndex(c => c.id === catId);
-            if (idx !== -1) {
-                profile.settings.categories[idx].icon = newEmoji;
-            }
-        }
-    }
-
-    // Sync to Supabase
-    if (window.saveProfileToSupabase) {
-        await window.saveProfileToSupabase();
-    }
-
-    renderStoredCategories();
-    
-    const explorer = document.getElementById('category-explorer');
-    if (explorer && !explorer.classList.contains('hidden')) {
-        const catName = document.getElementById('explorer-category-name').textContent;
-        renderCategorySubscriptions(catName);
-    }
-
-    if (window.renderSubscriptions) window.renderSubscriptions();
-    if (window.updateStats) window.updateStats();
-}
-
-export function toggleCategoriesPage(show) {
-    const page = document.getElementById('categories-page');
-    if (!page) return;
-
-    categoriesVisible = show;
-    if (window.HapticsService) window.HapticsService.medium();
-
-    if (show) {
-        page.classList.remove('hidden');
-        renderStoredCategories();
-    } else {
-        page.classList.add('hidden');
-    }
-}
-
-export function getCategories() {
-    const profile = window.userProfile;
-    let custom = [];
-    let deletedSystemIds = [];
-    let customizations = {};
-
-    if (profile?.settings?.categories && Array.isArray(profile.settings.categories)) {
-        custom = profile.settings.categories;
-    }
-    if (profile?.settings?.deletedSystemCategoryIds && Array.isArray(profile.settings.deletedSystemCategoryIds)) {
-        deletedSystemIds = profile.settings.deletedSystemCategoryIds;
-    }
-    if (profile?.settings?.categoryCustomizations) {
-        customizations = profile.settings.categoryCustomizations;
-    }
-    
-    // Merge defaults with custom, filtering out deleted system IDs
-    const all = DEFAULT_CATEGORIES.filter(d => !deletedSystemIds.includes(d.id)).map(cat => {
-        // Apply customizations (like custom icons)
-        if (customizations[cat.id]) {
-            return { ...cat, ...customizations[cat.id] };
-        }
-        return cat;
-    });
-    
-    custom.forEach(c => {
-        if (!all.some(a => a.name.toLowerCase() === c.name.toLowerCase())) {
-            all.push(c);
-        }
-    });
-    return all;
-}
-
-async function renderStoredCategories() {
-    const categories = getCategories();
-    const box = document.getElementById('categories-collection-box');
-    if (!box) return;
-
-    box.innerHTML = '';
-    
-    categories.forEach((cat) => {
-        const isDefault = DEFAULT_CATEGORIES.some(d => d.id === cat.id);
-        const row = document.createElement('div');
-        row.className = 'category-collection-row';
-        row.style.cssText = `
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 16px; background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.04); border-radius: 18px;
-            transition: all 0.2s ease;
-        `;
-
-        row.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    ${cat.icon || '📁'}
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">${cat.name}</span>
-                    <span style="font-size: 0.6rem; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.05em;">
-                        ${isDefault ? 'System Layer' : 'Custom Layer'}
-                    </span>
-                </div>
-            </div>
-            ${cat.id !== 'cat-1' ? `
-                <button class="open-cat-btn" style="
-                    padding: 8px 16px; border-radius: 12px; 
-                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-                    color: rgba(255,255,255,0.8); font-size: 0.75rem; font-weight: 700;
-                    text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s ease;
-                ">Open</button>
-            ` : `
-                <div style="padding: 6px 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                    Default
-                </div>
-            `}
-        `;
-
-        const openBtn = row.querySelector('.open-cat-btn');
-        if (openBtn) {
-            openBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (window.HapticsService) window.HapticsService.selection();
-                
-                // Open the dedicated Category Explorer page
-                toggleCategoryExplorer(true, cat.name);
-            };
-        }
-
-        box.appendChild(row);
-    });
-}
-
-
-function showCategoriesToast(message, isError = true) {
-    const toast = document.getElementById('categories-toast');
-    const msgSpan = document.getElementById('categories-toast-msg');
-    if (!toast || !msgSpan) return;
-
-    msgSpan.textContent = message;
-    toast.style.background = isError ? 'rgba(255, 59, 48, 0.9)' : 'rgba(52, 199, 89, 0.9)';
-    toast.classList.remove('hidden');
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-
-    if (window.HapticsService) {
-        if (isError) window.HapticsService.heavy();
-        else window.HapticsService.medium();
-    }
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(-50%) translateY(-20px)';
-        setTimeout(() => toast.classList.add('hidden'), 300);
-    }, 3000);
-}
-
-function toggleAddCategorySheet(show) {
-    if (show) {
-        showAddCategorySheet();
-    } else {
-        const sheet = document.getElementById('category-add-sheet');
-        if (sheet) dismissCategorySheet(sheet);
-    }
-}
-
-function showAddCategorySheet() {
-    document.getElementById('category-add-sheet')?.remove();
-
-    const modal = document.createElement('div');
-    modal.id = 'category-add-sheet';
-    modal.style.cssText = `
-        position: fixed; inset: 0; z-index: 10001;
-        display: flex; align-items: flex-end; justify-content: center;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-        animation: fadeIn 0.2s ease;
-    `;
-
-    modal.innerHTML = `
-        <div class="category-sheet-inner" style="
-            width: 100%; max-width: 450px;
-            background: #111;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            border-radius: 28px 28px 0 0;
-            padding: 24px;
-            animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-        ">
-            <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 24px;"></div>
-            
-            <h2 style="font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 24px; color: #fff; text-align: center;">NEW CATEGORY</h2>
-            
-            <form id="category-add-form" style="display: flex; flex-direction: column; gap: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label style="font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-left: 4px;">Name</label>
-                    <input type="text" id="cat-name-input" placeholder="e.g. Subscriptions, Family..." 
-                        style="width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; color: #fff; font-size: 0.95rem; outline: none;"
-                        autocomplete="off">
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <button type="submit" style="
-                        width: 100%; padding: 18px; border-radius: 18px;
-                        background: #fff; color: #000; border: none;
-                        font-size: 0.9rem; font-weight: 800; text-transform: uppercase;
-                        letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s ease;
-                    ">Create Category</button>
-                </div>
-            </form>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const form = document.getElementById('category-add-form');
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('cat-name-input').value.trim();
-        if (!name) {
-            showCategoriesToast('Please enter a name');
-            return;
-        }
-
-        const success = await addNewCategory(name);
-        if (success) {
-            dismissCategorySheet(modal);
-            showCategoriesToast('Category added!', false);
-        }
-    });
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) dismissCategorySheet(modal);
-    });
-}
-
-function dismissCategorySheet(modal) {
-    const inner = modal.querySelector('.category-sheet-inner');
-    if (inner) {
-        inner.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
-        inner.style.transform = 'translateY(110%)';
-    }
-    modal.style.opacity = '0';
-    setTimeout(() => modal.remove(), 300);
-}
-
-async function addNewCategory(name) {
-    const profile = window.userProfile;
-    if (!profile) return false;
-
-    if (!profile.settings) profile.settings = {};
-    const current = profile.settings.categories || [];
-    
-    // Check for duplicates
-    if (DEFAULT_CATEGORIES.some(c => c.name.toLowerCase() === name.toLowerCase()) || 
-        current.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-        showCategoriesToast('Category already exists');
-        return false;
-    }
-
-    const newCat = {
-        id: 'cat-' + Date.now(),
-        name: name,
-        icon: '📁',
-        color: 'linear-gradient(135deg, #1f2937 0%, #000 100%)'
-    };
-
-    // 1. Update LOCAL STATE and UI Immediately
-    profile.settings.categories = [...current, newCat];
-    renderStoredCategories();
-    
-    if (window.HapticsService) window.HapticsService.success();
-
-    // 2. Sync to Database (handles offline queue automatically)
-    if (window.saveProfileToSupabase) {
-        await window.saveProfileToSupabase();
-    }
-
-    return true;
-}
-
-function showDeleteCategoryConfirm(id, name) {
-    document.getElementById('cat-delete-confirm')?.remove();
-
-    const modal = document.createElement('div');
-    modal.id = 'cat-delete-confirm';
-    modal.style.cssText = `
-        position: fixed; inset: 0; z-index: 10002;
-        display: flex; align-items: flex-end; justify-content: center;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-        animation: fadeIn 0.2s ease;
-    `;
-
-    modal.innerHTML = `
-        <div class="category-sheet-inner" style="
-            width: 100%; max-width: 450px;
-            background: #111;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            border-radius: 28px 28px 0 0;
-            padding: 28px 24px 40px;
-            animation: nexusSlideIn 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-        ">
-            <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 24px;"></div>
-            
-            <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                    <path d="M10 11v6"></path><path d="M14 11v6"></path>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                </svg>
-            </div>
-
-            <h2 style="text-align: center; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 10px; color: #fff;">
-                Remove Category?
-            </h2>
-            <p style="text-align: center; font-size: 0.82rem; color: rgba(255,255,255,0.45); line-height: 1.6; margin: 0 0 28px; padding: 0 10px;">
-                Subscriptions currently in <strong style="color: #fff;">"${name}"</strong> will stay in your list but will no longer have a category.
-            </p>
-
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button id="cat-confirm-delete-yes" style="
-                    width: 100%; padding: 17px; border-radius: 18px;
-                    background: rgba(255,69,58,0.12); border: 1px solid rgba(255,69,58,0.25);
-                    color: #ff453a; font-size: 1rem; font-weight: 700;
-                    cursor: pointer; transition: all 0.15s ease;
-                ">Delete Category</button>
-                <button id="cat-confirm-delete-no" style="
-                    width: 100%; padding: 17px; border-radius: 18px;
-                    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-                    color: rgba(255,255,255,0.7); font-size: 1rem; font-weight: 600;
-                    cursor: pointer; transition: all 0.15s ease;
-                ">Keep it</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    document.getElementById('cat-confirm-delete-no').onclick = () => modal.remove();
-    document.getElementById('cat-confirm-delete-yes').onclick = async () => {
-        const profile = window.userProfile;
-        const subCats = profile.settings?.categories || [];
-        const deletedSystemIds = profile.settings?.deletedSystemCategoryIds || [];
-        
-        // 1. Find if it was a default or custom category
-        const isSystem = DEFAULT_CATEGORIES.some(d => d.id === id);
-        let catName = "";
-
-        if (isSystem) {
-            const sysCat = DEFAULT_CATEGORIES.find(d => d.id === id);
-            catName = sysCat.name;
-            if (!deletedSystemIds.includes(id)) {
-                deletedSystemIds.push(id);
-            }
-        } else {
-            const customCat = subCats.find(c => c.id === id);
-            catName = customCat?.name || "";
-            profile.settings.categories = subCats.filter(c => c.id !== id);
-        }
-
-        profile.settings.deletedSystemCategoryIds = deletedSystemIds;
-        
-        // 2. Perform Optimistic Subscription Cleanup locally
-        if (catName && window.subscriptions) {
-            window.subscriptions = window.subscriptions.map(s => {
-                if (s.category === catName) {
-                    const updatedSub = { ...s, category: 'Not set' };
-                    // If online, save sub. If offline, the core sync engine in main.js will handle subs
-                    // (Note: Subscriptions are usually handled by saveToSupabase which has its own queue)
-                    if (window.saveToSupabase) window.saveToSupabase(updatedSub);
-                    return updatedSub;
-                }
-                return s;
-            });
-        }
-
-        // 3. Update UI IMMEDIATELY
-        renderStoredCategories();
-        modal.remove();
-        if (window.renderSubscriptions) window.renderSubscriptions();
-        if (window.updateStats) window.updateStats();
-        if (window.renderCalendar) window.renderCalendar();
-        
-        showCategoriesToast('Category removed', false);
-
-        // 4. Sync Profile (handles offline queue automatically)
-        if (window.saveProfileToSupabase) {
-            await window.saveProfileToSupabase();
-        }
-    };
-}
-
-export function toggleCategoryExplorer(show, catName = '') {
-    const explorer = document.getElementById('category-explorer');
-    const footer = document.getElementById('category-explorer-footer');
-    if (!explorer) return;
-
-    if (show) {
-        explorer.classList.remove('hidden');
-        renderCategorySubscriptions(catName);
-        
-        // Hide delete footer for 'Not set' category
-        if (footer) {
-            footer.classList.toggle('hidden', catName === 'Not set');
-        }
-    } else {
-        explorer.classList.add('hidden');
-    }
-}
-
-export async function renderCategorySubscriptions(catName) {
-    const nameEl = document.getElementById('explorer-category-name');
-    const iconBox = document.getElementById('explorer-category-icon-box');
-    const statsEl = document.getElementById('explorer-category-stats');
-    const list = document.getElementById('category-subs-list');
-
-    if (nameEl) nameEl.textContent = catName;
-    
-    // Find category info for icon
-    const categories = getCategories();
-    const catInfo = categories.find(c => c.name === catName);
-    if (iconBox) {
-        iconBox.textContent = catInfo ? (catInfo.icon || '📁') : '📁';
-        iconBox.style.background = catInfo ? (catInfo.color || 'rgba(255,255,255,0.05)') : 'rgba(255,255,255,0.05)';
-    }
-
-    if (!list) return;
-
-    // --- Optimization: Use local data for instant "Live" feel ---
-    let subsToRender = [];
-    if (window.subscriptions && window.subscriptions.length > 0) {
-        subsToRender = window.subscriptions
-            .filter(s => {
-                const sCat = s.category || 'Not set';
-                return sCat === catName;
-            })
-            .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    }
-
-    const renderList = (subs) => {
-        if (statsEl) statsEl.textContent = `${subs.length} SUBSCRIPTION${subs.length !== 1 ? 'S' : ''}`;
-
-        if (!subs || subs.length === 0) {
-            list.innerHTML = `
-                <div style="padding: 24px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1);">
-                    <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6;">No subscriptions found in this category</p>
-                </div>
-            `;
-            return;
-        }
-
-        list.innerHTML = `
-            <div class="latest-list" style="margin-top: 0; padding: 0;">
-                ${subs.map(sub => {
-                    const report = window.lastReport || { total: 0, symbol: '$', currency: 'USD', rates: null };
-                    const settings = (window.userProfile && window.userProfile.settings) || {};
-                    const targetCurrency = report.currency;
-                    const targetSymbol = report.symbol;
-                    const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
-
-                    let displayPrice = `${sub.symbol || '$'}${parseFloat(sub.price).toFixed(2)}`;
-                    if (useAutoCurrency && report.rates && (sub.currency || 'USD') !== targetCurrency) {
-                        const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(sub.price), sub.currency || 'USD', targetCurrency, report.rates) : parseFloat(sub.price);
-                        displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
-                    }
-
-                    sub.displayPrice = displayPrice;
-                    return window.getSwipeTemplate ? window.getSwipeTemplate(sub) : `<div style="padding: 10px; color: white;">${sub.name}</div>`;
-                }).join('')}
-            </div>
-        `;
-
-        if (window.attachSwipeEvents) window.attachSwipeEvents();
-    };
-
-    // If we have local data, render it immediately
-    if (subsToRender.length > 0) {
-        renderList(subsToRender);
-    } else {
-        // Fallback to Remote Fetch if local is empty or hasn't loaded
-        list.innerHTML = `<p style="text-align: center; opacity: 0.5; font-size: 0.8rem; padding: 20px;">Fetching subscriptions...</p>`;
-        try {
-            const { data: subs, error } = await supabase
-                .from('subscriptions')
-                .select('*')
-                .eq('category', catName)
-                .order('name', { ascending: true });
-
-            if (error) throw error;
-            renderList(subs || []);
-        } catch (err) {
-            console.error('[Explorer] Error:', err);
-            list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Failed to load subscriptions</p>`;
-        }
-    }
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
 window.renderCategorySubscriptions = renderCategorySubscriptions;

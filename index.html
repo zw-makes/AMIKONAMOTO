@@ -1385,15 +1385,25 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
 
         <div class="nexus-scroll">
           <div class="nexus-card-slot" style="margin-top: 0;">
-            <div style="margin-bottom: 12px;">
+            <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
               <span style="font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em;">All Categories</span>
+              <button id="toggle-presets-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 6px 12px; color: rgba(255,255,255,0.5); font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;">View Presets</button>
             </div>
             
-            <div id="categories-collection-box" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-               <!-- Category rows will be injected here -->
+            <div id="presets-container" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px;">
+               <!-- System categories injected here -->
             </div>
 
-            <div class="module-text-row" style="justify-content: space-between;">
+            <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em;">My Categories</span>
+              <button id="toggle-creations-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 6px 12px; color: rgba(255,255,255,0.5); font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;">See Creations</button>
+            </div>
+
+            <div id="my-categories-collection-box" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;">
+               <!-- User categories injected here -->
+            </div>
+
+            <div class="module-text-row" style="justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;">
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: #fff;">Subscription Groups</span>
                 <span style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">Organize apps into custom layers</span>
