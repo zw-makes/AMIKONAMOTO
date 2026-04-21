@@ -847,6 +847,13 @@ function updateTime() {
 
 window.loadSubscriptions = loadSubscriptions;
 let lastFetchTimestamp = 0;
+let cachedAvatarUrl = null; // Part 3: Persistent avatar cache
+let renderTimeout = null;   // Part 4: For debouncing
+
+function debounceRender(callback, delay = 300) {
+  if (renderTimeout) clearTimeout(renderTimeout);
+  renderTimeout = setTimeout(callback, delay);
+}
 
 async function loadSubscriptions(force = false) {
   if (!currentUser) return;
@@ -1036,6 +1043,9 @@ async function saveProfileToSupabase() {
   } catch (err) {
     console.error('[Supabase] Profile sync error:', err.message);
     if (window.queueOperation) window.queueOperation('upsert_profile', userProfile);
+  } finally {
+    // Part 2: Targeted update only
+    updateProfileUI();
   }
 }
 window.saveProfileToSupabase = saveProfileToSupabase;
@@ -2330,38 +2340,42 @@ async function updateStats() {
 }
 
 window.refreshUniversalUI = async function (targetSubId = null) {
-  renderCalendar();
-  await updateStats(); // Ensures totals and rates are ready
+  // Part 4: Debounce the heavy full-app re-render
+  debounceRender(async () => {
+    console.log('[UI] Universal Refresh firing (debounced)...');
+    renderCalendar();
+    await updateStats(); // Ensures totals and rates are ready
 
-  const isStatsOpen = !document.getElementById('stats-modal').classList.contains('hidden');
-  const explorer = document.getElementById('category-explorer');
-  const isExplorerOpen = explorer && !explorer.classList.contains('hidden');
-  const isDayDetailOpen = !document.getElementById('day-detail-modal')?.classList.contains('hidden');
-  const nexusDetail = document.getElementById('nexus-card-detail');
-  const isNexusDetailOpen = nexusDetail && !nexusDetail.classList.contains('hidden');
+    const isStatsOpen = !document.getElementById('stats-modal').classList.contains('hidden');
+    const explorer = document.getElementById('category-explorer');
+    const isExplorerOpen = explorer && !explorer.classList.contains('hidden');
+    const isDayDetailOpen = !document.getElementById('day-detail-modal')?.classList.contains('hidden');
+    const nexusDetail = document.getElementById('nexus-card-detail');
+    const isNexusDetailOpen = nexusDetail && !nexusDetail.classList.contains('hidden');
 
-  if (isStatsOpen && window.showMonthlyBreakdown) {
-    window.showMonthlyBreakdown(window.currentStatsFilter || 'all');
-  }
-
-  if (isExplorerOpen) {
-    const catName = document.getElementById('explorer-category-name')?.textContent;
-    if (catName && window.renderCategorySubscriptions) {
-      await window.renderCategorySubscriptions(catName);
+    if (isStatsOpen && window.showMonthlyBreakdown) {
+      window.showMonthlyBreakdown(window.currentStatsFilter || 'all');
     }
-  }
 
-  if (isNexusDetailOpen && window.renderLinkedSubscriptions) {
-    window.renderLinkedSubscriptions(window._currentNexusCardId);
-  }
-
-  if (isDayDetailOpen && targetSubId && window.showDayDetails) {
-    const sub = subscriptions.find(s => s.id === targetSubId);
-    if (sub) {
-      const daySubs = (window.subscriptions || []).filter(s => s.date === sub.date);
-      window.showDayDetails(sub.date, daySubs);
+    if (isExplorerOpen) {
+      const catName = document.getElementById('explorer-category-name')?.textContent;
+      if (catName && window.renderCategorySubscriptions) {
+        await window.renderCategorySubscriptions(catName);
+      }
     }
-  }
+
+    if (isNexusDetailOpen && window.renderLinkedSubscriptions) {
+      window.renderLinkedSubscriptions(window._currentNexusCardId);
+    }
+
+    if (isDayDetailOpen && targetSubId && window.showDayDetails) {
+      const sub = (window.subscriptions || []).find(s => s.id === targetSubId);
+      if (sub) {
+        const daySubs = (window.subscriptions || []).filter(s => s.date === sub.date);
+        window.showDayDetails(sub.date, daySubs);
+      }
+    }
+  }, 300);
 };
 
 // --- Event Listeners ---
@@ -4365,15 +4379,20 @@ document.addEventListener('click', (e) => {
 function updateProfileUI() {
   if (!userProfile) return;
 
+  // Part 3: Populate cache
+  if (userProfile.avatar_url) cachedAvatarUrl = userProfile.avatar_url;
+
   const avatars = document.querySelectorAll('.profile-avatar');
   avatars.forEach(container => {
     const svg = container.querySelector('svg');
     const img = container.querySelector('img');
 
-    if (userProfile.avatar_url) {
+    const effectiveUrl = userProfile.avatar_url || cachedAvatarUrl;
+
+    if (effectiveUrl) {
       if (svg) svg.classList.add('hidden');
       if (img) {
-        img.src = userProfile.avatar_url;
+        if (img.src !== effectiveUrl) img.src = effectiveUrl;
         img.classList.remove('hidden');
       }
     } else {
