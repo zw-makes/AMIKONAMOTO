@@ -748,13 +748,14 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
 
     // --- UNIVERSAL HAPTIC ENGINE ---
     document.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn, .add-page-back-btn, .status-icon-btn, [id$="-btn"]');
+        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn, .add-page-back-btn, .status-icon-btn, .settings-item, .data-action, [id$="-btn"], [id$="-box"]');
         if (!target) return;
 
         if (window.HapticsService) {
             const id = target.id?.toLowerCase() || '';
+            const className = target.className?.toLowerCase() || '';
             // Priority 1: Heavy/Success/Danger Actions
-            if (id.includes('delete') || id.includes('confirm') || id.includes('wipe') || target.classList.contains('submit-btn')) {
+            if (id.includes('delete') || id.includes('confirm') || id.includes('wipe') || id.includes('remove') || className.includes('danger') || target.classList.contains('submit-btn')) {
                 window.HapticsService.medium();
             } 
             // Priority 2: Standard Interactions

@@ -407,7 +407,13 @@ async function openCardDetail(cardElement, data) {
     // Handle delete
     const deleteBtn = document.getElementById('delete-card-btn');
     if (deleteBtn) {
-        deleteBtn.onclick = () => showDeleteCardConfirm(data.id);
+        deleteBtn.onclick = () => {
+            if (!navigator.onLine) {
+                if (window.showOfflineWarning) window.showOfflineWarning();
+                return;
+            }
+            showDeleteCardConfirm(data.id);
+        };
     }
 }
 
