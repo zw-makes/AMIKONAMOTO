@@ -1446,7 +1446,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         </div>
 
 
-        <div class="profile-page-scroll">
+        <div class="profile-page-scroll" style="padding-bottom: 140px;">
           <div class="profile-content"
             style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
             <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1544,11 +1544,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </svg>
               Send Test Notification
             </button>
-            <div style="width: 100%;">
-              <button id="save-app-settings" class="submit-btn"
-                style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
-            </div>
           </div>
+        </div>
+
+        <!-- Fixed Bottom Action Bar (Nexus-Style) -->
+        <div class="settings-footer"
+          style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; pointer-events: none;">
+          <button id="save-app-settings" class="submit-btn"
+            style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700; pointer-events: auto;">Save Settings</button>
         </div>
       </div>
     </div>
@@ -1763,7 +1766,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             Settings</h2>
         </div>
 
-        <div class="profile-page-scroll">
+        <div class="profile-page-scroll" style="padding-bottom: 140px;">
           <form id="settings-form" class="profile-content">
             <!-- Box One: Stars banner card (same as profile page) -->
             <div class="profile-header-card" style="position: relative; overflow: hidden; margin-bottom: 8px;">
@@ -1842,11 +1845,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
 
             </div>
 
-            <div style="margin-top: 30px; width: 100%;">
-              <button type="submit" class="submit-btn"
-                style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700;">Save Settings</button>
-            </div>
           </form>
+        </div>
+
+        <!-- Fixed Bottom Action Bar (Nexus-Style) -->
+        <div class="settings-footer"
+          style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, #000 85%, transparent); z-index: 1000; display: flex; justify-content: center; box-sizing: border-box; pointer-events: none;">
+          <button id="save-profile-settings" type="submit" class="submit-btn"
+            style="width: 100%; margin: 0; height: 54px; font-size: 1rem; font-weight: 700; pointer-events: auto;">Save Profile</button>
         </div>
       </div>
     </div>

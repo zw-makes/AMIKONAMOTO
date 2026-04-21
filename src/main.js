@@ -746,9 +746,9 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
     }
   }
 
-    // --- UNIVERSAL HAPTIC ENGINE ---
-    document.addEventListener('click', (e) => {
-        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn, .add-page-back-btn, .status-icon-btn, .settings-item, .data-action, [id$="-btn"], [id$="-box"]');
+    // --- UNIVERSAL HAPTIC ENGINE (iPhone-Grade PointerDown) ---
+    document.addEventListener('pointerdown', (e) => {
+        const target = e.target.closest('button, .glass-btn, .nav-arrow, .platform-trigger, .category-collection-row, .nexus-glow-btn, .add-page-back-btn, .status-icon-btn, .profile-settings-item, .settings-item, .data-action, .danger-zone-btn, [id$="-btn"], [id$="-box"]');
         if (!target) return;
 
         if (window.HapticsService) {
@@ -763,7 +763,7 @@ document.getElementById('sub-name').addEventListener('input', (e) => {
                 window.HapticsService.light();
             }
         }
-    }, { capture: true });
+    }, { capture: true, passive: true });
 
     // --- RE-RENDER DEBOUNCE LOGIC ---
   // --- AUTO-CATEGORIZATION ---
@@ -4373,6 +4373,10 @@ usdTotalToggle.addEventListener('change', () => {
 
 saveAppSettingsBtn.addEventListener('click', async () => {
   if (!currentUser) return;
+  if (!navigator.onLine) {
+    if (window.showOfflineWarning) window.showOfflineWarning();
+    return;
+  }
 
   const newSettings = {
     notifications: notifToggle.checked,
@@ -4574,6 +4578,10 @@ function renderAvatars() {
 }
 
 window.selectAvatar = function (url) {
+  if (!navigator.onLine) {
+    if (window.showOfflineWarning) window.showOfflineWarning();
+    return;
+  }
   userProfile.avatar_url = url;
   updateProfileUI();
   if (typeof renderAvatars === 'function') renderAvatars();
@@ -4584,16 +4592,12 @@ window.selectAvatar = function (url) {
 };
 
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
-  if (!window.navigator.onLine) {
-    document.getElementById('offline-modal').classList.remove('hidden');
+  if (!navigator.onLine) {
+    if (window.showOfflineWarning) window.showOfflineWarning();
     return;
   }
   avatarModal.classList.remove('hidden');
   renderAvatars();
-});
-
-document.getElementById('close-offline-modal').addEventListener('click', () => {
-  document.getElementById('offline-modal').classList.add('hidden');
 });
 
 closeAvatarModalBtn.addEventListener('click', () => {
@@ -4664,6 +4668,11 @@ initBottomSheetDrag('delete-subs-confirm-modal', 'delete-subs-drag-area');
 initBottomSheetDrag('delete-confirm-modal', 'delete-account-drag-area');
 
 avatarUpload.addEventListener('change', (e) => {
+  if (!navigator.onLine) {
+    e.target.value = ''; // Reset the file input
+    if (window.showOfflineWarning) window.showOfflineWarning();
+    return;
+  }
   const file = e.target.files[0];
   if (file) {
     const reader = new FileReader();
@@ -4677,6 +4686,10 @@ avatarUpload.addEventListener('change', (e) => {
 
 settingsForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (!navigator.onLine) {
+    if (window.showOfflineWarning) window.showOfflineWarning();
+    return;
+  }
   const submitBtn = settingsForm.querySelector('.submit-btn');
   submitBtn.disabled = true;
   submitBtn.innerText = 'Saving...';

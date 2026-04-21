@@ -37,7 +37,6 @@ export function initDataManagement() {
             finalDeleteSubsBtn.innerText = 'Wipe Subscriptions Permanently';
             
             subsDeleteConfirmModal.classList.remove('hidden');
-            if (window.HapticsService) window.HapticsService.light();
         });
     }
 
