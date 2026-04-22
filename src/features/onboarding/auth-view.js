@@ -68,11 +68,11 @@ export function initAuthPage() {
   if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
        if (window.HapticsService) window.HapticsService.light();
-       
+
        const { error } = await supabase.auth.signInWithOAuth({
          provider: 'google',
          options: {
-           redirectTo: 'com.amikonamoto.app://google-auth'
+           redirectTo: 'com.amikonamoto.app://'
          }
        });
 
@@ -92,7 +92,7 @@ export function initAuthPage() {
        const { error } = await supabase.auth.signInWithOAuth({
          provider: 'apple',
          options: {
-           redirectTo: 'com.amikonamoto.app://apple-auth'
+           redirectTo: 'com.amikonamoto.app://'
          }
        });
 
