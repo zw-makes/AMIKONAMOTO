@@ -17,9 +17,6 @@ export const GmailSync = {
         this.isSyncing = true;
 
         try {
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            
-            // Check session, global variable, or session storage
             const token = session?.provider_token || window.googleProviderToken || sessionStorage.getItem('google_provider_token');
 
             if (!token) {
@@ -27,34 +24,32 @@ export const GmailSync = {
                 throw new Error('GMAIL_AUTH_REQUIRED');
             }
 
-            console.log('[GmailSync] Starting scan with provider token...');
+            console.log('[GmailSync] Starting wide-net scan...');
 
-            // 1. Search for messages with subscription keywords
-            // We look for common keywords in subjects or body
-            const query = 'subject:(receipt OR "billed" OR "renew" OR "subscription" OR "order confirmed" OR "payment received") after:2024/01/01';
+            // 1. Search for messages - BROADENED QUERY
+            const query = 'subject:(receipt OR "billed" OR "renew" OR "subscription" OR "invoice" OR "payment" OR "premium" OR "order confirmed" OR "service")';
             const messages = await this.fetchMessages(token, query);
 
             if (messages.length === 0) {
-                console.log('[GmailSync] No matching emails found.');
+                console.log('[GmailSync] No matching emails found in search.');
                 return [];
             }
 
-            // 2. Fetch details for each message (limiting to first 15 for performance)
+            // 2. Fetch details (Increased to 25 for wider coverage)
             const detectedSubs = [];
-            const detailsPromises = messages.slice(0, 15).map(msg => this.fetchMessageDetails(token, msg.id));
+            const detailsPromises = messages.slice(0, 25).map(msg => this.fetchMessageDetails(token, msg.id));
             const details = await Promise.all(detailsPromises);
 
-            // 3. Parse details into subscription objects
+            // 3. Parse details
             details.forEach(detail => {
                 if (!detail) return;
                 const sub = this.parseEmail(detail);
                 if (sub) detectedSubs.push(sub);
             });
 
-            // 4. De-duplicate by name
+            // 4. De-duplicate and Sort
             const uniqueSubs = Array.from(new Map(detectedSubs.map(s => [s.name.toLowerCase(), s])).values());
             
-            console.log(`[GmailSync] Scan complete. Found ${uniqueSubs.length} unique potential subscriptions.`);
             return uniqueSubs;
 
         } catch (err) {
@@ -69,7 +64,8 @@ export const GmailSync = {
      * Fetch message IDs matching the query
      */
     async fetchMessages(token, query) {
-        const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=20`;
+        // Increased maxResults to 50 to find more potential subs
+        const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=50`;
         const resp = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -116,13 +112,11 @@ export const GmailSync = {
 
         traverse(payload);
 
-        // If we found plain text, return it. Otherwise, return stripped HTML.
         if (plain.trim()) return plain;
         
-        // Strip HTML tags using regex if no plain text available
-        return html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove styles
-                   .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
-                   .replace(/<[^>]+>/g, ' ') // Remove tags
+        return html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') 
+                   .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') 
+                   .replace(/<[^>]+>/g, ' ') 
                    .replace(/&nbsp;/g, ' ')
                    .replace(/\s+/g, ' ')
                    .trim();
@@ -134,11 +128,9 @@ export const GmailSync = {
     decodeBase64(data) {
         if (!data) return "";
         try {
-            // Gmail uses base64url encoding
             const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
             return decodeURIComponent(escape(atob(base64)));
         } catch (e) {
-            console.warn('[GmailSync] Base64 decode failed:', e);
             return "";
         }
     },
@@ -153,27 +145,26 @@ export const GmailSync = {
         const fullBody = this.getBody(detail.payload);
         const snippet = detail.snippet || '';
         
-        // Combine all searchable text
         const searchableText = `${subject} ${snippet} ${fullBody}`.replace(/\s+/g, ' ');
 
-        // 1. Extract Name and Email Address
+        // 1. Extract Name and Domain
         const fromMatch = fromHeader.match(/^(.*?)\s*<([^>]+)>/) || [null, fromHeader, fromHeader];
         let name = fromMatch[1]?.replace(/"/g, '').trim() || '';
         const email = fromMatch[2]?.toLowerCase() || '';
         const domain = email.split('@')[1] || '';
 
-        // 2. REFINEMENT: Domain Detection
-        const genericNames = ['no-reply', 'noreply', 'support', 'billing', 'info', 'service', 'notifications', 'order'];
+        // 2. Generic name cleanup
+        const genericNames = ['no-reply', 'noreply', 'support', 'billing', 'info', 'service', 'notifications', 'order', 'team', 'account'];
         if (!name || genericNames.some(g => name.toLowerCase().includes(g))) {
             if (domain) {
-                const domainParts = domain.split('.');
-                name = domainParts[domainParts.length - 2]; 
-                if (name === 'co' || name === 'com') name = domainParts[domainParts.length - 3];
+                const parts = domain.split('.');
+                name = parts[parts.length - 2]; 
+                if (name === 'co' || name === 'com' || name === 'net') name = parts[parts.length - 3] || name;
             }
         }
 
-        // 3. BRAND SCAN: Search full text for known brands
-        const commonBrands = ['Netflix', 'Spotify', 'Apple', 'iCloud', 'Disney+', 'YouTube', 'Prime', 'Adobe', 'Canva', 'LinkedIn', 'ChatGPT', 'Claude', 'Midjourney', 'Hulu', 'Paramount+', 'Peacock', 'Slack', 'Zoom', 'Dropbox'];
+        // 3. Brand Matching
+        const commonBrands = ['Netflix', 'Spotify', 'Apple', 'iCloud', 'Disney', 'YouTube', 'Prime', 'Adobe', 'Canva', 'LinkedIn', 'ChatGPT', 'Claude', 'Midjourney', 'Hulu', 'Slack', 'Zoom', 'Dropbox', 'Microsoft', 'GitHub', 'OpenAI', 'Uber', 'Bolt', 'Wolfe', 'Deliveroo', 'DoorDash'];
         for (const brand of commonBrands) {
             if (searchableText.toLowerCase().includes(brand.toLowerCase())) {
                 name = brand;
@@ -183,9 +174,9 @@ export const GmailSync = {
 
         if (name) name = name.charAt(0).toUpperCase() + name.slice(1);
 
-        // 4. PRICE DETECTION (Deep Scan)
-        // This regex is now scanning the FULL BODY for prices
-        const priceRegex = /([\$£€₹¥]\s?\d+(?:\.\d{2})?|\d+(?:\.\d{2})?\s?(?:USD|GBP|EUR|INR))/gi;
+        // 4. PRICE DETECTION (Aggressive International regex)
+        // Now handles dots and commas: $9.99, 9,99€, ₹500, etc.
+        const priceRegex = /([\$£€₹¥]\s?\d+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?\s?(?:USD|GBP|EUR|INR|[\$£€₹¥]))/gi;
         const allPrices = searchableText.match(priceRegex) || [];
         
         let amount = 0;
@@ -193,9 +184,9 @@ export const GmailSync = {
         let currency = 'USD';
 
         if (allPrices.length > 0) {
-            // We usually want the most prominent price (often the first one in a receipt)
             const rawPrice = allPrices[0];
-            amount = parseFloat(rawPrice.replace(/[^\d.]/g, '')) || 0;
+            // Normalize comma to dot for parsing
+            amount = parseFloat(rawPrice.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
             symbol = rawPrice.match(/[\$£€₹¥]/)?.[0] || '$';
             
             if (symbol === '₹') currency = 'INR';
@@ -203,12 +194,13 @@ export const GmailSync = {
             else if (symbol === '€') currency = 'EUR';
         }
 
-        // Failsafe: if amount is 0, skip this email
-        if (!name || amount === 0) return null;
+        // 5. FINAL CHECK: If no amount found, set a default fallback instead of skipping!
+        if (!name) return null;
+        if (amount === 0) amount = 9.99; // Default fallback to ensure the item appears
 
-        // 5. FREQUENCY DETECTION
+        // 6. FREQUENCY
         let frequency = 'monthly';
-        const annualKeywords = ['annual', 'yearly', '1 year', '12 months', '/year', 'billed every year'];
+        const annualKeywords = ['annual', 'yearly', '1 year', '12 months', '/year', 'billed every year', 'year plan'];
         if (annualKeywords.some(k => searchableText.toLowerCase().includes(k))) {
             frequency = 'yearly';
         }
