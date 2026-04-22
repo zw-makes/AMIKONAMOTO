@@ -17,6 +17,7 @@ export const GmailSync = {
         this.isSyncing = true;
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const token = session?.provider_token || window.googleProviderToken || sessionStorage.getItem('google_provider_token');
 
             if (!token) {
