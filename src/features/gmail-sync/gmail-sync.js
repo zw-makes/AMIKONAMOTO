@@ -83,7 +83,9 @@ export const GmailSync = {
      * Fetch full metadata for a specific message
      */
     async fetchMessageDetails(token, messageId) {
-        const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`;
+        // We use format=full to get more content, but we'll stick to snippet for speed if possible
+        // or use format=metadata with more headers
+        const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=Return-Path`;
         const resp = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -93,43 +95,83 @@ export const GmailSync = {
     },
 
     /**
-     * Simple parser to extract Name, Amount, and Date from email metadata
+     * Smart parser to extract Name, Amount, and Date from email metadata
      */
     parseEmail(detail) {
         const headers = detail.payload.headers;
         const subject = headers.find(h => h.name === 'Subject')?.value || '';
-        const from = headers.find(h => h.name === 'From')?.value || '';
+        const fromHeader = headers.find(h => h.name === 'From')?.value || '';
         const snippet = detail.snippet || '';
 
-        // Extract "Name" from "From" (e.g., "Netflix <info@netflix.com>" -> "Netflix")
-        let name = from.split('<')[0].trim().replace(/"/g, '');
+        // 1. Extract Name and Email Address
+        // From: "Brand Name <email@domain.com>"
+        const fromMatch = fromHeader.match(/^(.*?)\s*<([^>]+)>/) || [null, fromHeader, fromHeader];
+        let name = fromMatch[1]?.replace(/"/g, '').trim() || '';
+        const email = fromMatch[2]?.toLowerCase() || '';
+        const domain = email.split('@')[1] || '';
+
+        // 2. REFINEMENT: If name is generic (no-reply, support, billing, etc.), use the domain or subject
+        const genericNames = ['no-reply', 'noreply', 'support', 'billing', 'info', 'service', 'notifications', 'order'];
+        if (!name || genericNames.some(g => name.toLowerCase().includes(g))) {
+            // Try to extract brand from domain (e.g., "netflix.com" -> "Netflix")
+            if (domain) {
+                const domainParts = domain.split('.');
+                name = domainParts[domainParts.length - 2]; // Get the main part of the domain
+                if (name === 'co' || name === 'com') name = domainParts[domainParts.length - 3];
+            }
+        }
+
+        // 3. SUBJECT SCAN: Look for brand names in subject if name is still messy
+        const commonBrands = ['Netflix', 'Spotify', 'Apple', 'iCloud', 'Disney+', 'YouTube', 'Prime', 'Adobe', 'Canva', 'LinkedIn', 'ChatGPT', 'Claude', 'Midjourney'];
+        for (const brand of commonBrands) {
+            if (subject.toLowerCase().includes(brand.toLowerCase())) {
+                name = brand;
+                break;
+            }
+        }
+
+        // Clean up the name (Capitalize)
+        if (name) name = name.charAt(0).toUpperCase() + name.slice(1);
+
+        // 4. PRICE DETECTION (Optimized Regex)
+        // Looks for things like $9.99, £10, 14.99 USD, etc.
+        const priceRegex = /([\$£€₹¥]\s?\d+(?:\.\d{2})?|\d+(?:\.\d{2})?\s?(?:USD|GBP|EUR|INR))/i;
+        const priceMatch = (snippet + ' ' + subject).match(priceRegex);
         
-        // Refine common names
-        if (name.toLowerCase().includes('google')) name = 'Google One';
-        if (name.toLowerCase().includes('spotify')) name = 'Spotify';
-        if (name.toLowerCase().includes('apple')) name = 'iCloud / Apple Music';
-        if (name.toLowerCase().includes('netflix')) name = 'Netflix';
-        if (name.toLowerCase().includes('adobe')) name = 'Adobe Creative Cloud';
-        if (name.toLowerCase().includes('amazon')) name = 'Amazon Prime';
+        let amount = 0;
+        let symbol = '$';
+        let currency = 'USD';
 
-        // Extract potential amount from snippet using regex (e.g., $9.99 or £12.50)
-        const amountMatch = snippet.match(/[\$£€¥](\d+\.?\u0020?\d{0,2})/);
-        const amount = amountMatch ? parseFloat(amountMatch[1]) : 9.99; // Default fallback
+        if (priceMatch) {
+            const rawPrice = priceMatch[0];
+            amount = parseFloat(rawPrice.replace(/[^\d.]/g, '')) || 0;
+            symbol = rawPrice.match(/[\$£€₹¥]/)?.[0] || '$';
+            // Simple currency guess
+            if (symbol === '₹') currency = 'INR';
+            else if (symbol === '£') currency = 'GBP';
+            else if (symbol === '€') currency = 'EUR';
+        }
 
-        // Detect frequency
+        // Skip if we couldn't find a name or amount is 0 (likely not a subscription receipt)
+        if (!name || name.toLowerCase() === 'no-reply' || amount === 0) return null;
+
+        // 5. FREQUENCY DETECTION
         let frequency = 'monthly';
-        if (subject.toLowerCase().includes('annual') || snippet.toLowerCase().includes('annual') || snippet.toLowerCase().includes('year')) {
+        const annualKeywords = ['annual', 'yearly', '1 year', '12 months', '/year'];
+        if (annualKeywords.some(k => (subject + ' ' + snippet).toLowerCase().includes(k))) {
             frequency = 'yearly';
         }
 
         return {
             name: name,
             amount: amount,
-            currency: amountMatch ? amountMatch[0].charAt(0) : '$',
+            currency: currency,
+            symbol: symbol,
             frequency: frequency,
             source: 'Gmail',
+            domain: domain || `${name.toLowerCase()}.com`,
             emailDate: headers.find(h => h.name === 'Date')?.value,
-            id: detail.id // Keep ID for potential "ignore" lists
+            id: detail.id
         };
     }
 };
