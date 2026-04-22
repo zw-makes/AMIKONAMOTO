@@ -50,9 +50,18 @@ App.addListener('appUrlOpen', ({ url }) => {
             const params = new URLSearchParams(slug);
             const access_token = params.get('access_token');
             const refresh_token = params.get('refresh_token');
+            const provider_token = params.get('provider_token');
 
             if (access_token && refresh_token) {
                 console.log('[App] Found session tokens, setting session...');
+                
+                // Store provider token for Gmail Sync
+                if (provider_token) {
+                    console.log('[App] Captured Provider Token from Deep Link');
+                    window.googleProviderToken = provider_token;
+                    sessionStorage.setItem('google_provider_token', provider_token);
+                }
+
                 supabase.auth.setSession({
                     access_token,
                     refresh_token
