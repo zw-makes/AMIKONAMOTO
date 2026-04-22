@@ -44,8 +44,21 @@ import { App } from '@capacitor/app';
 App.addListener('appUrlOpen', ({ url }) => {
     console.log('[App] Opened with URL:', url);
     if (url.includes('com.amikonamoto.app://')) {
-        // Pass the deep link URL to Supabase to extract the session
-        supabase.auth.setSession(url);
+        // Correctly parse the hash fragment for tokens
+        const slug = url.split('#')[1];
+        if (slug) {
+            const params = new URLSearchParams(slug);
+            const access_token = params.get('access_token');
+            const refresh_token = params.get('refresh_token');
+
+            if (access_token && refresh_token) {
+                console.log('[App] Found session tokens, setting session...');
+                supabase.auth.setSession({
+                    access_token,
+                    refresh_token
+                });
+            }
+        }
     }
 });
 
