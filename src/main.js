@@ -2388,11 +2388,13 @@ async function updateStats() {
   }
 
   let totalStr = monthlyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const digitOnly = totalStr.replace(/[^0-9]/g, '');
-  if (digitOnly.length > 10) {
-      totalStr = digitOnly.substring(0, 9) + '+';
+  let finalDisplayStr = `${finalSymbol}${totalStr}`;
+
+  if (finalDisplayStr.length > 9) {
+    // If more than 9 characters, show only first 8 and append '+' (total 9 chars)
+    finalDisplayStr = finalDisplayStr.substring(0, 8) + '+';
   }
-  totalAmountEl.innerText = `${finalSymbol}${totalStr}`;
+  totalAmountEl.innerText = finalDisplayStr;
 
   // Store globally for List View Sync
   window.lastReport = {
@@ -3290,66 +3292,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   if (window.toggleProfilePage) window.toggleProfilePage(false);
 });
 
-// Delete Account logic - Step 1: Show Confirmation Modal
-const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-const deleteConfirmEmailInput = document.getElementById('delete-confirm-email');
-const deleteEmailError = document.getElementById('delete-email-error');
-const finalDeleteBtn = document.getElementById('final-delete-btn');
-const closeDeleteConfirm = document.getElementById('close-delete-confirm');
-
-document.getElementById('delete-account-btn').addEventListener('click', () => {
-  // Reset modal state
-  deleteConfirmEmailInput.value = '';
-  deleteEmailError.classList.add('hidden');
-  finalDeleteBtn.disabled = false;
-  finalDeleteBtn.innerText = 'Delete My Account Forever';
-
-  // Show modal
-  deleteConfirmModal.classList.remove('hidden');
-});
-
-// Close confirmation modal
-closeDeleteConfirm.addEventListener('click', () => {
-  deleteConfirmModal.classList.add('hidden');
-});
-
-// Step 2: Final Verification and Deletion
-finalDeleteBtn.addEventListener('click', async () => {
-  const enteredEmail = deleteConfirmEmailInput.value.trim().toLowerCase();
-  const userEmail = currentUser?.email?.toLowerCase();
-
-  if (enteredEmail !== userEmail) {
-    deleteEmailError.classList.remove('hidden');
-    deleteConfirmEmailInput.focus();
-    return;
-  }
-
-  deleteEmailError.classList.add('hidden');
-  finalDeleteBtn.innerText = 'Deleting Account...';
-  finalDeleteBtn.disabled = true;
-
-  try {
-    // 1. Manually clear out dependencies that might block the deletion
-    // The 'notifications' table currently lacks a 'CASCADE' rule, so we must wipe it first.
-    await supabase.from('notifications').delete().eq('user_id', currentUser.id);
-
-    // 2. Call the database function to delete the user entirely
-    const { error: deleteError } = await supabase.rpc('delete_user_permanently');
-    if (deleteError) throw deleteError;
-
-    // 2. Clear ALL local storage and cache
-    localStorage.clear();
-
-    // 3. Force reload to ensure a clean state
-    window.location.reload();
-  } catch (err) {
-    console.error('[Auth] Delete account failed:', err.message);
-    deleteEmailError.innerText = "Error: " + err.message;
-    deleteEmailError.classList.remove('hidden');
-    finalDeleteBtn.innerText = 'Try Again';
-    finalDeleteBtn.disabled = false;
-  }
-});
+// Account destruction logic moved to src/features/data-management/data-management.js
 
 // Helper to safely set localStorage
 function safeSetLocalStorage(key, value) {
@@ -4781,10 +4724,7 @@ function initBottomSheetDrag(modalId, dragAreaId) {
   document.addEventListener('mouseup', onDragEnd);
 }
 
-// Initialize for all bottom sheets
-// Removed old initialization for avatar-modal drag
-initBottomSheetDrag('delete-subs-confirm-modal', 'delete-subs-drag-area');
-initBottomSheetDrag('delete-confirm-modal', 'delete-account-drag-area');
+// Dynamic drag logic now handled in specialized modules (Nexus, DataManagement, etc)
 
 avatarUpload.addEventListener('change', (e) => {
   if (!navigator.onLine) {

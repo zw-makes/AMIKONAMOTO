@@ -438,23 +438,26 @@ function showDeleteCardConfirm(cardId) {
             padding: 28px 24px 40px;
             animation: nexusSlideIn 0.3s cubic-bezier(0.32, 0.72, 0, 1);
         ">
-            <!-- Drag handle -->
-            <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 24px;"></div>
+            <!-- Drag Area -->
+            <div id="delete-drag-area" style="cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding-bottom: 24px; padding-top: 10px; margin-top: -10px;">
+                <!-- Drag handle -->
+                <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px; margin-bottom: 24px;"></div>
 
-            <!-- Icon -->
-            <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                    <path d="M10 11v6"></path><path d="M14 11v6"></path>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                </svg>
+                <!-- Icon -->
+                <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path><path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                </div>
+
+                <!-- Title -->
+                <h2 style="text-align: center; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; color: #fff;">
+                    Remove Card from Nexus?
+                </h2>
             </div>
-
-            <!-- Title -->
-            <h2 style="text-align: center; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 10px; color: #fff;">
-                Remove Card from Nexus?
-            </h2>
 
             <!-- Warning message -->
             <p style="text-align: center; font-size: 0.82rem; color: rgba(255,255,255,0.45); line-height: 1.6; margin: 0 0 28px; padding: 0 10px;">
@@ -493,33 +496,34 @@ function showDeleteCardConfirm(cardId) {
 
     // ── Drag-to-dismiss ──────────────────────────────────────────────
     const sheet = modal.querySelector('div');
+    const handle = modal.querySelector('#delete-drag-area');
     let startY = 0, currentY = 0, isDragging = false;
 
     const onDragStart = (e) => {
-        startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         isDragging = true;
         sheet.style.transition = 'none';
+        document.activeElement?.blur();
     };
 
     const onDragMove = (e) => {
         if (!isDragging) return;
-        const y = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         currentY = Math.max(0, y - startY); // Only allow pulling DOWN
         sheet.style.transform = `translateY(${currentY}px)`;
         // Fade backdrop as user pulls
         modal.style.background = `rgba(0,0,0,${Math.max(0, 0.6 - currentY / 400)})`;
+        if (e.cancelable) e.preventDefault();
     };
 
     const onDragEnd = () => {
         if (!isDragging) return;
         isDragging = false;
         if (currentY > 120) {
-            // Pull far enough → dismiss
             sheet.style.transition = 'transform 0.25s ease';
             sheet.style.transform = `translateY(110%)`;
             setTimeout(() => modal.remove(), 250);
         } else {
-            // Snap back
             sheet.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
             sheet.style.transform = 'translateY(0)';
             modal.style.background = 'rgba(0,0,0,0.6)';
@@ -527,9 +531,14 @@ function showDeleteCardConfirm(cardId) {
         currentY = 0;
     };
 
-    sheet.addEventListener('touchstart', onDragStart, { passive: true });
-    sheet.addEventListener('touchmove', onDragMove, { passive: true });
-    sheet.addEventListener('touchend', onDragEnd);
+    if (handle) {
+        handle.addEventListener('mousedown', onDragStart);
+        handle.addEventListener('touchstart', onDragStart, { passive: true });
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('mouseup', onDragEnd);
+        window.addEventListener('touchend', onDragEnd);
+    }
     // ─────────────────────────────────────────────────────────────────
 
     // Dismiss on backdrop tap
@@ -828,22 +837,25 @@ function showAddCardSheet(mode) {
             animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
             position: relative;
         ">
-            <!-- Drag Handle -->
-            <div id="add-card-drag-handle" style="padding: 14px 0 4px; display: flex; justify-content: center; cursor: grab;">
-                <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;"></div>
-            </div>
-
-            <!-- Header -->
-            <div style="display: flex; align-items: center; padding: 8px 20px 20px; gap: 16px;">
-                <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                    </svg>
+            <!-- Drag Area -->
+            <div id="add-card-drag-area" style="cursor: grab; display: flex; flex-direction: column; width: 100%; padding-top: 10px;">
+                <!-- Drag Handle -->
+                <div style="padding: 14px 0 4px; display: flex; justify-content: center;">
+                    <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;"></div>
                 </div>
-                <div>
-                    <h2 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #fff;">${titleText}</h2>
-                    <p style="margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 400;">Your details are stored securely.</p>
+
+                <!-- Header -->
+                <div style="display: flex; align-items: center; padding: 8px 20px 20px; gap: 16px;">
+                    <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #fff;">${titleText}</h2>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 400;">Your details are stored securely.</p>
+                    </div>
                 </div>
             </div>
 
@@ -904,28 +916,43 @@ function showAddCardSheet(mode) {
     // Drag-to-dismiss
     const sheet = modal.querySelector('.nexus-sheet-inner');
     let startY = 0, currentY = 0, dragging = false;
-    const handle = document.getElementById('add-card-drag-handle');
+    const handle = document.getElementById('add-card-drag-area');
+    
+    const onDragStart = (e) => {
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        dragging = true;
+        sheet.style.transition = 'none';
+        document.activeElement?.blur();
+    };
+
+    const onDragMove = (e) => {
+        if (!dragging) return;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        currentY = Math.max(0, y - startY);
+        sheet.style.transform = `translateY(${currentY}px)`;
+        modal.style.background = `rgba(0,0,0,${Math.max(0, 0.6 - currentY / 400)})`;
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const onDragEnd = () => {
+        if (!dragging) return;
+        dragging = false;
+        if (currentY > 120) { dismissSheet(modal); }
+        else {
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+            sheet.style.transform = 'translateY(0)';
+            modal.style.background = 'rgba(0,0,0,0.6)';
+        }
+        currentY = 0;
+    };
+
     if (handle) {
-        handle.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].clientY; dragging = true;
-            sheet.style.transition = 'none';
-        }, { passive: true });
-        handle.addEventListener('touchmove', (e) => {
-            if (!dragging) return;
-            currentY = Math.max(0, e.touches[0].clientY - startY);
-            sheet.style.transform = `translateY(${currentY}px)`;
-            modal.style.background = `rgba(0,0,0,${Math.max(0, 0.6 - currentY / 400)})`;
-        }, { passive: true });
-        handle.addEventListener('touchend', () => {
-            if (!dragging) return; dragging = false;
-            if (currentY > 120) { dismissSheet(modal); }
-            else {
-                sheet.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                sheet.style.transform = 'translateY(0)';
-                modal.style.background = 'rgba(0,0,0,0.6)';
-            }
-            currentY = 0;
-        });
+        handle.addEventListener('mousedown', onDragStart);
+        handle.addEventListener('touchstart', onDragStart, { passive: true });
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('mouseup', onDragEnd);
+        window.addEventListener('touchend', onDragEnd);
     }
 
     // Backdrop tap to dismiss

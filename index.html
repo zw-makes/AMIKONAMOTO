@@ -1173,7 +1173,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span>Back</span>
           </button>
           <h2
             style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em;  text-transform: uppercase;">
@@ -1266,30 +1265,36 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </style>
               <script>
                 setTimeout(() => {
-                  const container = document.getElementById('sovereign-text-container');
+                  const containers = document.querySelectorAll('#sovereign-text-container, .sovereign-text-container');
                   const phrases = ["Unlock more features", "Break the limits", "Try new features early", "Have a real purpose"];
                   let phraseIdx = 0;
 
-                  if (container) {
+                  if (containers.length > 0) {
                     function animateTypography() {
-                      container.innerHTML = '';
-                      const words = phrases[phraseIdx].split(' ');
+                      containers.forEach(container => {
+                        container.innerHTML = '';
+                        const words = phrases[phraseIdx].split(' ');
 
-                      words.forEach((word, idx) => {
-                        const span = document.createElement('span');
-                        span.innerText = word;
-                        span.className = 'sov-word';
-                        span.style.animationDelay = `${idx * 0.15}s`;
-                        container.appendChild(span);
+                        words.forEach((word, idx) => {
+                          const span = document.createElement('span');
+                          span.innerText = word;
+                          span.className = 'sov-word';
+                          span.style.animationDelay = `${idx * 0.15}s`;
+                          container.appendChild(span);
+                        });
                       });
 
-                      const finishTime = 2200 + (words.length * 150);
+                      const finishTime = 2200 + (6 * 150); // Using 6 as max words approx
                       setTimeout(() => {
-                        container.style.transition = 'opacity 0.4s ease';
-                        container.style.opacity = '0';
+                        containers.forEach(container => {
+                          container.style.transition = 'opacity 0.4s ease';
+                          container.style.opacity = '0';
+                        });
                         setTimeout(() => {
-                          container.style.transition = 'none';
-                          container.style.opacity = '1';
+                          containers.forEach(container => {
+                            container.style.transition = 'none';
+                            container.style.opacity = '1';
+                          });
                           phraseIdx = (phraseIdx + 1) % phrases.length;
                           animateTypography();
                         }, 400);
@@ -1378,7 +1383,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span>Back</span>
           </button>
           <div class="nexus-title" style="margin-left: auto;">CATEGORIES</div>
         </div>
@@ -1438,7 +1442,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span>Back</span>
           </button>
           <h2
             style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em;  text-transform: uppercase;">
@@ -1449,6 +1452,32 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         <div class="profile-page-scroll" style="padding-bottom: 140px;">
           <div class="profile-content"
             style="padding-bottom: 40px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+            
+            <!-- Sovereign Upgrade Button -->
+            <button class="glass-btn pricing-trigger-btn"
+              style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
+
+              <div class="space-bg"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
+                <div class="stars"></div>
+                <div class="stars2"></div>
+                <div class="stars3"></div>
+              </div>
+
+              <div style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
+                <img src="/sublify-logo.png" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
+              </div>
+
+              <div style="z-index: 1; display: flex; align-items: center; justify-content: space-between; flex: 1; min-width: 0; gap: 10px;">
+                <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
+                  <span style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade to Sovereign</span>
+                  <div style="height: 15px; position: relative; width: 100%;">
+                    <div class="sovereign-text-container" style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;"></div>
+                  </div>
+                </div>
+                <span style="background: #fff; color: #000; padding: 10px 22px; border-radius: 99px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; box-shadow: 0 4px 15px rgba(255,255,255,0.25);">Upgrade</span>
+              </div>
+            </button>
             <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
               <label>Notifications</label>
               <label class="switch">
@@ -1566,7 +1595,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span>Back</span>
           </button>
           <h2
             style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em;  text-transform: uppercase;">
@@ -1759,7 +1787,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span>Back</span>
           </button>
           <h2
             style="margin: 0; font-size: 1.1rem; font-weight: 300; letter-spacing: -0.01em;  text-transform: uppercase;">
@@ -1767,7 +1794,33 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
         </div>
 
         <div class="profile-page-scroll" style="padding-bottom: 140px;">
-          <form id="settings-form" class="profile-content">
+          <form id="settings-form" class="profile-content" style="display: flex; flex-direction: column; gap: 12px;">
+
+            <!-- Sovereign Upgrade Button -->
+            <button type="button" class="glass-btn pricing-trigger-btn"
+              style="position: relative; width: 100%; padding: 14px 16px; border-radius: 16px; text-align: left; background: #000; border: none; color: #7df9ff; overflow: hidden; display: flex; align-items: center; gap: 14px; flex-shrink: 0; margin-bottom: 8px;">
+
+              <div class="space-bg"
+                style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.8; pointer-events: none; border-radius: 16px; background: transparent;">
+                <div class="stars"></div>
+                <div class="stars2"></div>
+                <div class="stars3"></div>
+              </div>
+
+              <div style="width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; z-index: 1; flex-shrink: 0;">
+                <img src="/sublify-logo.png" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));">
+              </div>
+
+              <div style="z-index: 1; display: flex; align-items: center; justify-content: space-between; flex: 1; min-width: 0; gap: 10px;">
+                <div style="display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 3px; min-width: 0;">
+                  <span style="font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upgrade to Sovereign</span>
+                  <div style="height: 15px; position: relative; width: 100%;">
+                    <div class="sovereign-text-container" style="display: flex; gap: 3.5px; font-size: 0.75rem; color: rgba(125,249,255,0.8); font-weight: 500;"></div>
+                  </div>
+                </div>
+                <span style="background: #fff; color: #000; padding: 10px 22px; border-radius: 99px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; box-shadow: 0 4px 15px rgba(255,255,255,0.25);">Upgrade</span>
+              </div>
+            </button>
             <!-- Box One: Stars banner card (same as profile page) -->
             <div class="profile-header-card" style="position: relative; overflow: hidden; margin-bottom: 8px;">
               <!-- Stars Background -->
@@ -2232,7 +2285,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
-          <span>Back</span>
         </button>
         <h2 class="nexus-title" style="margin-left: auto;">Sublify Nexus</h2>
       </div>

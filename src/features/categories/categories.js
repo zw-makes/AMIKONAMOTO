@@ -292,19 +292,21 @@ function showDeleteCategoryConfirm(id, name) {
             padding: 28px 24px 40px;
             animation: nexusSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         ">
-            <div id="cat-delete-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 24px; cursor: grab;"></div>
-            
-            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
-                </svg>
-            </div>
+            <div id="cat-delete-drag-area" style="cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding-bottom: 24px; padding-top: 10px; margin-top: -10px;">
+                <div style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 24px; flex-shrink: 0;"></div>
+                
+                <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; flex-shrink: 0;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                    </svg>
+                </div>
 
-            <h2 style="text-align: center; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 15px; color: #fff;">
-                Remove ${name}?
-            </h2>
+                <h2 style="text-align: center; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; color: #fff;">
+                    Remove ${name}?
+                </h2>
+            </div>
             
             <p style="text-align: center; font-size: 0.88rem; color: rgba(255,255,255,0.45); line-height: 1.6; margin: 0 0 24px; padding: 0 20px;">
                 This category will be permanently removed from your account. Any subscriptions currently linked to this category will be <span style="color: #ffb340; font-weight: 700;">automatically recategorized</span>.
@@ -348,12 +350,13 @@ function showDeleteCategoryConfirm(id, name) {
     let currentY = 0;
     let isDragging = false;
 
-    const handle = document.getElementById('cat-delete-drag-handle');
+    const handle = document.getElementById('cat-delete-drag-area');
     
     const startDrag = (e) => {
         startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         isDragging = true;
         sheet.style.transition = 'none';
+        document.activeElement?.blur();
     };
 
     const onDrag = (e) => {
@@ -364,6 +367,7 @@ function showDeleteCategoryConfirm(id, name) {
             currentY = deltaY;
             sheet.style.transform = `translateY(${currentY}px)`;
             modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+            if (e.cancelable) e.preventDefault();
         }
     };
 
@@ -578,45 +582,55 @@ function showAddCategorySheet() {
     modal.innerHTML = `
         <div class="category-sheet-inner" style="
             width: 100%; max-width: 450px;
-            background: rgba(13, 13, 13, 0.98);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-radius: 32px 32px 0 0;
-            padding: 28px 24px 40px;
-            animation: nexusSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            background: #111;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px 28px 0 0;
+            padding-bottom: 34px;
+            animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
             position: relative;
         ">
-            <div id="cat-add-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 24px; cursor: grab;"></div>
-            
-            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(0, 162, 255, 0.08); border: 1px solid rgba(0, 162, 255, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    <line x1="12" y1="11" x2="12" y2="17"></line>
-                    <line x1="9" y1="14" x2="15" y2="14"></line>
-                </svg>
+            <!-- Drag Area -->
+            <div id="cat-add-drag-area" style="cursor: grab; display: flex; flex-direction: column; width: 100%; padding-top: 10px;">
+                <!-- Drag Handle -->
+                <div style="padding: 14px 0 4px; display: flex; justify-content: center;">
+                    <div style="width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;"></div>
+                </div>
+
+                <!-- Header -->
+                <div style="display: flex; align-items: center; padding: 8px 20px 20px; gap: 16px;">
+                    <div style="width: 56px; height: 56px; border-radius: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Create New Layer</h2>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 400;">Organize your dashboard with custom categories.</p>
+                    </div>
+                </div>
             </div>
 
-            <h2 style="text-align: center; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 10px; color: #fff;">
-                Create New Layer
-            </h2>
-            <p style="text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.4); line-height: 1.6; margin: 0 0 28px;">
-                Organize your dashboard by grouping your unique subscriptions into custom categories.
-            </p>
+            <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 0 20px 20px;"></div>
 
-            <div class="form-group" style="margin-bottom: 32px;">
-                <input type="text" id="cat-name-input" placeholder="Category Name (e.g. Work Tools)" autocomplete="off" style="
-                    width: 100%; height: 60px; background: rgba(255,255,255,0.03) !important;
-                    border: 1px solid rgba(255,255,255,0.08); border-radius: 18px;
-                    color: #fff; padding: 0 20px; font-size: 1rem; outline: none;
-                    transition: border-color 0.2s;
-                ">
-            </div>
+            <!-- Form -->
+            <div style="padding: 0 20px;">
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); font-weight: 600; display: block; margin-bottom: 12px;">Category Name</label>
+                    <input type="text" id="cat-name-input" placeholder="e.g. Work Tools" autocomplete="off" style="
+                        width: 100%; padding: 16px 18px; background: rgba(255,255,255,0.04);
+                        border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
+                        color: #fff; font-size: 0.95rem; outline: none;
+                        transition: all 0.2s; box-sizing: border-box;
+                    ">
+                </div>
 
-            <div style="display: flex; flex-direction: column; gap: 12px;">
                 <button id="submit-new-cat" style="
-                    width: 100%; padding: 19px; border-radius: 20px;
+                    width: 100%; padding: 17px; border-radius: 18px;
                     background: #fff; border: none;
-                    color: #000; font-size: 0.95rem; font-weight: 800;
-                    cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.05em;
+                    color: #000; font-size: 1rem; font-weight: 800;
+                    cursor: pointer; transition: all 0.2s ease;
                     display: flex; align-items: center; justify-content: center; gap: 10px;
                 ">Create Category</button>
             </div>
@@ -640,7 +654,7 @@ function showAddCategorySheet() {
     let currentY = 0;
     let isDragging = false;
 
-    const handle = document.getElementById('cat-add-drag-handle');
+    const handle = document.getElementById('cat-add-drag-area');
     
     const startDrag = (e) => {
         startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -657,6 +671,7 @@ function showAddCategorySheet() {
             currentY = deltaY;
             sheet.style.transform = `translateY(${currentY}px)`;
             modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+            if (e.cancelable) e.preventDefault();
         }
     };
 
@@ -763,11 +778,13 @@ function showEmojiPicker(catName) {
             flex-direction: column;
             box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         ">
-            <div id="emoji-drag-handle" style="width: 36px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 10px; margin: 0 auto 20px; flex-shrink: 0; cursor: grab;"></div>
-            
-            <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; text-align: center; letter-spacing: -0.01em; flex-shrink: 0;">
-                Choose ${catName} Icon
-            </h3>
+            <div id="emoji-drag-area" style="cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding-bottom: 4px; padding-top: 10px; margin-top: -10px; flex-shrink: 0;">
+                <div style="width: 36px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 10px; margin-bottom: 20px; flex-shrink: 0;"></div>
+                
+                <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; text-align: center; letter-spacing: -0.01em; flex-shrink: 0;">
+                    Choose ${catName} Icon
+                </h3>
+            </div>
 
             <div style="flex: 1; overflow-y: auto; padding: 0 10px 20px; -webkit-overflow-scrolling: touch;" class="custom-scroll">
                 ${emojiCategories.map(group => `
@@ -840,12 +857,13 @@ function showEmojiPicker(catName) {
     let currentY = 0;
     let isDragging = false;
 
-    const handle = document.getElementById('emoji-drag-handle');
+    const handle = document.getElementById('emoji-drag-area');
     
     const startDrag = (e) => {
         startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         isDragging = true;
         sheet.style.transition = 'none';
+        document.activeElement?.blur();
     };
 
     const onDrag = (e) => {
@@ -856,6 +874,7 @@ function showEmojiPicker(catName) {
             currentY = deltaY;
             sheet.style.transform = `translateY(${currentY}px)`;
             modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+            if (e.cancelable) e.preventDefault();
         }
     };
 

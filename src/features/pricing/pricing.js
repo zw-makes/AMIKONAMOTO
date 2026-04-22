@@ -440,18 +440,20 @@ function renderPricing(annual) {
 
 // ─── Init Function ───────────────────────────────────────────────────────────
 export function initPricing() {
-    const pricingBtn = document.getElementById('pricing-btn');
+    const pricingButtons = document.querySelectorAll('#pricing-btn, .pricing-trigger-btn');
     const pricingModal = document.getElementById('pricing-modal');
     const closePricingBtn = document.getElementById('close-pricing');
 
-    if (!pricingBtn || !pricingModal) return;
+    if (pricingButtons.length === 0 || !pricingModal) return;
 
     let cleanupFn = null;
 
-    pricingBtn.addEventListener('click', () => {
-        if (cleanupFn) cleanupFn();
-        cleanupFn = renderPricing(false); // Default to monthly since there's no annual toggle anymore
-        pricingModal.classList.remove('hidden');
+    pricingButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (cleanupFn) cleanupFn();
+            cleanupFn = renderPricing(false);
+            pricingModal.classList.remove('hidden');
+        });
     });
 
     closePricingBtn?.addEventListener('click', () => {
