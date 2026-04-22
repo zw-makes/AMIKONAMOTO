@@ -72,7 +72,8 @@ export function initAuthPage() {
        const { error } = await supabase.auth.signInWithOAuth({
          provider: 'google',
          options: {
-           redirectTo: 'com.amikonamoto.app://'
+           redirectTo: 'com.amikonamoto.app://',
+           scopes: 'https://www.googleapis.com/auth/gmail.readonly'
          }
        });
 

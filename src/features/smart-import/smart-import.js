@@ -2,6 +2,7 @@
 // AI-powered subscription extraction from images, PDFs, and CSVs
 import './smart-import.css';
 import { initAurora } from './Aurora.js';
+import { GmailSync } from '../gmail-sync/gmail-sync.js';
 
 // ─── Constants ──────────────────────────────────────────────
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
@@ -738,6 +739,47 @@ function resetFileSelection() {
     }
 }
 
+window.triggerGmailScan = async function() {
+    // 1. UI Setup
+    const optionPage = modalEl?.querySelector('.smart-import-option-page');
+    if (optionPage) optionPage.style.display = 'none';
+
+    showAurora(true, 'SCANNING GMAIL...');
+
+    try {
+        // Minimum 5-second cinematic delay for the scan
+        const [subs] = await Promise.all([
+            GmailSync.scanForSubscriptions(),
+            new Promise(resolve => setTimeout(resolve, 5000))
+        ]);
+
+        detectedSubs = subs;
+        showAurora(false);
+        
+        if (subs.length > 0) {
+            await renderResults(detectedSubs);
+        } else {
+            showToast('No subscription emails found.', 'info');
+            const heroEl = modalEl?.querySelector('.smart-import-hero');
+            if (heroEl) heroEl.style.display = 'flex';
+        }
+
+    } catch (err) {
+        showAurora(false);
+        console.error('[SmartImport] Gmail Scan Failed:', err);
+        
+        if (err.message === 'GMAIL_AUTH_REQUIRED') {
+            showToast('Gmail access required. Please sign in again.', 'error', 5000);
+            // Optionally redirect to profile to re-login
+        } else {
+            showToast('Failed to scan Gmail. Check connection.', 'error');
+        }
+
+        const heroEl = modalEl?.querySelector('.smart-import-hero');
+        if (heroEl) heroEl.style.display = 'flex';
+    }
+}
+
 // Option Pages rendering logic
 window.showSmartImportOption = (type) => {
     currentActiveOption = type;
@@ -777,6 +819,17 @@ window.showSmartImportOption = (type) => {
             'Drop in your screenshot and we will scan it instantly',
             'Your subscriptions are detected and added for you'
         ];
+    } else if (type === 'gmail') {
+        title = 'Sync with Gmail';
+        desc = 'Sublify will scan your inbox for receipts.';
+        btnText = 'Start Gmail Scan';
+        steps = [
+            'Connect your Google account to Sublify Sync',
+            'We scan your recent emails for subscription keywords',
+            'No manual screenshots or file uploads required',
+            'Detected subscriptions appear in your dashboard',
+            'Sync any time to catch new renewals or trials'
+        ];
     } else {
         title = 'Import from an image';
         desc = 'Snap any receipt or statement.';
@@ -809,7 +862,7 @@ window.showSmartImportOption = (type) => {
         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px 20px 8px 20px; margin-bottom: 24px; min-height: 200px;">
             ${stepsHtml}
         </div>
-        <button class="smart-import-banner" onclick="document.getElementById('smart-import-file-input').click()" style="margin-bottom: 0;">
+        <button class="smart-import-banner" onclick="${type === 'gmail' ? 'window.triggerGmailScan()' : "document.getElementById('smart-import-file-input').click()"}" style="margin-bottom: 0;">
             <div class="space-bg" style="border-radius: 25px;">
                 <div class="stars"></div>
                 <div class="stars2"></div>
@@ -817,11 +870,14 @@ window.showSmartImportOption = (type) => {
                 <div class="shooting-star" style="top: 30%; right: 20%; animation-duration: 7s;"></div>
             </div>
             <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                ${type === 'gmail' 
+                    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>`
+                    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+                }
             </div>
             <div class="smart-import-banner-text" style="text-align: left;">
                 <span class="smart-import-banner-title" style="font-size: 0.95rem;">${btnText}</span>
-                <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">Tap to select from device</span>
+                <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">${type === 'gmail' ? 'Securely scan your inbox' : 'Tap to select from device'}</span>
             </div>
         </button>
     `;
@@ -873,6 +929,25 @@ function createSmartImportModal() {
                     </div>
 
                     <div id="smart-import-options-grid" style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin-top: 10px;">
+                        
+                        <!-- Option 0: Sync Gmail -->
+                        <button class="smart-import-banner" aria-label="Sync Gmail" onclick="window.showSmartImportOption('gmail')" style="margin-bottom: 0;">
+                            <div class="space-bg" style="border-radius: 25px;">
+                                <div class="stars"></div>
+                                <div class="stars2"></div>
+                                <div class="stars3"></div>
+                            </div>
+                            <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L12 12L3 21"/><path d="M21 3L12 12L3 3"/><path d="M12 12V21"/><path d="M12 12V3"/></svg>
+                            </div>
+                            <div class="smart-import-banner-text" style="text-align: left;">
+                                <span class="smart-import-banner-title" style="font-size: 0.95rem;">Sync your Gmail Acc</span>
+                                <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">Catch every receipt instantly</span>
+                            </div>
+                            <div class="smart-import-banner-arrow" style="width: auto; background: none; border: none;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                            </div>
+                        </button>
                         
                         <!-- Option 1: Bank Statement -->
                         <button class="smart-import-banner" aria-label="Import a Bank Statement" onclick="window.showSmartImportOption('bank')" style="margin-bottom: 0;">
