@@ -19,12 +19,14 @@ export const GmailSync = {
         try {
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             
-            if (sessionError || !session?.provider_token) {
-                console.error('[GmailSync] No Google provider token found. User might need to re-login with Gmail scope.');
+            // Check session, global variable, or session storage
+            const token = session?.provider_token || window.googleProviderToken || sessionStorage.getItem('google_provider_token');
+
+            if (!token) {
+                console.error('[GmailSync] No Google provider token found.');
                 throw new Error('GMAIL_AUTH_REQUIRED');
             }
 
-            const token = session.provider_token;
             console.log('[GmailSync] Starting scan with provider token...');
 
             // 1. Search for messages with subscription keywords

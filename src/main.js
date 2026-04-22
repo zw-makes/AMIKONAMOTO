@@ -3427,6 +3427,16 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     // Stop the splash failsafe immediately
     hideSplash();
 
+    // ─── Gmail Sync Token Capture ───
+    if (session.provider_token) {
+        console.log('[Auth] Captured Google Provider Token');
+        window.googleProviderToken = session.provider_token;
+        sessionStorage.setItem('google_provider_token', session.provider_token);
+    } else {
+        // Try to recover from session storage if not in current session object
+        window.googleProviderToken = sessionStorage.getItem('google_provider_token');
+    }
+
     // Check if we are in the middle of a password reset flow
     if (window.isRecoveringPassword) {
       console.log('[Auth] Holding session transition for password recovery...');
