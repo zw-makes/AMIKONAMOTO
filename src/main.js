@@ -1,6 +1,7 @@
 // Triggering iOS Build - March 13
 import './style.css';
 import './features/bottombar/bottombar.css';
+import { App } from '@capacitor/app';
 import { supabase } from './supabase.js';
 window.supabase = supabase;
 import { initNotifications, clearReminders, loadNotifications } from './features/notifications/notifications.js';
@@ -147,6 +148,37 @@ initSurveyPage();
 initBelievePage();
 // Initialize New Auth
 initAuthPage();
+
+// Handle Native Deep Links (OAuth Redirects)
+App.addListener('appUrlOpen', async (data) => {
+  console.log('[DeepLink] App opened with URL:', data.url);
+  const url = new URL(data.url);
+  const hash = url.hash;
+
+  if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+    // Supabase JS handles hash fragments automatically if we're on a browser, 
+    // but in Capacitor we need to help it.
+    const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash;
+    const params = new URLSearchParams(cleanHash);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      
+      if (!error) {
+        console.log('[DeepLink] Session restored successfully');
+        window.location.reload(); // Refresh to apply session
+      } else {
+        console.error('[DeepLink] SetSession Error:', error.message);
+      }
+    }
+  }
+});
+
 // Initialize Email Auth
 initEmailAuthPage();
 // Initialize Guider

@@ -72,7 +72,7 @@ export function initAuthPage() {
        const { error } = await supabase.auth.signInWithOAuth({
          provider: 'google',
          options: {
-           redirectTo: window.location.origin
+           redirectTo: 'com.amikonamoto.app://google-auth'
          }
        });
 
@@ -92,7 +92,7 @@ export function initAuthPage() {
        const { error } = await supabase.auth.signInWithOAuth({
          provider: 'apple',
          options: {
-           redirectTo: window.location.origin
+           redirectTo: 'com.amikonamoto.app://apple-auth'
          }
        });
 
