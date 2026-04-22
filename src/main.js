@@ -3411,6 +3411,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     window.currentUser = session.user;
     console.log(`[Auth] Session active for: ${currentUser.email} `);
 
+    // Stop the splash failsafe immediately
+    hideSplash();
+
     // Check if we are in the middle of a password reset flow
     if (window.isRecoveringPassword) {
       console.log('[Auth] Holding session transition for password recovery...');
@@ -3563,6 +3566,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           hideSplash();
           const loadingScreen = document.getElementById('auth-loading-screen');
           if (loadingScreen) loadingScreen.classList.add('hidden');
+          
+          // Force hide auth screen
+          authScreen.classList.add('hidden');
+          
           const appCont = document.getElementById('app-container');
           if (appCont) appCont.classList.add('hidden'); // Guarantee hidden for Guider
           
