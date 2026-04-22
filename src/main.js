@@ -4127,6 +4127,8 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
 // --- Account Settings Logic ---
 window.showAccountSettings = function () {
   if (!userProfile || !currentUser) return;
+  window.pendingAvatarUrl = null;
+  updateProfileUI();
 
   // Fill form fields
   document.getElementById('settings-name').value = userProfile.name || '';
@@ -4552,31 +4554,156 @@ closeAppSettingsBtn.addEventListener('click', () => {
   appSettingsModal.classList.add('hidden');
 });
 
-// Avatar Selection Modal Logic
-const avatarModal = document.getElementById('avatar-modal');
-const closeAvatarModalBtn = document.getElementById('close-avatar-modal');
-const uploadCustomBtn = document.getElementById('upload-custom-btn');
-const freeAvatarGrid = document.getElementById('free-avatar-grid');
-const paidAvatarGrid = document.getElementById('paid-avatar-grid');
+// Dynamic Nexus-Style Avatar Selection Sheet
+window.showAvatarSheet = function() {
+    document.getElementById('avatar-sheet-modal')?.remove();
 
-function renderAvatars() {
-  if (freeAvatarGrid) {
-    freeAvatarGrid.innerHTML = FREE_AVATARS.map(url => `
-      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')"
-        style="cursor: pointer; transition: var(--transition);">
-        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+    const modal = document.createElement('div');
+    modal.id = 'avatar-sheet-modal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 10001;
+        display: flex; align-items: flex-end; justify-content: center;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+        animation: fadeIn 0.2s ease;
+    `;
+
+    const activeAvatar = window.pendingAvatarUrl || window.userProfile.avatar_url;
+    
+    const freeHtml = FREE_AVATARS.map(url => `
+      <div class="avatar-option ${activeAvatar === url ? 'selected' : ''}" data-url="${url}"
+        style="cursor: pointer; transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1); aspect-ratio: 1; border-radius: 14px; overflow: hidden; border: 2px solid ${activeAvatar === url ? 'var(--accent-blue)' : 'transparent'};">
+        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
       </div>
     `).join('');
-  }
 
-  if (paidAvatarGrid) {
-    paidAvatarGrid.innerHTML = PAID_AVATARS.map(url => `
-      <div class="avatar-option ${userProfile.avatar_url === url ? 'selected' : ''}" onclick="selectAvatar('${url}')"
-        style="cursor: pointer; transition: var(--transition);">
-        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+    const paidHtml = PAID_AVATARS.map(url => `
+      <div class="avatar-option ${activeAvatar === url ? 'selected' : ''}" data-url="${url}"
+        style="cursor: pointer; transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1); aspect-ratio: 1; border-radius: 14px; overflow: hidden; border: 2px solid ${activeAvatar === url ? 'var(--accent-blue)' : 'transparent'};">
+        <img src="${url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
       </div>
     `).join('');
-  }
+
+    modal.innerHTML = `
+        <div class="nexus-sheet-inner" style="
+            width: 100%; max-width: 450px;
+            background: #111;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            border-radius: 32px 32px 0 0;
+            padding: 24px 24px 40px;
+            animation: nexusSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            position: relative;
+            height: 55vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        ">
+            <div id="avatar-drag-area" style="cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding-bottom: 24px; padding-top: 10px; margin-top: -10px;">
+                <div style="width: 36px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 10px; margin-bottom: 24px; flex-shrink: 0;"></div>
+                <h3 style="color: #fff; font-size: 1.25rem; font-weight: 700; margin: 0; text-align: center; letter-spacing: -0.02em; flex-shrink: 0;">
+                    Update Profile Avatar
+                </h3>
+            </div>
+
+            <div style="flex: 1; overflow-y: auto; padding: 0 10px 20px; -webkit-overflow-scrolling: touch;" class="custom-scroll">
+                <button id="avatar-upload-trigger" style="
+                    width: 100%; padding: 18px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.1); color: #fff; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;
+                ">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload Custom Image
+                </button>
+
+                <div style="margin-top: 32px; margin-bottom: 32px;">
+                    <p style="font-size: 0.65rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; font-weight: 800; padding-left: 4px;">Free Collection</p>
+                    <div class="avatar-grid">
+                        ${freeHtml}
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p style="font-size: 0.65rem; color: #ffb340; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; font-weight: 800; padding-left: 4px;">Premium Animated</p>
+                    <div class="avatar-grid">
+                        ${paidHtml}
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const sheet = modal.querySelector('.nexus-sheet-inner');
+
+    // Drag to Dismiss Logic
+    let startY = 0, currentY = 0, isDragging = false;
+    const handle = modal.querySelector('#avatar-drag-area');
+
+    const onDragStart = (e) => {
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        isDragging = true;
+        sheet.style.transition = 'none';
+        document.activeElement?.blur();
+    };
+    const onDragMove = (e) => {
+        if (!isDragging) return;
+        const nowY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const deltaY = nowY - startY;
+        if (deltaY > 0) {
+            currentY = deltaY;
+            sheet.style.transform = `translateY(${currentY}px)`;
+            modal.style.background = `rgba(0,0,0,${0.6 * (1 - currentY/500)})`;
+            if (e.cancelable) e.preventDefault();
+        }
+    };
+    const onDragEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'all 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+        if (currentY > 120) {
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => modal.remove(), 250);
+        } else {
+            sheet.style.transform = 'translateY(0)';
+            modal.style.background = 'rgba(0,0,0,0.6)';
+        }
+    };
+
+    handle.addEventListener('mousedown', onDragStart);
+    handle.addEventListener('touchstart', onDragStart, { passive: true });
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('touchmove', onDragMove, { passive: false });
+    window.addEventListener('mouseup', onDragEnd);
+    window.addEventListener('touchend', onDragEnd);
+
+    modal.onclick = (e) => { if (e.target === modal) {
+        sheet.style.transition = 'transform 0.25s ease';
+        sheet.style.transform = 'translateY(110%)';
+        setTimeout(() => modal.remove(), 250);
+    }};
+
+    // Setup Avatar Picks
+    modal.querySelectorAll('.avatar-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            window.selectAvatar(opt.dataset.url);
+            sheet.style.transition = 'transform 0.25s ease';
+            sheet.style.transform = 'translateY(110%)';
+            setTimeout(() => modal.remove(), 250);
+        });
+    });
+
+    // Upload Trigger
+    modal.querySelector('#avatar-upload-trigger').addEventListener('click', () => {
+        document.getElementById('avatar-upload')?.click();
+        sheet.style.transition = 'transform 0.25s ease';
+        sheet.style.transform = 'translateY(110%)';
+        setTimeout(() => modal.remove(), 250);
+    });
+
+    if (window.HapticsService) window.HapticsService.medium();
 }
 
 window.selectAvatar = function (url) {
@@ -4584,13 +4711,13 @@ window.selectAvatar = function (url) {
     if (window.showOfflineWarning) window.showOfflineWarning();
     return;
   }
-  userProfile.avatar_url = url;
-  updateProfileUI();
-  if (typeof renderAvatars === 'function') renderAvatars();
-  if (window.saveProfileToSupabase) window.saveProfileToSupabase();
+  window.pendingAvatarUrl = url;
   
-  const avatarModal = document.getElementById('avatar-modal');
-  if (avatarModal) avatarModal.classList.add('hidden');
+  if (avatarImgPreview && avatarSvgPlaceholder) {
+    avatarImgPreview.src = url;
+    avatarImgPreview.classList.remove('hidden');
+    avatarSvgPlaceholder.classList.add('hidden');
+  }
 };
 
 document.getElementById('settings-avatar-preview').addEventListener('click', () => {
@@ -4598,17 +4725,7 @@ document.getElementById('settings-avatar-preview').addEventListener('click', () 
     if (window.showOfflineWarning) window.showOfflineWarning();
     return;
   }
-  avatarModal.classList.remove('hidden');
-  renderAvatars();
-});
-
-closeAvatarModalBtn.addEventListener('click', () => {
-  avatarModal.classList.add('hidden');
-});
-
-uploadCustomBtn.addEventListener('click', () => {
-  avatarUpload.click();
-  avatarModal.classList.add('hidden');
+  window.showAvatarSheet();
 });
 
 // Reusable Bottom Sheet Drag to Close Logic
@@ -4665,7 +4782,7 @@ function initBottomSheetDrag(modalId, dragAreaId) {
 }
 
 // Initialize for all bottom sheets
-initBottomSheetDrag('avatar-modal', 'avatar-drag-area');
+// Removed old initialization for avatar-modal drag
 initBottomSheetDrag('delete-subs-confirm-modal', 'delete-subs-drag-area');
 initBottomSheetDrag('delete-confirm-modal', 'delete-account-drag-area');
 
@@ -4679,8 +4796,12 @@ avatarUpload.addEventListener('change', (e) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (event) => {
-      userProfile.avatar_url = event.target.result; // Base64
-      updateProfileUI();
+      window.pendingAvatarUrl = event.target.result; // Base64
+      if (avatarImgPreview && avatarSvgPlaceholder) {
+        avatarImgPreview.src = event.target.result;
+        avatarImgPreview.classList.remove('hidden');
+        avatarSvgPlaceholder.classList.add('hidden');
+      }
     };
     reader.readAsDataURL(file);
   }
@@ -4706,6 +4827,12 @@ settingsForm.addEventListener('submit', async (e) => {
     userProfile.gender = updatedGender;
     userProfile.dob = updatedDob || null; // Explicit null for SQL consistency
     userProfile.onboarding_completed = true;
+
+    // Apply pending avatar if any
+    if (window.pendingAvatarUrl) {
+      userProfile.avatar_url = window.pendingAvatarUrl;
+      window.pendingAvatarUrl = null;
+    }
 
     // 2. Sync Everywhere (Local, Cache, Cloud) Instantly
     if (window.saveProfileToSupabase) {

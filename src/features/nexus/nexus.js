@@ -66,22 +66,31 @@ export async function initNexus() {
         console.log('[Nexus] Sync queue flushed — refreshing cards...');
         renderStoredCards();
     });
-    
-    // Load persisted cards from DB
-    await renderStoredCards();
-
-    // Secondary refresh after a short delay to catch the profile loading from main.js
-    setTimeout(() => renderStoredCards(), 1500);
 }
 
+let hasFetchedCloudCards = false;
+
 window.getStoredCards = getStoredCards;
-export async function getStoredCards() {
+export async function getStoredCards(forceCloud = false) {
     try {
-        // 1. INSTANT OFFLINE LOAD: No blocking auth checks!
         const cache = localStorage.getItem('nexus_cards');
         let cards = cache ? JSON.parse(cache) : [];
 
-        // Merge with pending offline operations (optimistic)
+        if ((forceCloud || !cache) && navigator.onLine && !hasFetchedCloudCards) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data, error } = await supabase
+                    .from('nexus_cards')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+                if (!error && data) {
+                    localStorage.setItem('nexus_cards', JSON.stringify(data));
+                    cards = data; 
+                    hasFetchedCloudCards = true;
+                }
+            }
+        }
+
         const q = getQueue();
         q.forEach(item => {
             if (item.action === 'upsert_nexus_card' && item.data) {
@@ -92,24 +101,6 @@ export async function getStoredCards() {
                 cards = cards.filter(c => c.id !== item.data.id);
             }
         });
-
-        // 2. ASYNC BACKGROUND SYNC: Don't await this, let it run in parallel
-        if (navigator.onLine) {
-            supabase.auth.getUser().then(({ data: { user } }) => {
-                if (user) {
-                    supabase
-                        .from('nexus_cards')
-                        .select('*')
-                        .order('created_at', { ascending: true })
-                        .then(({ data, error }) => {
-                            if (!error && data) {
-                                localStorage.setItem('nexus_cards', JSON.stringify(data));
-                                // Optionally trigger a refresh if the data changed significantly
-                            }
-                        });
-                }
-            });
-        }
 
         return cards;
     } catch (err) {
@@ -160,11 +151,19 @@ async function saveCardToStorage(cardData) {
 }
 
 async function renderStoredCards() {
-    const cards = await getStoredCards();
     const stack = document.getElementById('nexus-cards-list');
     if (!stack) return;
 
-    // Clear existing (except maybe placeholder if empty)
+    if (!hasFetchedCloudCards && navigator.onLine) {
+        stack.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; min-height: 180px;">
+                <div style="width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #fff; border-radius: 50%; animation: nexusSpin 0.7s linear infinite;"></div>
+            </div>
+        `;
+    }
+
+    const cards = await getStoredCards(true);
+    
     stack.innerHTML = '';
     
     if (cards.length === 0) {
@@ -748,9 +747,6 @@ export async function populatePaymentCardsDropdown() {
 
 
 export function toggleNexus(show) {
-
-
-
     const nexusPage = document.getElementById('nexus-page');
     if (!nexusPage) return;
 
@@ -758,6 +754,7 @@ export function toggleNexus(show) {
 
     if (show) {
         nexusPage.classList.remove('hidden');
+        renderStoredCards();
     } else {
         nexusPage.classList.add('hidden');
     }
