@@ -21,12 +21,12 @@ export const GmailSync = {
 
             console.log('[GmailSync] Starting wide-net scan...');
 
-            // 1. Search for messages - LIMITED TO LAST 3 MONTHS
+            // 1. Search for messages - LIMITED TO LAST 3 MONTHS (TIGHTENED QUERY)
             const threeMonthsAgo = new Date();
             threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
             const dateFilter = `${threeMonthsAgo.getFullYear()}/${String(threeMonthsAgo.getMonth() + 1).padStart(2, '0')}/${String(threeMonthsAgo.getDate()).padStart(2, '0')}`;
             
-            const query = `subject:(receipt OR "billed" OR "renew" OR "subscription" OR "invoice" OR "payment" OR "premium" OR "order confirmed" OR "service") after:${dateFilter}`;
+            const query = `subject:("subscription" OR "renewed" OR "renew" OR "billing" OR "billed" OR "your plan" OR "membership" OR "premium plan" OR "receipt") after:${dateFilter}`;
             const messages = await this.fetchMessages(token, query);
 
             if (messages.length === 0) {
@@ -223,8 +223,10 @@ export const GmailSync = {
 
         if (allPrices.length > 0) {
             const rawPrice = allPrices[0];
-            // Normalize comma to dot for parsing
-            amount = parseFloat(rawPrice.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            // Normalize comma to dot for parsing (Handling $9,99 or 9.99)
+            const cleanPrice = rawPrice.replace(/[^\d.,]/g, '');
+            const normalized = cleanPrice.replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
+            amount = parseFloat(normalized) || 0;
             symbol = rawPrice.match(/[\$£€₹¥]/)?.[0] || '$';
             
             if (symbol === '₹') currency = 'INR';
@@ -250,7 +252,7 @@ export const GmailSync = {
             symbol: symbol,
             frequency: frequency,
             source: 'Gmail',
-            domain: domain || `${name.toLowerCase()}.com`,
+            domain: (domain || `${name.toLowerCase()}.com`).replace(/^(mail\.|email\.|billing\.|noreply\.)/, ''),
             emailDate: headers.find(h => h.name === 'Date')?.value,
             id: detail.id
         };
