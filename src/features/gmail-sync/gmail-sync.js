@@ -17,13 +17,7 @@ export const GmailSync = {
         this.isSyncing = true;
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.provider_token || window.googleProviderToken || sessionStorage.getItem('google_provider_token');
-
-            if (!token) {
-                console.error('[GmailSync] No Google provider token found.');
-                throw new Error('GMAIL_AUTH_REQUIRED');
-            }
+            const token = await this.getValidToken();
 
             console.log('[GmailSync] Starting wide-net scan...');
 
@@ -59,6 +53,40 @@ export const GmailSync = {
         } finally {
             this.isSyncing = false;
         }
+    },
+
+    /**
+     * Retrieves a valid Google Provider Token, refreshing if needed.
+     */
+    async getValidToken() {
+        let token = localStorage.getItem('google_provider_token');
+
+        if (!token) {
+            console.error('[GmailSync] No token in localStorage, checking session...');
+            const { data: { session } } = await supabase.auth.getSession();
+            token = session?.provider_token;
+            if (token) localStorage.setItem('google_provider_token', token);
+        }
+
+        if (!token) throw new Error('GMAIL_AUTH_REQUIRED');
+
+        // Test token validity
+        const testResp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (testResp.status === 401) {
+            console.log('[GmailSync] Token expired, refreshing session...');
+            const { data } = await supabase.auth.refreshSession();
+            if (data?.session?.provider_token) {
+                token = data.session.provider_token;
+                localStorage.setItem('google_provider_token', token);
+            } else {
+                throw new Error('GMAIL_AUTH_REQUIRED');
+            }
+        }
+
+        return token;
     },
 
     /**
