@@ -34,19 +34,27 @@ export const GmailSync = {
                 return [];
             }
 
-            // 2. Fetch details (Increased to 25 for wider coverage)
-            const detectedSubs = [];
+            // 2. Fetch details (Increased for wider AI coverage)
             const detailsPromises = messages.slice(0, 25).map(msg => this.fetchMessageDetails(token, msg.id));
             const details = await Promise.all(detailsPromises);
 
-            // 3. Parse details
-            details.forEach(detail => {
-                if (!detail) return;
-                const sub = this.parseEmail(detail);
-                if (sub) detectedSubs.push(sub);
-            });
+            // 3. Prepare text for AI Analysis
+            const emailContents = details.map(detail => {
+                if (!detail) return '';
+                const headers = detail.payload.headers;
+                const subject = headers.find(h => h.name === 'Subject')?.value || '';
+                const snippet = detail.snippet || '';
+                const body = this.getBody(detail.payload);
+                return `Subject: ${subject}\nSnippet: ${snippet}\nContent: ${body.substring(0, 500)}\n---`;
+            }).join('\n\n');
 
-            // 4. De-duplicate and Sort
+            if (!emailContents.trim()) return [];
+
+            // 4. Call AI for Extraction
+            console.log('[GmailSync] Sending data to AI for extraction...');
+            const detectedSubs = await this.callAI(emailContents);
+            
+            // 5. De-duplicate and Sort
             const uniqueSubs = Array.from(new Map(detectedSubs.map(s => [s.name.toLowerCase(), s])).values());
             
             return uniqueSubs;
@@ -56,6 +64,58 @@ export const GmailSync = {
             throw err;
         } finally {
             this.isSyncing = false;
+        }
+    },
+
+    /**
+     * AI Extraction Logic (Mirrors Smart Import)
+     */
+    async callAI(text) {
+        const EXTRACTION_SYSTEM_PROMPT = `You are an exhaustive, row-by-row subscription extraction machine.
+Your task is to scan the provided email content and extract EVERY SINGLE subscription entry.
+
+SCANNING PROTOCOL:
+1. Identify the BRAND/NAME.
+2. Extract the PRICE, CURRENCY, and SYMBOL.
+3. Identify the frequency (monthly/yearly/trial).
+4. Extract the DATE or billing day.
+
+JSON SCHEMA:
+Return a JSON array of objects:
+- "name": string
+- "domain": string (e.g. spotify.com)
+- "price": number
+- "currency": string (USD, INR, etc.)
+- "symbol": string ($, ₹, etc.)
+- "type": "monthly" | "yearly" | "trial"
+- "date": string (YYYY-MM-DD)
+
+Return ONLY the raw JSON array. NO code blocks, NO text.`;
+
+        try {
+            const { data, error } = await supabase.functions.invoke('sync-groq', {
+                body: { 
+                    userPrompt: `Extract subscriptions from these emails:\n\n${text}`,
+                    systemPrompt: EXTRACTION_SYSTEM_PROMPT 
+                }
+            });
+
+            if (error || (data && data.error)) throw new Error(error?.message || data?.error || 'AI Sync Error');
+            
+            const raw = data.reply || '[]';
+            let cleaned = raw.trim();
+            cleaned = cleaned.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+            
+            const parsed = JSON.parse(cleaned);
+            return parsed.map(s => ({
+                ...s,
+                source: 'Gmail',
+                domain: (s.domain || `${s.name.toLowerCase()}.com`).replace(/^(mail\.|email\.|billing\.|noreply\.)/, ''),
+                amount: parseFloat(s.price) || 0
+            }));
+        } catch (e) {
+            console.error('[GmailSync] AI Parsing failed:', e);
+            return [];
         }
     },
 
@@ -171,90 +231,5 @@ export const GmailSync = {
         } catch (e) {
             return "";
         }
-    },
-
-    /**
-     * Smart parser to extract Name, Amount, and Date from FULL email content
-     */
-    parseEmail(detail) {
-        const headers = detail.payload.headers;
-        const subject = headers.find(h => h.name === 'Subject')?.value || '';
-        const fromHeader = headers.find(h => h.name === 'From')?.value || '';
-        const fullBody = this.getBody(detail.payload);
-        const snippet = detail.snippet || '';
-        
-        const searchableText = `${subject} ${snippet} ${fullBody}`.replace(/\s+/g, ' ');
-
-        // 1. Extract Name and Domain
-        const fromMatch = fromHeader.match(/^(.*?)\s*<([^>]+)>/) || [null, fromHeader, fromHeader];
-        let name = fromMatch[1]?.replace(/"/g, '').trim() || '';
-        const email = fromMatch[2]?.toLowerCase() || '';
-        const domain = email.split('@')[1] || '';
-
-        // 2. Generic name cleanup
-        const genericNames = ['no-reply', 'noreply', 'support', 'billing', 'info', 'service', 'notifications', 'order', 'team', 'account'];
-        if (!name || genericNames.some(g => name.toLowerCase().includes(g))) {
-            if (domain) {
-                const parts = domain.split('.');
-                name = parts[parts.length - 2]; 
-                if (name === 'co' || name === 'com' || name === 'net') name = parts[parts.length - 3] || name;
-            }
-        }
-
-        // 3. Brand Matching
-        const commonBrands = ['Netflix', 'Spotify', 'Apple', 'iCloud', 'Disney', 'YouTube', 'Prime', 'Adobe', 'Canva', 'LinkedIn', 'ChatGPT', 'Claude', 'Midjourney', 'Hulu', 'Slack', 'Zoom', 'Dropbox', 'Microsoft', 'GitHub', 'OpenAI', 'Uber', 'Bolt', 'Wolfe', 'Deliveroo', 'DoorDash'];
-        for (const brand of commonBrands) {
-            if (searchableText.toLowerCase().includes(brand.toLowerCase())) {
-                name = brand;
-                break;
-            }
-        }
-
-        if (name) name = name.charAt(0).toUpperCase() + name.slice(1);
-
-        // 4. PRICE DETECTION (Aggressive International regex)
-        // Now handles dots and commas: $9.99, 9,99€, ₹500, etc.
-        const priceRegex = /([\$£€₹¥]\s?\d+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?\s?(?:USD|GBP|EUR|INR|[\$£€₹¥]))/gi;
-        const allPrices = searchableText.match(priceRegex) || [];
-        
-        let amount = 0;
-        let symbol = '$';
-        let currency = 'USD';
-
-        if (allPrices.length > 0) {
-            const rawPrice = allPrices[0];
-            // Normalize comma to dot for parsing (Handling $9,99 or 9.99)
-            const cleanPrice = rawPrice.replace(/[^\d.,]/g, '');
-            const normalized = cleanPrice.replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
-            amount = parseFloat(normalized) || 0;
-            symbol = rawPrice.match(/[\$£€₹¥]/)?.[0] || '$';
-            
-            if (symbol === '₹') currency = 'INR';
-            else if (symbol === '£') currency = 'GBP';
-            else if (symbol === '€') currency = 'EUR';
-        }
-
-        // 5. FINAL CHECK: If no amount found, set a default fallback instead of skipping!
-        if (!name) return null;
-        if (amount === 0) amount = 9.99; // Default fallback to ensure the item appears
-
-        // 6. FREQUENCY
-        let frequency = 'monthly';
-        const annualKeywords = ['annual', 'yearly', '1 year', '12 months', '/year', 'billed every year', 'year plan'];
-        if (annualKeywords.some(k => searchableText.toLowerCase().includes(k))) {
-            frequency = 'yearly';
-        }
-
-        return {
-            name: name,
-            amount: amount,
-            currency: currency,
-            symbol: symbol,
-            frequency: frequency,
-            source: 'Gmail',
-            domain: (domain || `${name.toLowerCase()}.com`).replace(/^(mail\.|email\.|billing\.|noreply\.)/, ''),
-            emailDate: headers.find(h => h.name === 'Date')?.value,
-            id: detail.id
-        };
     }
 };
