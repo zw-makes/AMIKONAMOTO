@@ -55,11 +55,10 @@ App.addListener('appUrlOpen', ({ url }) => {
             if (access_token && refresh_token) {
                 console.log('[App] Found session tokens, setting session...');
                 
-                // Store provider token for Gmail Sync
+                // Store provider token for Gmail Sync (Persistent)
                 if (provider_token) {
                     console.log('[App] Captured Provider Token from Deep Link');
-                    window.googleProviderToken = provider_token;
-                    sessionStorage.setItem('google_provider_token', provider_token);
+                    localStorage.setItem('google_provider_token', provider_token);
                 }
 
                 supabase.auth.setSession({
@@ -3424,7 +3423,7 @@ setTimeout(() => {
     hideSplash();
     authScreen.classList.remove('hidden');
   }
-}, 3000);
+}, 8000); // Increased to 8s to give Supabase more time to initialize on slow networks
 
 
 supabase.auth.onAuthStateChange(async (event, session) => {

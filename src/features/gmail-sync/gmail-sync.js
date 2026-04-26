@@ -78,12 +78,17 @@ export const GmailSync = {
         if (testResp.status === 401) {
             console.log('[GmailSync] Token expired, refreshing session...');
             const { data } = await supabase.auth.refreshSession();
+            
+            // If the refresh gave us a new provider token, update it
             if (data?.session?.provider_token) {
                 token = data.session.provider_token;
                 localStorage.setItem('google_provider_token', token);
-            } else {
+            } else if (!data?.session) {
+                // If the whole session refresh failed, then we are truly unauthorized
                 throw new Error('GMAIL_AUTH_REQUIRED');
             }
+            // If session refreshed but no new provider_token, we'll try the current one 
+            // one last time (some Supabase setups persist the token in the session cookie)
         }
 
         return token;
