@@ -21,8 +21,12 @@ export const GmailSync = {
 
             console.log('[GmailSync] Starting wide-net scan...');
 
-            // 1. Search for messages - BROADENED QUERY
-            const query = 'subject:(receipt OR "billed" OR "renew" OR "subscription" OR "invoice" OR "payment" OR "premium" OR "order confirmed" OR "service")';
+            // 1. Search for messages - LIMITED TO LAST 3 MONTHS
+            const threeMonthsAgo = new Date();
+            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+            const dateFilter = `${threeMonthsAgo.getFullYear()}/${String(threeMonthsAgo.getMonth() + 1).padStart(2, '0')}/${String(threeMonthsAgo.getDate()).padStart(2, '0')}`;
+            
+            const query = `subject:(receipt OR "billed" OR "renew" OR "subscription" OR "invoice" OR "payment" OR "premium" OR "order confirmed" OR "service") after:${dateFilter}`;
             const messages = await this.fetchMessages(token, query);
 
             if (messages.length === 0) {
