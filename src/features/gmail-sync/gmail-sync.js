@@ -108,16 +108,20 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             
             const parsed = JSON.parse(cleaned);
             return parsed.map(s => {
-                // Robust Date Handling (Extract day for 'date' and full string for 'startDate')
+                // Robust Date Handling with Fallback to "Now" to prevent 1970 errors
+                let fullDate = s.date;
                 let billingDay = 1;
-                let fullDate = s.date; // AI returns YYYY-MM-DD in the 'date' field
+                const now = new Date();
 
                 if (typeof fullDate === 'string' && fullDate.includes('-')) {
                     const parts = fullDate.split('-');
                     billingDay = parseInt(parts[2]) || 1;
-                } else if (typeof fullDate === 'number') {
+                } else if (typeof fullDate === 'number' && fullDate > 0 && fullDate <= 31) {
                     billingDay = fullDate;
-                    const now = new Date();
+                    fullDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(billingDay).padStart(2, '0')}`;
+                } else {
+                    // Fallback: Use current date if AI provided nothing or invalid data
+                    billingDay = now.getDate();
                     fullDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(billingDay).padStart(2, '0')}`;
                 }
 
@@ -126,8 +130,8 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                     source: 'Gmail',
                     domain: (s.domain || `${s.name.toLowerCase()}.com`).replace(/^(mail\.|email\.|billing\.|noreply\.)/, ''),
                     amount: parseFloat(s.price) || 0,
-                    date: billingDay, // Day of month (1-31)
-                    startDate: fullDate // Full YYYY-MM-DD
+                    date: billingDay,
+                    startDate: fullDate
                 };
             });
         } catch (e) {
