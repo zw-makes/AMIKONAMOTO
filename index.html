@@ -782,9 +782,9 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             </div>
 
             <!-- Two-in-one Row: Category & Payment Method -->
-            <div style="display: flex; gap: 15px; margin-top: 15px;">
+            <div style="display: flex; gap: 15px; margin-top: 15px; position: relative; z-index: 100;">
               <!-- Category Selection -->
-              <div class="form-group" style="flex: 1; margin: 0;">
+              <div class="form-group" style="flex: 1; min-width: 0; margin: 0;">
                 <label>Category</label>
                 <div class="category-selection-container" style="position: relative;">
                   <button type="button" id="form-category-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
@@ -792,14 +792,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                       <div id="form-selected-category-icon" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; opacity: 0.8; font-size: 1.1rem;">
                         📁
                       </div>
-                      <span id="form-category-selected-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;">Not set</span>
+                      <span id="form-category-selected-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 70px;">Not set</span>
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4; flex-shrink: 0;">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                   </button>
   
-                  <div class="dropdown-content hidden" id="form-category-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto; min-width: unset;">
+                  <div class="dropdown-content hidden" id="form-category-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto;">
                     <ul id="form-category-list">
                       <!-- Categories will be injected here via JS -->
                     </ul>
@@ -809,7 +809,7 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </div>
   
               <!-- Payment Method (Nexus Integration) -->
-              <div class="form-group" style="flex: 1; margin: 0;">
+              <div class="form-group" style="flex: 1; min-width: 0; margin: 0;">
                 <label style="display: block; white-space: nowrap;">Payment Method <span style="opacity: 0.4; font-weight: 400; font-size: 0.65rem;">(Nexus)</span></label>
                 <div class="card-selection-container" style="position: relative;">
                   <button type="button" id="card-select-trigger" class="dropdown-trigger" style="width: 100%; justify-content: space-between; padding: 14px 16px;">
@@ -820,14 +820,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
                           <line x1="1" y1="10" x2="23" y2="10"></line>
                         </svg>
                       </div>
-                      <span id="card-select-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Select Card</span>
+                      <span id="card-select-text" style="font-size: 0.8rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: clip;">Select Card</span>
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity: 0.4; flex-shrink: 0;">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                   </button>
   
-                  <div class="dropdown-content hidden" id="card-select-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto; min-width: unset; left: auto; right: 0;">
+                  <div class="dropdown-content hidden" id="card-select-dropdown" style="z-index: 1000; top: auto; bottom: calc(100% + 8px); max-height: 250px; overflow-y: auto;">
                     <ul id="nexus-cards-dropdown-list">
                       <!-- Cards will be injected here via JS -->
                       <li style="padding: 12px; opacity: 0.5; font-size: 0.75rem; pointer-events: none;">No cards found</li>
@@ -838,65 +838,6 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
               </div>
             </div>
 
-
-            <!-- Monthly Options Section (Hidden by default) -->
-            <div id="monthly-options-section" class="form-group hidden"
-              style="margin-top: 15px; animation: slideDown 0.3s ease;">
-              <label>Monthly Selection</label>
-              <div class="freq-selector" id="monthly-recurring-selector">
-                <button type="button" class="recur-btn" data-value="recurring">Recurring</button>
-                <button type="button" class="recur-btn" data-value="non-recurring">Non-recurring</button>
-              </div>
-              <input type="hidden" id="sub-recurring-val" value="">
-              <p id="monthly-error" class="hidden"
-                style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
-                Please select a monthly option!
-              </p>
-            </div>
-
-            <!-- Trial Duration Section (Hidden by default) -->
-            <div id="trial-duration-section" class="form-group hidden"
-              style="margin-top: 15px; animation: slideDown 0.3s ease;">
-              <label>Trial Duration</label>
-              <div style="display: flex; gap: 10px;">
-                <!-- Combined Duration Picker (Days + Months) -->
-                <div class="custom-dropdown dropdown-up" id="trial-days-picker" style="flex: 1;">
-                  <button type="button" class="dropdown-trigger" id="trial-days-trigger">
-                    <span id="trial-days-selected">Duration</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.5">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div class="dropdown-content hidden" id="trial-days-dropdown">
-                    <ul id="trial-days-list">
-                      <li data-value="7" data-type="days">7 Days</li>
-                      <li data-value="14" data-type="days">14 Days</li>
-                      <li data-value="1" data-type="months">1 Month</li>
-                      <li data-value="3" data-type="months">3 Months</li>
-                      <li data-value="6" data-type="months">6 Months</li>
-                      <li data-value="12" data-type="months">12 Months</li>
-                    </ul>
-                  </div>
-                  <input type="hidden" id="trial-days-val" value="">
-                  <input type="hidden" id="trial-months-val" value="">
-                </div>
-
-                <!-- Free Trial Toggle Button -->
-                <button type="button" id="free-trial-btn" class="dropdown-trigger"
-                  style="flex: 1; justify-content: center; gap: 8px;">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
-                  <span style="font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;">Free Trial</span>
-                </button>
-              </div>
-              <p id="trial-error" class="hidden"
-                style="color: var(--accent-red); font-size: 0.7rem; margin-top: 8px; font-weight: 500;">
-                Please select the trial duration!
-              </p>
-            </div>
 
 
             <!-- Notes Section -->

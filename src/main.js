@@ -2067,7 +2067,7 @@ window.editSubscription = function (id, e) {
       }
     } else {
       if (cardIdInput) cardIdInput.value = '';
-      if (cardText) cardText.textContent = 'Associate Nexus Card';
+      if (cardText) cardText.textContent = 'Select Card';
       if (cardIcon) cardIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>';
     }
   } catch (cardErr) {
@@ -2526,7 +2526,7 @@ document.getElementById('close-modal').addEventListener('click', () => {
     const cardSelectText = document.getElementById('card-select-text');
     const cardSelectId = document.getElementById('selected-card-id');
     const cardSelectIcon = document.getElementById('selected-card-status-icon');
-    if (cardSelectText) cardSelectText.textContent = 'Select Nexus Card';
+    if (cardSelectText) cardSelectText.textContent = 'Select Card';
     if (cardSelectId) cardSelectId.value = '';
     if (cardSelectIcon) {
         cardSelectIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
