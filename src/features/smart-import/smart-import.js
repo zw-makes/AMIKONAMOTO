@@ -643,6 +643,7 @@ function handleFileSelected(file) {
 
         document.getElementById('remove-file-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (window.HapticsService) window.HapticsService.light();
             resetFileSelection();
         });
     }
@@ -740,6 +741,7 @@ function resetFileSelection() {
 }
 
 window.triggerGmailScan = async function() {
+    if (window.HapticsService) window.HapticsService.medium();
     // 1. UI Setup
     const optionPage = modalEl?.querySelector('.smart-import-option-page');
     if (optionPage) optionPage.style.display = 'none';
@@ -785,6 +787,7 @@ window.triggerGmailScan = async function() {
 
 // Option Pages rendering logic
 window.showSmartImportOption = (type) => {
+    if (window.HapticsService) window.HapticsService.light();
     currentActiveOption = type;
     const hero = document.getElementById('smart-import-drop-zone');
     const optionPage = document.getElementById('smart-import-option-page');
@@ -865,16 +868,27 @@ window.showSmartImportOption = (type) => {
         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px 20px 8px 20px; margin-bottom: 24px; min-height: 200px;">
             ${stepsHtml}
         </div>
-        <button class="smart-import-banner" onclick="${type === 'gmail' ? 'window.triggerGmailScan()' : "document.getElementById('smart-import-file-input').click()"}" style="margin-bottom: 0;">
+    `;
+
+    // Add/Update the fixed footer for the option page
+    let footer = optionPage.querySelector('.smart-import-footer');
+    if (!footer) {
+        footer = document.createElement('div');
+        footer.className = 'smart-import-footer';
+        optionPage.appendChild(footer);
+    }
+    
+    footer.innerHTML = `
+        <button class="smart-import-banner" onclick="${type === 'gmail' ? 'window.triggerGmailScan()' : "document.getElementById('smart-import-file-input').click()"}" style="margin-bottom: 0; width: 100%;">
             <div class="space-bg" style="border-radius: 25px;">
                 <div class="stars"></div>
                 <div class="stars2"></div>
                 <div class="stars3"></div>
                 <div class="shooting-star" style="top: 30%; right: 20%; animation-duration: 7s;"></div>
             </div>
-            <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+            <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
                 ${type === 'gmail' 
-                    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>`
+                    ? `<img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" style="width: 22px; height: 22px;">`
                     : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
                 }
             </div>
@@ -884,6 +898,7 @@ window.showSmartImportOption = (type) => {
             </div>
         </button>
     `;
+    footer.style.display = 'flex';
     
     hero.style.display = 'none';
     optionPage.style.display = 'flex';
@@ -898,15 +913,13 @@ function createSmartImportModal() {
         <div class="smart-import-container">
             <!-- Header -->
             <div class="smart-import-header">
-                <button class="smart-import-back-btn" id="smart-import-back">
+                <button id="smart-import-back" class="profile-page-back-btn" aria-label="Go back">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span>Back</span>
                 </button>
                 <h2>Sublify Sync</h2>
-                <div class="smart-import-header-spacer"></div>
             </div>
 
             <!-- File Preview (hidden initially) -->
@@ -940,8 +953,8 @@ function createSmartImportModal() {
                                 <div class="stars2"></div>
                                 <div class="stars3"></div>
                             </div>
-                            <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21L12 12L3 21"/><path d="M21 3L12 12L3 3"/><path d="M12 12V21"/><path d="M12 12V3"/></svg>
+                            <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" style="width: 22px; height: 22px;">
                             </div>
                             <div class="smart-import-banner-text" style="text-align: left;">
                                 <span class="smart-import-banner-title" style="font-size: 0.95rem;">Sync your Gmail Acc</span>
@@ -1206,6 +1219,7 @@ export function initSmartImport() {
 
     // Back button
     document.getElementById('smart-import-back')?.addEventListener('click', () => {
+        if (window.HapticsService) window.HapticsService.light();
         const optionPage = modalEl.querySelector('.smart-import-option-page');
         const heroEl = modalEl.querySelector('.smart-import-hero');
         
