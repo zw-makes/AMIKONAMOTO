@@ -326,7 +326,7 @@
   position: fixed;
   inset: 0;
   z-index: 20000;
-  background: #000000;
+  background: var(--bg-color);
   display: flex;
   justify-content: center;
   overflow: hidden;
@@ -1003,20 +1003,22 @@
   position: relative;
 }
 
-.smart-import-footer {
+.smart-import-footer,
+.smart-import-option-footer {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   padding: 35px 24px calc(env(safe-area-inset-bottom, 0px) + 24px);
-  background: linear-gradient(to top, #000 85%, transparent);
+  background: linear-gradient(to top, var(--bg-color) 85%, transparent);
   z-index: 1000;
   display: none;
   gap: 12px;
   box-sizing: border-box;
 }
 
-.smart-import-footer.visible {
+.smart-import-footer.visible,
+.smart-import-option-footer.visible {
   display: flex;
 }
 

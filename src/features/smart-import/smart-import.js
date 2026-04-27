@@ -436,7 +436,10 @@ async function renderResults(subs) {
     });
 
     resultsContainer.classList.add('visible');
-    footerEl?.classList.add('visible');
+    if (footerEl) {
+        footerEl.classList.add('visible');
+        footerEl.style.display = 'flex';
+    }
     
     // Initial success haptic
     if (window.HapticsService) window.HapticsService.success();
@@ -871,10 +874,10 @@ window.showSmartImportOption = (type) => {
     `;
 
     // Add/Update the fixed footer for the option page
-    let footer = optionPage.querySelector('.smart-import-footer');
+    let footer = optionPage.querySelector('.smart-import-option-footer');
     if (!footer) {
         footer = document.createElement('div');
-        footer.className = 'smart-import-footer';
+        footer.className = 'smart-import-option-footer';
         optionPage.appendChild(footer);
     }
     
@@ -898,6 +901,7 @@ window.showSmartImportOption = (type) => {
             </div>
         </button>
     `;
+    footer.classList.add('visible');
     footer.style.display = 'flex';
     
     hero.style.display = 'none';
@@ -1174,7 +1178,15 @@ function showAurora(show, message = 'ANALYZING...') {
             }
         }
         if (bodyEl) bodyEl.style.display = 'flex';
-        if (footerEl) footerEl.style.display = 'flex';
+        if (footerEl) {
+            // Only show main footer if we have results or are on the hero page
+            const hasResults = modalEl?.querySelector('.smart-import-results').classList.contains('visible');
+            const isHero = modalEl?.querySelector('.smart-import-hero').style.display !== 'none';
+            if (hasResults || isHero) {
+                footerEl.style.display = 'flex';
+                footerEl.classList.add('visible');
+            }
+        }
         if (removeFileBtn) removeFileBtn.style.display = 'flex';
         
         if (previewEl) {
