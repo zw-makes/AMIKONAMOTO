@@ -871,35 +871,55 @@ window.showSmartImportOption = (type) => {
         optionPage.appendChild(footer);
     }
     
-    footer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-            <button class="smart-import-banner" onclick="window.triggerGmailScan()" style="margin-bottom: 0; width: 100%;">
+    if (type === 'gmail' || type === 'email') {
+        footer.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <button class="smart-import-banner" onclick="window.triggerGmailScan()" style="margin-bottom: 0; width: 100%;">
+                    <div class="space-bg" style="border-radius: 25px;">
+                        <div class="stars"></div>
+                        <div class="stars2"></div>
+                        <div class="stars3"></div>
+                    </div>
+                    <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" style="width: 22px; height: 22px;">
+                    </div>
+                    <div class="smart-import-banner-text" style="text-align: left;">
+                        <span class="smart-import-banner-title" style="font-size: 0.95rem;">Start Gmail Scan</span>
+                        <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">Securely scan your inbox</span>
+                    </div>
+                </button>
+                
+                <button class="smart-import-banner" onclick="document.getElementById('smart-import-file-input').click()" style="margin-bottom: 0; width: 100%; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05);">
+                    <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.05); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    </div>
+                    <div class="smart-import-banner-text" style="text-align: left;">
+                        <span class="smart-import-banner-title" style="font-size: 0.95rem;">Search Screenshots</span>
+                        <span style="font-size: 0.72rem; color: rgba(255,255,255,0.4); font-weight: 500;">Upload receipt images</span>
+                    </div>
+                </button>
+            </div>
+            <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px;">Sublify Sync is in beta and may occasionally miss or misread subscriptions. Your inbox data is processed securely, never shared, and your subscription data is stored safely with end-to-end encryption.</p>
+        `;
+    } else {
+        footer.innerHTML = `
+            <button class="smart-import-banner" onclick="document.getElementById('smart-import-file-input').click()" style="margin-bottom: 0; width: 100%;">
                 <div class="space-bg" style="border-radius: 25px;">
                     <div class="stars"></div>
                     <div class="stars2"></div>
                     <div class="stars3"></div>
                 </div>
                 <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.08); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" style="width: 22px; height: 22px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </div>
                 <div class="smart-import-banner-text" style="text-align: left;">
-                    <span class="smart-import-banner-title" style="font-size: 0.95rem;">Start Gmail Scan</span>
-                    <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">Securely scan your inbox</span>
+                    <span class="smart-import-banner-title" style="font-size: 0.95rem;">${btnText}</span>
+                    <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">Tap to select from device</span>
                 </div>
             </button>
-            
-            <button class="smart-import-banner" onclick="document.getElementById('smart-import-file-input').click()" style="margin-bottom: 0; width: 100%; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05);">
-                <div class="smart-import-banner-logo" style="background: rgba(255,255,255,0.05); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                </div>
-                <div class="smart-import-banner-text" style="text-align: left;">
-                    <span class="smart-import-banner-title" style="font-size: 0.95rem;">Search Screenshots</span>
-                    <span style="font-size: 0.72rem; color: rgba(255,255,255,0.4); font-weight: 500;">Upload receipt images</span>
-                </div>
-            </button>
-        </div>
-        <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px;">Sublify Sync is in beta and may occasionally miss or misread subscriptions. Your inbox data is processed securely, never shared, and your subscription data is stored safely with end-to-end encryption.</p>
-    `;
+            <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px;">Sublify Sync is in beta and may occasionally miss or misread subscriptions. Your inbox data is processed securely, never shared, and your subscription data is stored safely with end-to-end encryption.</p>
+        `;
+    }
     footer.classList.add('visible');
     footer.style.display = 'flex';
     

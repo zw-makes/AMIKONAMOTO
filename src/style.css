@@ -2713,7 +2713,7 @@ input:checked+.slider:before {
   position: absolute;
   inset: 0;
   z-index: 10000;
-  background: #000000;
+  background: var(--bg-color);
   display: flex;
   justify-content: center;
   overflow: hidden;
@@ -2903,23 +2903,6 @@ input:checked+.slider:before {
   }
 }
 
-/* Add Subscription Full Page View */
-.add-page {
-  position: absolute;
-  inset: 0;
-  z-index: 10000;
-  background: #000000;
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.add-page.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(20px);
-}
 
 .add-page-container {
   width: 100%;

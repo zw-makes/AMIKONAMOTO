@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: #000000 !important;
+  background: var(--bg-color) !important;
 }
 
 .detail-view-content {
@@ -13,7 +13,7 @@
   max-width: 450px; /* Match pricing page reference */
   height: 100%;
   max-height: 100vh;
-  background: #000000 !important;
+  background: var(--bg-color) !important;
   display: flex;
   flex-direction: column;
   padding: 0;
