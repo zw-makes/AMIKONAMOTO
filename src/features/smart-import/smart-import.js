@@ -770,7 +770,10 @@ window.triggerGmailScan = async function() {
         
         if (err.message === 'GMAIL_AUTH_REQUIRED') {
             showToast('Gmail access required. Please sign in again.', 'error', 5000);
-            // Optionally redirect to profile to re-login
+        } else if (err.message === 'GMAIL_API_ERROR') {
+            showToast('Gmail connection unstable. Please try again.', 'error');
+        } else if (err.message === 'AI_TIMEOUT_ERROR') {
+            showToast('AI is taking too long. Try again with fewer emails.', 'error');
         } else {
             showToast('Failed to scan Gmail. Check connection.', 'error');
         }

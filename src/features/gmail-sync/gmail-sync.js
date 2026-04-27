@@ -34,21 +34,31 @@ export const GmailSync = {
                 return [];
             }
 
-            // 2. Fetch details (Increased for wider AI coverage)
-            const detailsPromises = messages.slice(0, 25).map(msg => this.fetchMessageDetails(token, msg.id));
-            const details = await Promise.all(detailsPromises);
+            // 2. Fetch details (Reduced to 15 for better mobile stability and AI performance)
+            const messagesToFetch = messages.slice(0, 15);
+            const details = [];
+            
+            for (const msg of messagesToFetch) {
+                const detail = await this.fetchMessageDetails(token, msg.id);
+                if (detail) details.push(detail);
+                // Tiny 50ms throttle to prevent rate-limit bursts on mobile
+                await new Promise(r => setTimeout(r, 50));
+            }
 
             // 3. Prepare text for AI Analysis
             const emailContents = details.map(detail => {
-                if (!detail) return '';
-                const headers = detail.payload.headers;
-                const subject = headers.find(h => h.name === 'Subject')?.value || '';
+                const headers = detail.payload?.headers || [];
+                const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
                 const snippet = detail.snippet || '';
                 const body = this.getBody(detail.payload);
-                return `Subject: ${subject}\nSnippet: ${snippet}\nContent: ${body.substring(0, 500)}\n---`;
-            }).join('\n\n');
+                // Keep snippets concise for AI context window
+                return `Subject: ${subject}\nSnippet: ${snippet}\nContent: ${body.substring(0, 400)}\n---`;
+            }).filter(content => content.trim().length > 10).join('\n\n');
 
-            if (!emailContents.trim()) return [];
+            if (!emailContents.trim()) {
+                console.log('[GmailSync] No readable email content found.');
+                return [];
+            }
 
             // 4. Call AI for Extraction
             console.log('[GmailSync] Sending data to AI for extraction...');
@@ -61,6 +71,9 @@ export const GmailSync = {
 
         } catch (err) {
             console.error('[GmailSync] Scan failed:', err);
+            // Re-throw with more descriptive messages for the UI
+            if (err.message.includes('Gmail API')) throw new Error('GMAIL_API_ERROR');
+            if (err.message.includes('AI Sync')) throw new Error('AI_TIMEOUT_ERROR');
             throw err;
         } finally {
             this.isSyncing = false;
