@@ -1013,6 +1013,7 @@
   background: linear-gradient(to top, var(--bg-color) 85%, transparent);
   z-index: 1000;
   display: none;
+  flex-wrap: wrap;
   gap: 12px;
   box-sizing: border-box;
 }

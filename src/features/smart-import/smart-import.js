@@ -900,6 +900,7 @@ window.showSmartImportOption = (type) => {
                 <span style="font-size: 0.72rem; color: rgba(125, 249, 255, 0.85); font-weight: 500;">${type === 'gmail' ? 'Securely scan your inbox' : 'Tap to select from device'}</span>
             </div>
         </button>
+        <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 12px; line-height: 1.4; padding: 0 10px;">Sublify Sync is in beta and may occasionally miss or misread subscriptions. Your inbox data is processed securely, never shared, and your subscription data is stored safely with end-to-end encryption.</p>
     `;
     footer.classList.add('visible');
     footer.style.display = 'flex';
@@ -1110,6 +1111,7 @@ function createSmartImportModal() {
             <div class="smart-import-footer">
                 <button class="select-all-btn cancel-import-btn">Cancel</button>
                 <button class="import-selected-btn" disabled>select subs</button>
+                <p style="font-size: 0.65rem; color: rgba(255, 255, 255, 0.3); text-align: center; margin-top: 12px; line-height: 1.4; width: 100%; grid-column: span 2;">Sublify Sync is in beta and may occasionally miss or misread subscriptions. Your inbox data is processed securely, never shared, and your subscription data is stored safely with end-to-end encryption.</p>
             </div>
         </div>
     `;
