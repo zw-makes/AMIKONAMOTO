@@ -14,9 +14,11 @@ async function syncUser() {
     }
 }
 
+let isLoading = false;
+
 export async function loadNotifications() {
     if (!currentUser) return;
-
+    
     // Check if user turned off notifications in settings
     const saved = localStorage.getItem(`profile_${currentUser.id}`);
     if (saved) {
@@ -38,6 +40,12 @@ export async function loadNotifications() {
         } catch (e) { }
     }
 
+    if (notifications.length === 0) {
+        isLoading = true;
+        renderNotifications();
+    }
+
+    // ... rest of the fetch logic ...
     const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -46,13 +54,14 @@ export async function loadNotifications() {
         .order('created_at', { ascending: false })
         .limit(20);
 
+    isLoading = false;
     if (!error && data) {
         notifications = data.map(n => ({
             ...n,
             time: formatTime(n.created_at)
         }));
-        renderNotifications();
     }
+    renderNotifications();
 }
 
 function formatTime(dateStr) {
@@ -79,20 +88,24 @@ export function initNotifications() {
     const markReadAllBtn = document.getElementById('notif-mark-read');
     const deleteAllBtn = document.getElementById('notif-delete-all');
 
-    if (!notifBtn || !notifModal || !closeNotifBtn) return;
+    if (!notifBtn || !notifModal) return;
 
     // Start sync
     syncUser();
 
     // Open Modal
-    notifBtn.addEventListener('click', async () => {
-        await loadNotifications();
+    notifBtn.addEventListener('click', () => {
+        // Show immediately for snappy feel
         notifModal.classList.remove('hidden');
         document.getElementById('notif-badge')?.classList.add('hidden');
+        
+        // Load data in background
+        loadNotifications();
     });
 
     // Bulk Actions
     markReadAllBtn?.addEventListener('click', async () => {
+        if (window.HapticsService) window.HapticsService.medium();
         if (!currentUser) return;
         notifications.forEach(n => n.read = true);
         renderNotifications();
@@ -105,6 +118,7 @@ export function initNotifications() {
     });
 
     deleteAllBtn?.addEventListener('click', async () => {
+        if (window.HapticsService) window.HapticsService.medium();
         if (!currentUser) return;
         notifications = [];
         renderNotifications();
@@ -119,7 +133,7 @@ export function initNotifications() {
     });
 
     // Close Modal
-    closeNotifBtn.addEventListener('click', () => {
+    closeNotifBtn?.addEventListener('click', () => {
         notifModal.classList.add('hidden');
     });
 
@@ -129,10 +143,28 @@ export function initNotifications() {
             notifModal.classList.add('hidden');
         }
     });
+
+    // Initialize Swipe-to-Dismiss
+    if (window.initBottomSheetDrag) {
+        window.initBottomSheetDrag('notif-sheet-content', 'notif-drag-area', 'notif-modal');
+    }
 }
 
 function renderNotifications() {
     if (!notifList) return;
+
+    if (isLoading) {
+        notifList.innerHTML = Array(3).fill(0).map(() => `
+            <div class="notif-item skeleton">
+                <div class="notif-logo-container skeleton-box" style="width: 48px; height: 48px; border-radius: 14px;"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton-box" style="width: 60%; height: 14px; margin-bottom: 8px; border-radius: 4px;"></div>
+                    <div class="skeleton-box" style="width: 85%; height: 12px; border-radius: 4px;"></div>
+                </div>
+            </div>
+        `).join('');
+        return;
+    }
 
     if (notifications.length === 0) {
         notifList.innerHTML = `

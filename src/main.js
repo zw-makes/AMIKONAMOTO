@@ -1507,7 +1507,7 @@ function createCell(day, isOtherMonth, isToday, fullDate, isPastMonth) {
         if (index < 2) {
           const isPaidOnThisMonth = window.isSubPaid(sub, currentDate);
           const icon = document.createElement('div');
-          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''} ${isPaidOnThisMonth ? 'paid-icon' : ''}`;
+          icon.className = `sub-icon ${sub.stopped ? 'dimmed' : ''}`;
 
           // Smart brand mapping to ensure legit logos always work
           const brandMap = {
@@ -2514,6 +2514,7 @@ document.getElementById('add-sub-btn').addEventListener('click', () => {
 });
 
 document.getElementById('close-modal').addEventListener('click', () => {
+  if (window.HapticsService) window.HapticsService.light();
   addModal.classList.add('hidden');
   // Reset form when going back/closing to ensure a clean state next time
   setTimeout(() => {
@@ -2537,6 +2538,7 @@ document.getElementById('close-modal').addEventListener('click', () => {
 // Nexus Card Dropdown Toggle
 document.getElementById('card-select-trigger').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (window.HapticsService) window.HapticsService.light();
     const dropdown = document.getElementById('card-select-dropdown');
     dropdown.classList.toggle('hidden');
     if (!dropdown.classList.contains('hidden')) {
@@ -2546,12 +2548,14 @@ document.getElementById('card-select-trigger').addEventListener('click', (e) => 
 
 
 document.getElementById('close-detail').addEventListener('click', () => {
+  if (window.HapticsService) window.HapticsService.light();
   dayDetailModal.classList.add('hidden');
 });
 
 // Frequency toggle buttons
 document.querySelectorAll('.freq-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.medium();
     document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const type = btn.dataset.value;
@@ -2589,6 +2593,7 @@ function initFormCategoryPicker() {
 
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (window.HapticsService) window.HapticsService.light();
         dropdown.classList.toggle('hidden');
         if (!dropdown.classList.contains('hidden')) {
             renderFormCategoryList();
@@ -2596,6 +2601,7 @@ function initFormCategoryPicker() {
     });
 
     window.selectFormCategory = function(name, icon) {
+        if (window.HapticsService) window.HapticsService.selection();
         hiddenInput.value = name;
         selectedIcon.textContent = icon;
         selectedText.textContent = name;
@@ -2628,6 +2634,7 @@ initFormCategoryPicker();
 // Monthly Recurring Logic
 document.querySelectorAll('.recur-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.medium();
     document.querySelectorAll('.recur-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('sub-recurring-val').value = btn.dataset.value;
@@ -2638,11 +2645,13 @@ document.querySelectorAll('.recur-btn').forEach(btn => {
 // Trial Combined Duration Dropdown Logic
 document.getElementById('trial-days-trigger').addEventListener('click', (e) => {
   e.stopPropagation();
+  if (window.HapticsService) window.HapticsService.light();
   document.getElementById('trial-days-dropdown').classList.toggle('hidden');
 });
 
 document.getElementById('trial-days-list').querySelectorAll('li').forEach(li => {
   li.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.selection();
     const val = li.dataset.value;
     const type = li.dataset.type; // 'days' or 'months'
 
@@ -2665,6 +2674,7 @@ const freeTrialBtn = document.getElementById('free-trial-btn');
 window._isFreeTrial = false;
 
 freeTrialBtn.addEventListener('click', () => {
+  if (window.HapticsService) window.HapticsService.medium();
   window._isFreeTrial = !window._isFreeTrial;
 
   if (window._isFreeTrial) {
@@ -2819,6 +2829,8 @@ subForm.addEventListener('submit', (e) => {
   if (nexusDetail && !nexusDetail.classList.contains('hidden') && window.renderLinkedSubscriptions) {
       window.renderLinkedSubscriptions(window._currentNexusCardId);
   }
+  
+  if (window.HapticsService) window.HapticsService.success();
   addModal.classList.add('hidden');
   document.getElementById('trial-duration-section').classList.add('hidden');
   document.getElementById('monthly-options-section').classList.add('hidden');
@@ -4722,9 +4734,10 @@ document.getElementById('settings-avatar-preview').addEventListener('click', () 
 });
 
 // Reusable Bottom Sheet Drag to Close Logic
-function initBottomSheetDrag(modalId, dragAreaId) {
+window.initBottomSheetDrag = function(modalId, dragAreaId, overlayId = null) {
   const modal = document.getElementById(modalId);
   const dragArea = document.getElementById(dragAreaId);
+  const closeTarget = overlayId ? document.getElementById(overlayId) : modal;
   if (!modal || !dragArea) return;
 
   let startY = 0;
@@ -4744,6 +4757,10 @@ function initBottomSheetDrag(modalId, dragAreaId) {
     const diffY = currentY - startY;
     if (diffY > 0) {
       modal.style.transform = `translateY(${diffY}px)`;
+      if (overlayId) {
+        const overlay = document.getElementById(overlayId);
+        if (overlay) overlay.style.background = `rgba(0,0,0,${0.6 * (1 - (diffY / 500))})`;
+      }
     }
   };
 
@@ -4755,10 +4772,20 @@ function initBottomSheetDrag(modalId, dragAreaId) {
 
     const diffY = currentY > 0 ? (currentY - startY) : 0;
     if (diffY > 100) {
-      modal.classList.add('hidden');
-      setTimeout(() => { modal.style.transform = ''; }, 400);
+      closeTarget.classList.add('hidden');
+      setTimeout(() => { 
+        modal.style.transform = ''; 
+        if (overlayId) {
+          const overlay = document.getElementById(overlayId);
+          if (overlay) overlay.style.background = '';
+        }
+      }, 400);
     } else {
       modal.style.transform = '';
+      if (overlayId) {
+        const overlay = document.getElementById(overlayId);
+        if (overlay) overlay.style.background = '';
+      }
     }
     currentY = 0;
   };

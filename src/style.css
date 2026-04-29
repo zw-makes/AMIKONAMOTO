@@ -619,7 +619,8 @@ button:active {
 }
 
 .sub-icon.paid-icon img,
-.detail-logo.paid-logo img {
+.detail-logo.paid-logo img,
+.detail-logo-container.paid-logo img {
   filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.4));
   border: 1.5px solid rgba(0, 255, 136, 0.4);
   border-radius: 50%;
@@ -905,7 +906,8 @@ button:active {
 }
 
 .sub-icon.paid-icon img,
-.detail-logo.paid-logo img {
+.detail-logo.paid-logo img,
+.detail-logo-container.paid-logo img {
   filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.4));
   border: 1.5px solid rgba(0, 255, 136, 0.4);
   border-radius: 50%;
@@ -1034,6 +1036,16 @@ button:active {
   /* Mobile style modal from bottom */
   z-index: 2000;
   padding: 10px;
+}
+
+/* Modal Handle for Bottom Sheets */
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+  flex-shrink: 0;
 }
 
 .modal-content {

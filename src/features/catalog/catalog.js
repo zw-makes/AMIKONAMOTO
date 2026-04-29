@@ -366,6 +366,7 @@ export function initCatalog() {
   });
 
   cancelSearchBtn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.light();
     searchInput.value = '';
     render('');
     searchBar.classList.remove('active');
@@ -396,6 +397,7 @@ export function initCatalog() {
   // Open Catalog
   openCatalogBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (window.HapticsService) window.HapticsService.medium();
     catalogModal.classList.remove('hidden');
     searchInput.value = '';
     render('');
@@ -404,6 +406,7 @@ export function initCatalog() {
 
   // Close Catalog
   closeCatalogBtn.addEventListener('click', () => {
+    if (window.HapticsService) window.HapticsService.light();
     catalogModal.classList.add('hidden');
   });
 
@@ -411,6 +414,7 @@ export function initCatalog() {
   const catalogPlusBtn = document.getElementById('catalog-plus-btn');
   if (catalogPlusBtn) {
     catalogPlusBtn.addEventListener('click', () => {
+      if (window.HapticsService) window.HapticsService.medium();
       catalogModal.classList.add('hidden');
       const addModal = document.getElementById('add-modal');
       const form = document.getElementById('sub-form');
@@ -425,6 +429,7 @@ export function initCatalog() {
 
   // Global selection function
   window.selectCatalogApp = (name, domain) => {
+    if (window.HapticsService) window.HapticsService.selection();
     const addModal = document.getElementById('add-modal');
     const form = document.getElementById('sub-form');
 

@@ -363,7 +363,7 @@ function createCardHTML(s, viewDate = new Date()) {
             </div>
             ` : ''}
 
-            <div class="detail-logo-container">
+            <div class="detail-logo-container ${isPaid ? 'paid-logo' : ''}">
                 <img src="${window.getLogoUrl(domain)}" alt="${s.name}" onerror="this.src='https://icon.horse/icon/example.com'">
             </div>
             
