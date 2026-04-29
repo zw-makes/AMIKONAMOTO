@@ -96,7 +96,7 @@ export const NativeNotifications = {
             await this.cancelAll();
 
             const notifications = reminders.map(r => ({
-                id: r.id || Math.floor(Math.random() * 1000000),
+                id: r.id || Math.floor(Math.random() * 890000),
                 title: r.title,
                 body: r.body,
                 schedule: { at: r.date },
@@ -107,6 +107,19 @@ export const NativeNotifications = {
             console.log(`[NativeNotif] Scheduled ${notifications.length} native reminders`);
         } catch (e) {
             console.error('[NativeNotif] Failed to schedule reminders:', e);
+        }
+    },
+
+    /**
+     * Fetch all currently pending native notifications
+     */
+    async getPendingNotifications() {
+        try {
+            const pending = await LocalNotifications.getPending();
+            return pending.notifications || [];
+        } catch (e) {
+            console.error('[NativeNotif] Failed to get pending notifications:', e);
+            return [];
         }
     }
 };

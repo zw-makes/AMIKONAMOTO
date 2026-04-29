@@ -1,13 +1,16 @@
-/* src/features/sync/syncUI.js */
-
 export const SyncUI = {
     terminal: null,
     statusText: null,
     offlineTag: null,
     modal: null,
     statusTimeout: null,
+    lastSyncResults: {
+        synced: [],
+        failed: []
+    },
 
     init() {
+        window.SyncUI = this;
         this.terminal = document.getElementById('status-terminal');
         this.statusText = document.getElementById('sync-status-text');
         this.offlineTag = document.getElementById('offline-tag');
@@ -20,6 +23,41 @@ export const SyncUI = {
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.hideOfflineModal());
+        }
+
+        if (this.terminal) {
+            this.terminal.addEventListener('click', () => {
+                const text = this.statusText?.innerText || '';
+                if (text.includes('REMINDERS SCHEDULED')) {
+                    if (window.showScheduledNotifications) window.showScheduledNotifications();
+                } else if (text.includes('SYNCED') || text.includes('FAILED')) {
+                    if (window.showSyncDetails) window.showSyncDetails();
+                }
+            });
+
+            // Gesture support for manual status peek
+            let touchStartY = 0;
+            this.terminal.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                // Subtle interaction hint
+                this.terminal.style.transition = 'opacity 0.2s ease';
+                this.terminal.style.opacity = '0.7';
+            }, { passive: true });
+
+            this.terminal.addEventListener('touchend', (e) => {
+                const touchEndY = e.changedTouches[0].clientY;
+                const deltaY = Math.abs(touchEndY - touchStartY);
+                
+                // Reset interaction hint
+                this.terminal.style.opacity = '1';
+
+                if (deltaY > 25) { // Increased threshold for smoother/more intentional feel
+                    if (window.showRemindersStatus) {
+                        // Small delay to let the touch release feel natural
+                        setTimeout(() => window.showRemindersStatus(), 50);
+                    }
+                }
+            }, { passive: true });
         }
 
         // Expose to window so other modules can use the status terminal

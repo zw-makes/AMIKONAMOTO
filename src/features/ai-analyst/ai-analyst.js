@@ -71,12 +71,11 @@ function createAIAnalystOverlay() {
     overlay.innerHTML = `
         <div class="ai-analyst-container">
             <header class="ai-header">
-                <button class="back-btn" id="close-ai-btn">
+                <button id="close-ai-btn" class="profile-page-back-btn" aria-label="Go back">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    <span>Back</span>
                 </button>
                 <div class="ai-chat-title" id="chat-title">New Chat</div>
                 <div class="header-actions" style="display: flex; gap: 8px;">
@@ -358,12 +357,21 @@ async function saveMsgToDb(role, content, meta = {}) {
 }
 
 async function loadLastChat() {
+    const logo = document.getElementById('main-ai-logo');
+    if (logo) logo.classList.add('loading');
+
     const supabase = window.supabase;
-    if (!supabase) return;
+    if (!supabase) {
+        if (logo) logo.classList.remove('loading');
+        return;
+    }
     
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
-    if (!userId) return;
+    if (!userId) {
+        if (logo) logo.classList.remove('loading');
+        return;
+    }
 
     // Get the most recent session
     const { data: sessions } = await supabase
@@ -488,6 +496,8 @@ async function loadLastChat() {
 
     const main = document.getElementById('ai-chat-content');
     if (main) setTimeout(() => main.scrollTop = main.scrollHeight, 100);
+
+    if (logo) logo.classList.remove('loading');
 }
 
 function ResetChat() {

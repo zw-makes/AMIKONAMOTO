@@ -115,18 +115,27 @@ async function flushQueue() {
     }
   }
 
-  saveQueue(failed);
+  // User requested: failed syncs should NOT retry. 
+  // So we clear the queue completely instead of saving 'failed' items.
+  saveQueue([]);
 
-  const synced = q.length - failed.length;
-  if (synced > 0) {
-    console.log(`[SyncQueue] ${synced} operation(s) synced ✅`);
+  const syncedCount = q.length - failed.length;
+  
+  // Track specific results for the UI details view — ALWAYS update this!
+  SyncUI.lastSyncResults = {
+      synced: q.filter(item => !failed.includes(item)),
+      failed: failed
+  };
+
+  if (syncedCount > 0) {
+    console.log(`[SyncQueue] ${syncedCount} operation(s) synced ✅`);
     if (failed.length > 0) {
-        SyncUI.showStatus(`${synced} SYNCED, ${failed.length} FAILED`, 'syncing', 5000);
+        SyncUI.showStatus(`${syncedCount} SYNCED, ${failed.length} FAILED`, 'syncing', 5000);
     } else {
-        SyncUI.showStatus(`${synced} CHANGES SYNCED`, 'success', 5000);
+        SyncUI.showStatus(`${syncedCount} CHANGES SYNCED`, 'success', 5000);
     }
     // Tell the main app to refresh so UI matches the cloud
-    window.dispatchEvent(new CustomEvent('syncqueue:flushed', { detail: { synced } }));
+    window.dispatchEvent(new CustomEvent('syncqueue:flushed', { detail: { synced: syncedCount } }));
   } else if (failed.length > 0) {
     SyncUI.showStatus(`SYNC FAILED (${failed.length})`, 'syncing', 5000);
   }

@@ -176,16 +176,52 @@ function refreshCardInPlace(sub) {
 function updateFooterButtons(sub) {
     const cancelBtn = document.getElementById('sub-detail-cancel');
     const paidBtn = document.getElementById('sub-detail-paid');
+    const editBtn = document.getElementById('sub-detail-edit');
     if (!cancelBtn || !paidBtn) return;
 
     const isStopped = sub.stopped;
-    const isPaid = window.isSubPaid ? window.isSubPaid(sub, new Date()) : false;
+    const isPaid = window.isSubPaid ? window.isSubPaid(sub, currentViewDate) : false;
+
+    // Check if viewing a past month
+    const today = new Date();
+    const isPast = (currentViewDate.getFullYear() < today.getFullYear()) || 
+                   (currentViewDate.getFullYear() === today.getFullYear() && currentViewDate.getMonth() < today.getMonth());
 
     cancelBtn.innerText = isStopped ? 'Restart' : 'Stop';
     cancelBtn.classList.toggle('is-stopped', isStopped);
     
     paidBtn.innerText = isPaid ? 'PAID' : 'PAY';
     paidBtn.classList.toggle('is-paid', isPaid);
+
+    if (isPast) {
+        cancelBtn.style.opacity = '0.3';
+        cancelBtn.style.filter = 'grayscale(1)';
+        cancelBtn.style.pointerEvents = 'none';
+        
+        paidBtn.style.opacity = '0.3';
+        paidBtn.style.filter = 'grayscale(1)';
+        paidBtn.style.pointerEvents = 'none';
+
+        if (editBtn) {
+            editBtn.style.opacity = '0.3';
+            editBtn.style.filter = 'grayscale(1)';
+            editBtn.style.pointerEvents = 'none';
+        }
+    } else {
+        cancelBtn.style.opacity = '1';
+        cancelBtn.style.filter = 'none';
+        cancelBtn.style.pointerEvents = 'auto';
+        
+        paidBtn.style.opacity = '1';
+        paidBtn.style.filter = 'none';
+        paidBtn.style.pointerEvents = 'auto';
+
+        if (editBtn) {
+            editBtn.style.opacity = '1';
+            editBtn.style.filter = 'none';
+            editBtn.style.pointerEvents = 'auto';
+        }
+    }
 
     // Update Frequency Dots
     renderFrequencyDots(sub);

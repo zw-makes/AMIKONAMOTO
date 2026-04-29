@@ -1908,8 +1908,32 @@ window.showDayDetails = async function (day, subs) {
   dayDetailModal.classList.remove('hidden');
 };
 
+// --- Action Safety Helper ---
+function isActionAllowed() {
+  const today = new Date();
+  const currentViewYear = currentDate.getFullYear();
+  const currentViewMonth = currentDate.getMonth();
+  
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
+
+  if (currentViewYear < todayYear || (currentViewYear === todayYear && currentViewMonth < todayMonth)) {
+    if (window.HapticsService) window.HapticsService.error();
+    if (window.addNotification) {
+      window.addNotification({
+        title: "Read-Only Mode",
+        text: "Modifications are disabled for past months.",
+        type: "warning"
+      });
+    }
+    return false;
+  }
+  return true;
+}
+
 window.deleteSubscription = async function (id, e) {
   if (e) e.stopPropagation();
+  if (!isActionAllowed()) return;
 
   // Robust element detection: use the event target's context if available, fallback to ID
   let element = null;
@@ -1966,6 +1990,7 @@ window.deleteSubscription = async function (id, e) {
 
 window.editSubscription = function (id, e) {
   if (e) e.stopPropagation();
+  if (!isActionAllowed()) return;
   const sub = subscriptions.find(s => s.id === id);
   if (!sub) return;
 
@@ -2094,6 +2119,7 @@ window.editSubscription = function (id, e) {
 
 window.stopSubscription = function (id, e) {
   if (e) e.stopPropagation();
+  if (!isActionAllowed()) return;
   HapticsService.medium();
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
@@ -2135,6 +2161,7 @@ window.stopSubscription = function (id, e) {
 
 window.togglePaidStatus = async function (id, e, forceStatus = null) {
   if (e && e.stopPropagation) e.stopPropagation();
+  if (!isActionAllowed()) return;
   HapticsService.success();
   if (!userProfile) return;
   const sub = subscriptions.find(s => s.id === id);
@@ -2520,6 +2547,7 @@ document.getElementById('today-btn').addEventListener('click', () => {
 });
 
 document.getElementById('add-sub-btn').addEventListener('click', () => {
+  if (!isActionAllowed()) return;
   // Directly open the All Subscriptions catalog instead of the empty add modal
   const openCatalogBtn = document.getElementById('open-all-subs-btn');
   if (openCatalogBtn) {
@@ -4940,6 +4968,10 @@ window.showSubDetail = function(id, e) {
   const statsModal = document.getElementById('stats-modal');
   if (statsModal) statsModal.classList.add('hidden');
 
+  // Close day detail modal if opening from calendar date view
+  const dayModal = document.getElementById('day-detail-modal');
+  if (dayModal) dayModal.classList.add('hidden');
+
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
     // Find all subs for the same day as this sub
@@ -4966,9 +4998,15 @@ function getSwipeTemplate(s) {
   const isPaid = window.isSubPaid(s, currentDate);
   const domain = getDomain(s);
 
+  // Check if viewing a past month
+  const today = new Date();
+  const isPast = (currentDate.getFullYear() < today.getFullYear()) || 
+                 (currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() < today.getMonth());
+  
+  const actionStyle = isPast ? 'opacity: 0.3; filter: grayscale(1); pointer-events: none;' : '';
+
   // Check if ended (non-recurring/trial and today > end)
   const { end } = getSubDates(s);
-  const today = new Date();
   today.setHours(0, 0, 0, 0);
   const isEnded = end && today > end;
 
@@ -4976,7 +5014,7 @@ function getSwipeTemplate(s) {
     <div class="detail-item-wrapper" id="sw-wrapper-${s.id}">
       <div class="swipe-actions-bg" style="justify-content: space-between;">
         <div style="display: flex; height: 100%; gap: 5px;">
-          <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+          <div class="swipe-action stop ${isStopped ? 'stopped-active' : ''}" onclick="stopSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem; ${actionStyle}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;">
               ${isStopped
       ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-5-8h10"/>'
@@ -4984,13 +5022,13 @@ function getSwipeTemplate(s) {
             </svg>
             ${isStopped ? 'RESTART' : 'STOP'}
           </div>
-          <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem;">
+          <div class="swipe-action delete" onclick="deleteSubscription(${s.id}, event)" style="width: 50px; font-size: 0.5rem; ${actionStyle}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             CANCEL
           </div>
         </div>
         <div style="display: flex; height: 100%; gap: 5px;">
-          <div class="swipe-action paid ${isPaid ? 'paid-active' : ''}" onclick="togglePaidStatus(${s.id}, event)" style="width: 50px; color: ${isPaid ? '#fff' : 'var(--accent-green)'} !important; font-size: 0.5rem; text-align: center;">
+          <div class="swipe-action paid ${isPaid ? 'paid-active' : ''}" onclick="togglePaidStatus(${s.id}, event)" style="width: 50px; color: ${isPaid ? '#fff' : 'var(--accent-green)'} !important; font-size: 0.5rem; text-align: center; ${actionStyle}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${isPaid ? 4 : 3}" style="width: 18px; height: 18px;"><path d="M20 6L9 17l-5-5"/></svg>
             ${isPaid ? 'PAID' : 'PAY'}
           </div>
@@ -5150,7 +5188,7 @@ function updateReminders() {
         }
 
         nativeReminders.push({
-          id: Math.floor(Math.random() * 1000000),
+          id: Math.floor(Math.random() * 890000),
           title: diffDays === 0 ? `⚠️ ${s.name} ${label}` : `🔔 ${s.name} ${label} Soon`,
           body: diffDays === 0
             ? `Your ${s.name} ${type} ${label.toLowerCase()} today. Don't forget!`
@@ -5204,7 +5242,7 @@ function updateReminders() {
             unpaidDate = new Date(Date.now() + 5 * 60 * 1000);
           }
           nativeReminders.push({
-            id: Math.floor(Math.random() * 1000000),
+            id: Math.floor(Math.random() * 890000),
             title: `📌 Unpaid Reminder: ${s.name}`,
             body: `You haven't marked your ${s.name} billing as paid yet.`,
             date: unpaidDate
@@ -5215,6 +5253,7 @@ function updateReminders() {
 
   // Bulk schedule native notifications + show confirmation to the user
   if (nativeReminders.length > 0) {
+    window.lastRemindersCount = nativeReminders.length;
     NativeNotifications.scheduleReminders(nativeReminders).then(() => {
       if (window.showAppStatus) {
         window.showAppStatus(`${nativeReminders.length} REMINDERS SCHEDULED`, 'success', 5000);
@@ -5235,6 +5274,172 @@ function updateReminders() {
   });
 }
 window.updateReminders = updateReminders;
+
+window.showScheduledNotifications = async function() {
+    if (window.HapticsService) window.HapticsService.medium();
+    const modal = document.getElementById('scheduled-notifs-modal');
+    const list = document.getElementById('scheduled-notifs-list');
+    const label = document.getElementById('notifs-count-label');
+    
+    if (!modal || !list || !label) return;
+    
+    modal.classList.remove('hidden');
+    list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">Fetching scheduled alerts...</div>';
+    
+    // Initialize drag if not already done
+    if (!window._notifsDragInitialized) {
+        window._notifsDragInitialized = true;
+        if (window.initBottomSheetDrag) {
+            window.initBottomSheetDrag('notifs-sheet-content', 'notifs-drag-area', 'scheduled-notifs-modal');
+        }
+        // Backdrop close
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+        document.getElementById('close-notifs-modal').onclick = () => modal.classList.add('hidden');
+    }
+
+    try {
+        const allNotifs = await window.NativeNotifications.getPendingNotifications();
+        
+        // Filter out "Daily Reminders" (IDs 900000+) so we only show the Sub reminders 
+        // that were mentioned in the header status message.
+        const notifs = allNotifs.filter(n => n.id < 900000);
+
+        label.innerText = `${notifs.length} notification${notifs.length === 1 ? '' : 's'} scheduled`;
+        
+        if (notifs.length === 0) {
+            list.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-secondary); opacity: 0.5; font-size: 0.9rem;">No upcoming alerts found.</div>';
+            return;
+        }
+
+        // Sort by date
+        notifs.sort((a, b) => new Date(a.schedule.at) - new Date(b.schedule.at));
+
+        list.innerHTML = notifs.map(n => {
+            const date = new Date(n.schedule.at);
+            const day = date.getDate();
+            const month = date.toLocaleDateString(undefined, { month: 'short' });
+            const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            
+            // Extract emoji if present at the start of the title
+            let icon = '🔔';
+            let cleanTitle = n.title;
+            const emojiMatch = n.title.match(/^([\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/u);
+            if (emojiMatch) {
+                icon = emojiMatch[1];
+                cleanTitle = n.title.replace(icon, '').trim();
+            }
+            
+            return `
+                <div class="notif-card" style="padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; margin-bottom: 12px; display: flex; gap: 14px; position: relative; animation: slideInNotif 0.4s cubic-bezier(0.19, 1, 0.22, 1) both;">
+                    <!-- Date Column -->
+                    <div style="flex-shrink: 0; width: 44px; height: 44px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(255,255,255,0.02);">
+                        <span style="font-size: 0.6rem; font-weight: 800; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: -2px;">${month}</span>
+                        <span style="font-size: 1.1rem; font-weight: 900; color: #fff;">${day}</span>
+                    </div>
+
+                    <!-- Content Area -->
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 10px;">
+                            <h3 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #fff; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cleanTitle}</h3>
+                            <span style="font-size: 0.65rem; font-weight: 850; color: var(--accent-green); background: rgba(80, 250, 123, 0.08); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.02em;">${timeStr}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; opacity: 0.7; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${n.body}</p>
+                    </div>
+
+                    <!-- Subtle Icon Watermark -->
+                    <div style="position: absolute; right: 12px; bottom: 10px; font-size: 1.4rem; opacity: 0.03; pointer-events: none; transform: rotate(15deg); filter: blur(0.5px);">${icon}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--accent-red); font-size: 0.85rem;">Failed to load alerts: ${e.message}</div>`;
+    }
+};
+
+window.showRemindersStatus = function() {
+    const count = window.lastRemindersCount || 0;
+    if (count > 0) {
+        if (window.showAppStatus) window.showAppStatus(`${count} REMINDERS SCHEDULED`, 'success', 4000);
+        if (window.HapticsService) window.HapticsService.light();
+    } else {
+        if (window.showAppStatus) window.showAppStatus('ALERTS UPDATED', 'success', 2000);
+    }
+};
+
+window.showSyncDetails = function() {
+    if (window.HapticsService) window.HapticsService.medium();
+    const modal = document.getElementById('sync-details-modal');
+    const list = document.getElementById('sync-details-list');
+    const label = document.getElementById('sync-count-label');
+    
+    if (!modal || !list || !label) return;
+    
+    modal.classList.remove('hidden');
+    
+    // Initialize drag if not already done
+    if (!window._syncDragInitialized) {
+        window._syncDragInitialized = true;
+        if (window.initBottomSheetDrag) {
+            window.initBottomSheetDrag('sync-sheet-content', 'sync-drag-area', 'sync-details-modal');
+        }
+        // Backdrop close
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+        document.getElementById('close-sync-modal').onclick = () => modal.classList.add('hidden');
+    }
+
+    const { synced, failed } = (window.SyncUI && window.SyncUI.lastSyncResults) ? window.SyncUI.lastSyncResults : { synced: [], failed: [] };
+    
+    label.innerText = `${synced.length} successful, ${failed.length} failed`;
+    
+    if (synced.length === 0 && failed.length === 0) {
+        list.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-secondary); opacity: 0.5; font-size: 0.9rem;">No sync history found for this session.</div>';
+        return;
+    }
+
+    let html = '';
+
+    // Render FAILED first
+    failed.forEach(item => {
+        html += `
+            <div class="notif-card" style="padding: 16px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 20px; margin-bottom: 12px; display: flex; gap: 14px; position: relative;">
+                <div style="flex-shrink: 0; width: 44px; height: 44px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <h3 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #fff;">${item.action.replace('_', ' ').toUpperCase()}</h3>
+                        <span style="font-size: 0.6rem; font-weight: 800; color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 2px 8px; border-radius: 6px;">FAILED</span>
+                    </div>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">Target: ${item.data?.name || 'System Data'}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    // Render SYNCED
+    synced.forEach(item => {
+        html += `
+            <div class="notif-card" style="padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 20px; margin-bottom: 12px; display: flex; gap: 14px; position: relative;">
+                <div style="flex-shrink: 0; width: 44px; height: 44px; background: rgba(80, 250, 123, 0.05); border: 1px solid rgba(80, 250, 123, 0.1); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <h3 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: #fff;">${item.action.replace('_', ' ').toUpperCase()}</h3>
+                        <span style="font-size: 0.6rem; font-weight: 800; color: var(--accent-green); background: rgba(80, 250, 123, 0.1); padding: 2px 8px; border-radius: 6px;">SYNCED</span>
+                    </div>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">Target: ${item.data?.name || 'System Data'}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+};
 
 
 // --- Feature Init ---

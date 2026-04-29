@@ -57,36 +57,7 @@
 }
 
 
-/* Match the Pricing Page back button exactly */
-.back-btn {
-    background: rgba(40, 40, 40, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 8px 18px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 0.85rem;
-    transition: all 0.2s ease;
-}
 
-.back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.back-btn:active {
-    transform: scale(0.95);
-    opacity: 0.8;
-}
-
-.back-btn svg {
-    color: #ffffff;
-}
 
 /* Octopus/Ghost icon button on the right */
 .header-btn {
@@ -175,7 +146,7 @@
 
 .initial-view {
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -187,8 +158,8 @@
 }
 
 .ai-center-logo {
-    width: 90px;
-    height: 90px;
+    width: 60px;
+    height: 60px;
     opacity: 0.15;
     object-fit: contain;
     filter: grayscale(100%);
@@ -203,6 +174,18 @@
 @keyframes thinkingPulseCenter {
     from { transform: scale(0.95); opacity: 0.2; }
     to { transform: scale(1.05); opacity: 0.5; }
+}
+
+.ai-center-logo.loading {
+    animation: logoPulse 2.5s ease-in-out infinite;
+    opacity: 0.5;
+    filter: grayscale(0%);
+}
+
+@keyframes logoPulse {
+    0% { opacity: 0.1; transform: scale(0.95); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+    100% { opacity: 0.1; transform: scale(0.95); }
 }
 
 /* === Chat Messages === */
