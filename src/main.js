@@ -1215,6 +1215,12 @@ window.getDisplaySubscriptions = function() {
         // Filter by category
         if (f.category && f.category !== 'all' && s.category !== f.category) return false;
 
+        // Filter by nexus card
+        if (f.nexus && f.nexus !== 'all') {
+            const sNexus = s.nexus_card_id || 'null';
+            if (sNexus !== f.nexus) return false;
+        }
+
         // Filter by status
         if (f.status && f.status !== 'all') {
             const { end } = window.getSubDates ? window.getSubDates(s) : { end: null };

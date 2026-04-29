@@ -9,8 +9,10 @@ let filters = {
     frequency: 'all',
     currency: 'all',
     status: 'all',
-    category: 'all'
+    category: 'all',
+    nexus: 'all'
 };
+
 
 // Expose actions globally immediately
 window.toggleFilterModal = toggleFilterModal;
@@ -33,6 +35,8 @@ export function initFilter() {
     };
 
     setupPlatformPicker();
+    setupCategoryPicker();
+    setupNexusPicker();
     setupCurrencyPicker();
 
     // Drag is initialized lazily on first open to avoid race conditions
@@ -103,6 +107,50 @@ function resetModalUI() {
             if (hiddenCurrency) hiddenCurrency.value = filters.currency;
             const cur = (window.CURRENCIES || []).find(c => c.code === filters.currency);
             symbolSpan.innerText = cur ? cur.symbol : '';
+        }
+    }
+    
+    // Category
+    const catText = document.getElementById('filter-category-text');
+    const catIcon = document.getElementById('filter-category-icon');
+    const catVal = document.getElementById('filter-category-val');
+    if (catText && catIcon && catVal) {
+        if (filters.category === 'all') {
+            catText.innerText = 'All';
+            catIcon.innerText = '📁';
+            catVal.value = 'all';
+        } else {
+            catText.innerText = filters.category;
+            catVal.value = filters.category;
+            const cats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
+            const found = cats.find(c => c.name === filters.category);
+            catIcon.innerText = found ? (found.icon || '📁') : '📁';
+        }
+    }
+
+    // Nexus
+    const nexusText = document.getElementById('filter-nexus-text');
+    const nexusIcon = document.getElementById('filter-nexus-icon');
+    const nexusVal = document.getElementById('filter-nexus-val');
+    if (nexusText && nexusIcon && nexusVal) {
+        if (filters.nexus === 'all') {
+            nexusText.innerText = 'All Cards';
+            nexusIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
+            nexusVal.value = 'all';
+        } else {
+            nexusVal.value = filters.nexus;
+            const getCards = window.getStoredCards || window.getStoredCardsFromCache;
+            if (getCards) {
+                Promise.resolve(getCards()).then(cards => {
+                    const card = cards.find(c => c.id === filters.nexus);
+                    if (card) {
+                        const isPhys = ['visa','mastercard','amex','discover','jcb','debit','credit'].includes(card.type);
+                        nexusText.innerText = `Nexus: ${isPhys ? '•••• ' + card.last4 : card.name || card.type}`;
+                        const logoMap = { 'visa': 'https://cdn.simpleicons.org/visa/white', 'mastercard': 'https://cdn.simpleicons.org/mastercard/white', 'amex': 'https://cdn.simpleicons.org/americanexpress/white', 'discover': 'https://cdn.simpleicons.org/discover/white', 'jcb': 'https://cdn.simpleicons.org/jcb/white', 'paypal': 'https://cdn.simpleicons.org/paypal/white', 'applepay': 'https://cdn.simpleicons.org/applepay/white', 'googlepay': 'https://cdn.simpleicons.org/googlepay/white' };
+                        nexusIcon.innerHTML = `<img src="${logoMap[card.type] || '/sublify-logo.png'}" style="width: 100%; height: 100%; object-fit: contain;">`;
+                    }
+                });
+            }
         }
     }
 }
@@ -185,6 +233,122 @@ function updateFilterPlatformIcon(domainOrUrl) {
     preview.innerHTML = `<img src="${window.getLogoUrl(domainOrUrl)}" style="width:100%; height:100%; object-fit:contain;">`;
 }
 
+// --- Category Picker Logic ---
+function setupCategoryPicker() {
+    const trigger = document.getElementById('filter-category-trigger');
+    const dropdown = document.getElementById('filter-category-dropdown');
+    const list = document.getElementById('filter-category-list');
+    
+    if (!trigger || !dropdown || !list) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            renderFilterCategoryList(list);
+        }
+    });
+}
+
+function renderFilterCategoryList(list) {
+    list.innerHTML = '';
+    const cats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
+    
+    // Add "All"
+    const allLi = document.createElement('li');
+    allLi.innerHTML = `<span style="font-size: 1.1rem;">📁</span> <span style="font-size: 0.85rem; font-weight: 500;">All</span>`;
+    allLi.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;";
+    allLi.addEventListener('click', () => selectFilterCategory('all', '📁'));
+    list.appendChild(allLi);
+
+    cats.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span style="font-size: 1.1rem;">${cat.icon || '📁'}</span> <span style="font-size: 0.85rem; font-weight: 500;">${cat.name}</span>`;
+        li.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;";
+        li.addEventListener('click', () => selectFilterCategory(cat.name, cat.icon));
+        list.appendChild(li);
+    });
+}
+
+function selectFilterCategory(name, icon) {
+    document.getElementById('filter-category-val').value = name;
+    document.getElementById('filter-category-text').innerText = name === 'all' ? 'All' : name;
+    document.getElementById('filter-category-icon').innerText = icon || '📁';
+    document.getElementById('filter-category-dropdown').classList.add('hidden');
+}
+
+// --- Nexus Picker Logic ---
+function setupNexusPicker() {
+    const trigger = document.getElementById('filter-nexus-trigger');
+    const dropdown = document.getElementById('filter-nexus-dropdown');
+    const list = document.getElementById('filter-nexus-list');
+    
+    if (!trigger || !dropdown || !list) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) {
+            renderFilterNexusList(list);
+        }
+    });
+}
+
+function renderFilterNexusList(list) {
+    list.innerHTML = '';
+    
+    // Add "All Cards"
+    const allLi = document.createElement('li');
+    allLi.innerHTML = `
+        <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; cursor: pointer;">
+            <span style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></span>
+            <span style="font-size: 0.85rem; font-weight: 500;">All Cards</span>
+        </div>
+    `;
+    allLi.addEventListener('click', () => selectFilterNexus('all', null));
+    list.appendChild(allLi);
+
+    const getCards = window.getStoredCards || window.getStoredCardsFromCache;
+    if (getCards) {
+        Promise.resolve(getCards()).then(cards => {
+            cards.forEach(card => {
+                const li = document.createElement('li');
+                const isPhys = ['visa','mastercard','amex','discover','jcb','debit','credit'].includes(card.type);
+                const name = isPhys ? `•••• ${card.last4}` : card.name || card.type;
+                const logoMap = { 'visa': 'https://cdn.simpleicons.org/visa/white', 'mastercard': 'https://cdn.simpleicons.org/mastercard/white', 'amex': 'https://cdn.simpleicons.org/americanexpress/white', 'discover': 'https://cdn.simpleicons.org/discover/white', 'jcb': 'https://cdn.simpleicons.org/jcb/white', 'paypal': 'https://cdn.simpleicons.org/paypal/white', 'applepay': 'https://cdn.simpleicons.org/applepay/white', 'googlepay': 'https://cdn.simpleicons.org/googlepay/white' };
+                const logoSrc = logoMap[card.type] || '/sublify-logo.png';
+                
+                li.innerHTML = `
+                    <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; cursor: pointer;">
+                        <span style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;"><img src="${logoSrc}" style="width: 100%; height: 100%; object-fit: contain;"></span>
+                        <span style="font-size: 0.85rem; font-weight: 500;">Nexus: ${name}</span>
+                    </div>
+                `;
+                li.addEventListener('click', () => selectFilterNexus(card.id, card));
+                list.appendChild(li);
+            });
+        });
+    }
+}
+
+function selectFilterNexus(id, card) {
+    document.getElementById('filter-nexus-val').value = id;
+    const text = document.getElementById('filter-nexus-text');
+    const icon = document.getElementById('filter-nexus-icon');
+    
+    if (id === 'all') {
+        text.innerText = 'All Cards';
+        icon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
+    } else if (card) {
+        const isPhys = ['visa','mastercard','amex','discover','jcb','debit','credit'].includes(card.type);
+        text.innerText = `Nexus: ${isPhys ? '•••• ' + card.last4 : card.name || card.type}`;
+        const logoMap = { 'visa': 'https://cdn.simpleicons.org/visa/white', 'mastercard': 'https://cdn.simpleicons.org/mastercard/white', 'amex': 'https://cdn.simpleicons.org/americanexpress/white', 'discover': 'https://cdn.simpleicons.org/discover/white', 'jcb': 'https://cdn.simpleicons.org/jcb/white', 'paypal': 'https://cdn.simpleicons.org/paypal/white', 'applepay': 'https://cdn.simpleicons.org/applepay/white', 'googlepay': 'https://cdn.simpleicons.org/googlepay/white' };
+        icon.innerHTML = `<img src="${logoMap[card.type] || '/sublify-logo.png'}" style="width: 100%; height: 100%; object-fit: contain;">`;
+    }
+    
+    document.getElementById('filter-nexus-dropdown').classList.add('hidden');
+}
+
 // --- Currency Picker Logic ---
 function setupCurrencyPicker() {
     const trigger = document.getElementById('filter-currency-trigger');
@@ -246,7 +410,8 @@ function updateFilterBadges() {
                        filters.frequency !== 'all' || 
                        filters.currency !== 'all' || 
                        filters.status !== 'all' ||
-                       filters.category !== 'all';
+                       filters.category !== 'all' ||
+                       filters.nexus !== 'all';
 
     const headerBadge = document.getElementById('filter-badge-header');
     const optBadge = document.getElementById('filter-badge-opt');
@@ -259,6 +424,8 @@ function updateFilterBadges() {
 export function applyFilters() {
     filters.name = document.getElementById('filter-platform-name').value.trim();
     filters.currency = document.getElementById('filter-currency-val').value;
+    filters.category = document.getElementById('filter-category-val')?.value || 'all';
+    filters.nexus = document.getElementById('filter-nexus-val')?.value || 'all';
     // frequency and status are managed by buttons
 
     console.log('[Filter] Applying:', filters);
@@ -277,7 +444,8 @@ export function clearFilters() {
         frequency: 'all',
         currency: 'all',
         status: 'all',
-        category: 'all'
+        category: 'all',
+        nexus: 'all'
     };
     resetModalUI();
     updateFilterBadges();
@@ -310,5 +478,13 @@ document.addEventListener('click', (e) => {
     const cPicker = document.getElementById('filter-currency-picker');
     if (cPicker && !cPicker.contains(e.target)) {
         document.getElementById('filter-currency-dropdown')?.classList.add('hidden');
+    }
+    const catPicker = document.getElementById('filter-category-picker');
+    if (catPicker && !catPicker.contains(e.target)) {
+        document.getElementById('filter-category-dropdown')?.classList.add('hidden');
+    }
+    const nexPicker = document.getElementById('filter-nexus-picker');
+    if (nexPicker && !nexPicker.contains(e.target)) {
+        document.getElementById('filter-nexus-dropdown')?.classList.add('hidden');
     }
 });
