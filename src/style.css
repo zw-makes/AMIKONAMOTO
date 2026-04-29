@@ -1618,8 +1618,6 @@ input[type="date"] {
 .stats-summary span.filter-active {
   color: #ffffff !important;
   /* Brillant white for active selection */
-  border-bottom: 2px solid #ffffff;
-  border-radius: 0;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 

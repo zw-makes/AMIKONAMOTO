@@ -987,56 +987,90 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
     </div>
 
 
-    <!-- Day Detail Modal -->
-    <div id="day-detail-modal" class="modal-overlay hidden">
-      <div class="day-detail-content">
-        <div class="detail-header">
-          <h3 id="detail-date-title">March 15</h3>
-          <button id="close-detail" class="nav-arrow"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+    <!-- Day Detail Modal (Converted to Bottom Sheet) -->
+    <div id="day-detail-modal" class="modal-overlay hidden" style="padding: 0 !important; background: transparent !important; backdrop-filter: none !important; z-index: 20000;">
+      <div id="day-sheet-content" class="modal-content" style="background: var(--bg-color) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-bottom: none !important; padding: 0 !important; max-height: 70vh !important; width: 100% !important; max-width: 450px !important;">
+        <div id="day-drag-area" style="cursor: grab; padding: 12px 24px 20px; z-index: 10;">
+          <div class="modal-handle"></div>
+          
+          <div class="history-sheet-header">
+            <div class="history-header-left">
+              <div class="history-main-icon-container">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+                </svg>
+              </div>
+              <div class="history-header-text">
+                <h2 class="history-modal-title" id="detail-date-title">Date View</h2>
+                <div class="detail-header-toggle" style="display: flex; gap: 8px; margin-top: 4px;">
+                    <span class="toggle-link active bought" id="toggle-bought">BOUGHT</span>
+                    <span class="toggle-divider">/</span>
+                    <span class="toggle-link ends" id="toggle-ends">ENDS</span>
+                </div>
+              </div>
+            </div>
+            <div class="history-nav-controls">
+              <button id="close-detail" class="history-pop-btn close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
         </div>
-        <div id="detail-list" class="detail-list">
-          <!-- Items injected via JS -->
-        </div>
-        <div class="stats-footer" id="detail-footer"
-          style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 700;">TOTAL FOR THIS DAY:</span>
-          <span id="detail-total-amount"
-            style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">$0.00</span>
+
+        <div class="day-body" style="padding: 0 24px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; max-height: 60vh;">
+          <div id="detail-list" class="detail-list" style="margin-top: 0;">
+            <!-- Items injected via JS -->
+          </div>
+          <div class="stats-footer" id="detail-footer"
+            style="margin-top: 8px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">TOTAL FOR THIS DAY:</span>
+            <span id="detail-total-amount"
+              style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">$0.00</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Stats Modal (Monthly Total click) -->
-    <div id="stats-modal" class="modal-overlay hidden">
-      <div class="day-detail-content">
-        <div class="detail-header">
-          <h3>Monthly Breakdown</h3>
-          <button id="close-stats" class="nav-arrow"
-            style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+    <!-- Stats Modal (Monthly Total click) (Converted to Bottom Sheet) -->
+    <div id="stats-modal" class="modal-overlay hidden" style="padding: 0 !important; background: transparent !important; backdrop-filter: none !important; z-index: 20000;">
+      <div id="stats-sheet-content" class="modal-content" style="background: var(--bg-color) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-bottom: none !important; padding: 0 !important; max-height: 70vh !important; width: 100% !important; max-width: 450px !important;">
+        <div id="stats-drag-area" style="cursor: grab; padding: 12px 24px 20px; z-index: 10;">
+          <div class="modal-handle"></div>
+          
+          <div class="history-sheet-header">
+            <div class="history-header-left">
+              <div class="history-main-icon-container">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
+                </svg>
+              </div>
+              <div class="history-header-text">
+                <h2 class="history-modal-title">Monthly Breakdown</h2>
+                <p class="history-modal-desc">Summary of your subscriptions</p>
+              </div>
+            </div>
+            <div class="history-nav-controls">
+              <button id="close-stats" class="history-pop-btn close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="stats-summary" id="stats-summary"
-          style="margin-bottom: 20px; font-size: 0.8rem; color: var(--text-secondary); font-family: 'Roboto Mono', monospace;">
-          <!-- Summary injected via JS -->
-        </div>
-        <div id="stats-list" class="detail-list">
-          <!-- Items injected via JS -->
-        </div>
-        <div class="stats-footer" id="stats-footer"
-          style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 700;">GRAND TOTAL:</span>
-          <span id="stats-total-amount"
-            style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">$0.00</span>
+
+        <div class="stats-body" style="padding: 0 24px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; max-height: 60vh;">
+          <div class="stats-summary" id="stats-summary"
+            style="font-size: 0.7rem; line-height: 1.5; color: var(--text-secondary); font-family: 'Roboto Mono', monospace; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <!-- Summary injected via JS -->
+          </div>
+          <div id="stats-list" class="detail-list" style="margin-top: 0;">
+            <!-- Items injected via JS -->
+          </div>
+          <div class="stats-footer" id="stats-footer"
+            style="margin-top: 8px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">GRAND TOTAL:</span>
+            <span id="stats-total-amount"
+              style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">$0.00</span>
+          </div>
         </div>
       </div>
     </div>

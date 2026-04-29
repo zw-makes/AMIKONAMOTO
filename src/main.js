@@ -1762,35 +1762,38 @@ function hideTooltip() {
 }
 
 window.showDayDetails = async function (day, subs) {
+  if (window.HapticsService) window.HapticsService.medium();
   const monthName = currentDate.toLocaleString('default', { month: 'long' });
-  const header = document.querySelector('#day-detail-modal .detail-header');
+  const title = document.getElementById('detail-date-title');
+  if (title) title.innerText = `${monthName} ${day}`;
 
-  // Refined header logic: Only build the toggle structure once
-  if (!header.querySelector('.detail-header-container')) {
-    header.innerHTML = `
-      <div class="detail-header-container">
-        <div class="day-title-group">
-          <h3 id="detail-date-title" style="margin:0;">${monthName} ${day}</h3>
-          <div class="detail-header-toggle">
-            <span class="toggle-link active bought" id="toggle-bought">BOUGHT</span>
-            <span class="toggle-divider">/</span>
-            <span class="toggle-link ends" id="toggle-ends">ENDS</span>
-          </div>
-        </div>
-        <button class="close-detail" id="close-detail">&times;</button>
-      </div>
-    `;
-    // Attach close listener
-    document.getElementById('close-detail').onclick = () => dayDetailModal.classList.add('hidden');
-  } else {
-    // Already built, just update content
-    const title = document.getElementById('detail-date-title');
-    if (title) title.innerText = `${monthName} ${day}`;
-    // Reset toggle states
-    const tb = document.getElementById('toggle-bought');
-    const te = document.getElementById('toggle-ends');
-    if (tb) { tb.classList.add('active'); }
-    if (te) { te.classList.remove('active'); }
+  // Reset toggle states
+  const tb = document.getElementById('toggle-bought');
+  const te = document.getElementById('toggle-ends');
+  if (tb) { tb.classList.add('active'); }
+  if (te) { te.classList.remove('active'); }
+
+  // Lazy drag init: attach once
+  if (!_dayDragInitialized) {
+      _dayDragInitialized = true;
+      if (window.initBottomSheetDrag) {
+          window.initBottomSheetDrag('day-sheet-content', 'day-drag-area', 'day-detail-modal');
+      }
+  }
+
+  // Lazy backdrop click-to-close: attach once
+  const modal = document.getElementById('day-detail-modal');
+  if (!_dayBackdropInitialized) {
+      _dayBackdropInitialized = true;
+      modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.add('hidden');
+      });
+  }
+
+  // Close detail button
+  const closeBtn = document.getElementById('close-detail');
+  if (closeBtn) {
+      closeBtn.onclick = () => modal.classList.add('hidden');
   }
 
   const settings = userProfile?.settings || {};
@@ -2888,11 +2891,17 @@ subForm.addEventListener('submit', (e) => {
   document.getElementById('sub-domain').value = '';
 });
 
-// --- Monthly Breakdown Modal ---
+// --- Monthly Breakdown & Day Detail Modals ---
+let _statsDragInitialized = false;
+let _statsBackdropInitialized = false;
+let _dayDragInitialized = false;
+let _dayBackdropInitialized = false;
+
 const totalAmountBtn = document.getElementById('total-amount');
 const monthlyTotalContainer = document.querySelector('.grand-total-container');
 
 const openStats = () => {
+  if (window.HapticsService) window.HapticsService.medium();
   console.log("Opening Monthly Breakdown...");
   currentStatsFilter = 'all'; // Default to show all when opening
   showMonthlyBreakdown('all');
@@ -4137,6 +4146,26 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
   }
 
   modal.classList.remove('hidden');
+
+  // Lazy drag init: attach once
+  if (!_statsDragInitialized) {
+      _statsDragInitialized = true;
+      if (window.initBottomSheetDrag) {
+          window.initBottomSheetDrag('stats-sheet-content', 'stats-drag-area', 'stats-modal');
+      }
+  }
+
+  // Lazy backdrop click-to-close: attach once
+  if (!_statsBackdropInitialized) {
+      _statsBackdropInitialized = true;
+      modal.addEventListener('click', (e) => {
+          // Only close when tapping the bare overlay, not any children
+          if (e.target === modal) {
+              modal.classList.add('hidden');
+          }
+      });
+  }
+
   attachSwipeEvents();
 };
 
@@ -4906,6 +4935,11 @@ window.showToast = function(message, type = 'success') {
 
 window.showSubDetail = function(id, e) {
   if (e) e.stopPropagation();
+  
+  // Close stats modal if opening from breakdown
+  const statsModal = document.getElementById('stats-modal');
+  if (statsModal) statsModal.classList.add('hidden');
+
   const sub = subscriptions.find(s => s.id === id);
   if (sub) {
     // Find all subs for the same day as this sub
