@@ -1,10 +1,52 @@
-/* Filter Specific Content Styles */
+/* Ensure dropdowns appear above sheet */
+#filter-platform-dropdown,
+#filter-currency-dropdown {
+    position: absolute;
+    z-index: 9999;
+    background: #111; /* match sheet background */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+/* Raise sheet content above backdrop */
+#filter-sheet-content {
+    position: relative;
+    z-index: 1000;
+}
+
+#filter-modal {
+    padding: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+#filter-sheet-content {
+    background: #111 !important; /* Solid pop-up color */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 32px 32px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    max-width: 450px;
+    height: 70vh !important; /* Standardized height */
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible !important; /* Allow dropdowns to render outside the sheet */
+}
+
 .filter-body {
-    padding: 5px 0;
+    padding: 0 24px 24px;
+    flex-grow: 1;
+    /* No overflow clipping — allows platform/currency dropdowns to render freely */
 }
 
 .filter-section {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .filter-label {
@@ -13,7 +55,7 @@
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     display: block;
 }
 
@@ -36,40 +78,6 @@
     border-color: rgba(255, 255, 255, 0.15);
 }
 
-.filter-footer {
-    display: flex;
-    gap: 12px;
-    margin-top: 28px;
-}
-
-.filter-btn-secondary {
-    flex: 1;
-    padding: 14px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    color: #fff;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.filter-btn-primary {
-    flex: 2;
-    padding: 14px;
-    background: var(--text-primary);
-    border: none;
-    border-radius: 16px;
-    color: #000;
-    font-size: 0.8rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
 .filter-tags-row {
     display: flex;
     flex-wrap: wrap;
@@ -80,7 +88,7 @@
 .filter-tag {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 100px; /* Pillow shape for tags */
+    border-radius: 100px;
     padding: 8px 16px;
     color: var(--text-secondary);
     font-size: 0.75rem;
@@ -104,7 +112,12 @@
     transform: scale(1.02);
 }
 
-.filter-btn-secondary:disabled, .filter-btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* Scrollbar for filter body */
+.filter-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.filter-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
 }

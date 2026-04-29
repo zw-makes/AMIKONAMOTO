@@ -12,13 +12,15 @@ let filters = {
     category: 'all'
 };
 
+// Expose actions globally immediately
+window.toggleFilterModal = toggleFilterModal;
+window.applyFilters = applyFilters;
+window.clearFilters = clearFilters;
+
 export function initFilter() {
     console.log('[Filter] Initialized');
     
-    // Expose toggle globally
-    window.toggleFilterModal = toggleFilterModal;
-    window.applyFilters = applyFilters;
-    window.clearFilters = clearFilters;
+    // Expose remaining data globally
     window.getGlobalFilters = () => filters;
     window.setCategoryFilter = (catName) => {
         filters.category = catName;
@@ -32,7 +34,12 @@ export function initFilter() {
 
     setupPlatformPicker();
     setupCurrencyPicker();
+
+    // Drag is initialized lazily on first open to avoid race conditions
 }
+
+let _filterDragInitialized = false;
+let _filterBackdropInitialized = false;
 
 export function toggleFilterModal(show = true) {
     const modal = document.getElementById('filter-modal');
@@ -41,6 +48,25 @@ export function toggleFilterModal(show = true) {
     if (show) {
         modal.classList.remove('hidden');
         resetModalUI();
+
+        // Lazy drag init: attach once, after modal is visible & elements are in DOM
+        if (!_filterDragInitialized) {
+            _filterDragInitialized = true;
+            if (window.initBottomSheetDrag) {
+                window.initBottomSheetDrag('filter-sheet-content', 'filter-drag-area', 'filter-modal');
+            }
+        }
+
+        // Lazy backdrop click-to-close: attach once
+        if (!_filterBackdropInitialized) {
+            _filterBackdropInitialized = true;
+            modal.addEventListener('click', (e) => {
+                // Only close when tapping the bare overlay, not any children
+                if (e.target === modal) {
+                    toggleFilterModal(false);
+                }
+            });
+        }
     } else {
         modal.classList.add('hidden');
     }
@@ -49,7 +75,7 @@ export function toggleFilterModal(show = true) {
 function resetModalUI() {
     // Platform
     const nameInput = document.getElementById('filter-platform-name');
-    nameInput.value = filters.name;
+    if (nameInput) nameInput.value = filters.name;
     updateFilterPlatformIcon(null);
     
     // Frequency Tags
@@ -67,15 +93,17 @@ function resetModalUI() {
     const symbolSpan = document.getElementById('filter-currency-symbol');
     const hiddenCurrency = document.getElementById('filter-currency-val');
     
-    if (filters.currency === 'all') {
-        codeSpan.innerText = 'Any Currency';
-        symbolSpan.innerText = '?';
-        if (hiddenCurrency) hiddenCurrency.value = 'all';
-    } else {
-        codeSpan.innerText = filters.currency;
-        if (hiddenCurrency) hiddenCurrency.value = filters.currency;
-        const cur = (window.CURRENCIES || []).find(c => c.code === filters.currency);
-        symbolSpan.innerText = cur ? cur.symbol : '';
+    if (codeSpan && symbolSpan) {
+        if (filters.currency === 'all') {
+            codeSpan.innerText = 'Any Currency';
+            symbolSpan.innerText = '?';
+            if (hiddenCurrency) hiddenCurrency.value = 'all';
+        } else {
+            codeSpan.innerText = filters.currency;
+            if (hiddenCurrency) hiddenCurrency.value = filters.currency;
+            const cur = (window.CURRENCIES || []).find(c => c.code === filters.currency);
+            symbolSpan.innerText = cur ? cur.symbol : '';
+        }
     }
 }
 

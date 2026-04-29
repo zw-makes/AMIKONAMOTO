@@ -169,6 +169,7 @@ window.showOfflineWarning = function() {
 initListView();
 // Initialize Filter
 initFilter();
+
 // Initialize Catalog
 initCatalog();
 // Initialize Smart Import
@@ -1196,7 +1197,10 @@ window.getDisplaySubscriptions = function() {
 
     return subscriptions.filter(s => {
         // Filter by platform name
-        if (f.name && !s.name.toLowerCase().includes(f.name.toLowerCase())) return false;
+        if (f.name) {
+            const sName = s.name || '';
+            if (!sName.toLowerCase().includes(f.name.toLowerCase())) return false;
+        }
         
         // Filter by frequency
         if (f.frequency !== 'all' && s.type !== f.frequency) return false;
@@ -5255,3 +5259,5 @@ window.addEventListener('online',  syncProfileFieldsToNetworkState);
 
 // --- Add Subscription Page "Catalog" Header Button ---
 // Handled in src/features/catalog/catalog.js
+
+initFilter();
