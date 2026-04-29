@@ -243,6 +243,7 @@ function setupCategoryPicker() {
 
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (window.HapticsService) window.HapticsService.light();
         dropdown.classList.toggle('hidden');
         if (!dropdown.classList.contains('hidden')) {
             renderFilterCategoryList(list);
@@ -258,14 +259,20 @@ function renderFilterCategoryList(list) {
     const allLi = document.createElement('li');
     allLi.innerHTML = `<span style="font-size: 1.1rem;">📁</span> <span style="font-size: 0.85rem; font-weight: 500;">All</span>`;
     allLi.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;";
-    allLi.addEventListener('click', () => selectFilterCategory('all', '📁'));
+    allLi.addEventListener('click', () => {
+        if (window.HapticsService) window.HapticsService.light();
+        selectFilterCategory('all', '📁');
+    });
     list.appendChild(allLi);
 
     cats.forEach(cat => {
         const li = document.createElement('li');
         li.innerHTML = `<span style="font-size: 1.1rem;">${cat.icon || '📁'}</span> <span style="font-size: 0.85rem; font-weight: 500;">${cat.name}</span>`;
         li.style.cssText = "padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;";
-        li.addEventListener('click', () => selectFilterCategory(cat.name, cat.icon));
+        li.addEventListener('click', () => {
+            if (window.HapticsService) window.HapticsService.light();
+            selectFilterCategory(cat.name, cat.icon);
+        });
         list.appendChild(li);
     });
 }
@@ -287,6 +294,7 @@ function setupNexusPicker() {
 
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (window.HapticsService) window.HapticsService.light();
         dropdown.classList.toggle('hidden');
         if (!dropdown.classList.contains('hidden')) {
             renderFilterNexusList(list);
@@ -305,7 +313,10 @@ function renderFilterNexusList(list) {
             <span style="font-size: 0.85rem; font-weight: 500;">All Cards</span>
         </div>
     `;
-    allLi.addEventListener('click', () => selectFilterNexus('all', null));
+    allLi.addEventListener('click', () => {
+        if (window.HapticsService) window.HapticsService.light();
+        selectFilterNexus('all', null);
+    });
     list.appendChild(allLi);
 
     const getCards = window.getStoredCards || window.getStoredCardsFromCache;
@@ -324,7 +335,10 @@ function renderFilterNexusList(list) {
                         <span style="font-size: 0.85rem; font-weight: 500;">Nexus: ${name}</span>
                     </div>
                 `;
-                li.addEventListener('click', () => selectFilterNexus(card.id, card));
+                li.addEventListener('click', () => {
+                    if (window.HapticsService) window.HapticsService.light();
+                    selectFilterNexus(card.id, card);
+                });
                 list.appendChild(li);
             });
         });
