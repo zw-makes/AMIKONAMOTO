@@ -2336,6 +2336,7 @@ function attachSwipeEvents() {
     item.addEventListener('mousedown', onStart);
   });
 }
+window.attachSwipeEvents = attachSwipeEvents;
 
 async function updateStats() {
   // Main aggregate footer should only show ACTIVE monthly commitment relevant to THE VIEWED month

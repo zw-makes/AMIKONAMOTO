@@ -40,6 +40,12 @@ export function initHistory() {
     const nextBtn = document.getElementById('hist-next');
     const downloadBtn = document.getElementById('hist-download-monthly');
 
+    // Initialize Bottom Sheet Drag
+    if (window.initBottomSheetDrag) {
+        window.initBottomSheetDrag('history-modal', 'history-drag-area', 'history-modal');
+        window.initBottomSheetDrag('export-choice-modal', 'export-drag-area', 'export-choice-modal');
+    }
+
     // Export Modal Selectors
     const exportModal = document.getElementById('export-choice-modal');
     const closeExportBtn = document.getElementById('close-export-choice');
@@ -51,13 +57,14 @@ export function initHistory() {
     if (closeBtn) {
         closeBtn.onclick = () => {
             modal.classList.add('hidden');
-            const btn = document.getElementById('download-btn');
-            if (btn) btn.classList.remove('history-active');
+            const hBtn = document.getElementById('opt-history-btn');
+            if (hBtn) hBtn.classList.remove('history-active');
         };
     }
 
     if (prevBtn) {
         prevBtn.onclick = async () => {
+            if (window.HapticsService) window.HapticsService.light();
             historyDate.setMonth(historyDate.getMonth() - 1);
             await renderHistoryCalendar();
         };
@@ -65,6 +72,7 @@ export function initHistory() {
 
     if (nextBtn) {
         nextBtn.onclick = async () => {
+            if (window.HapticsService) window.HapticsService.light();
             historyDate.setMonth(historyDate.getMonth() + 1);
             await renderHistoryCalendar();
         };
@@ -73,6 +81,7 @@ export function initHistory() {
     // --- Export Logic ---
     if (downloadBtn) {
         downloadBtn.onclick = () => {
+            if (window.HapticsService) window.HapticsService.medium();
             const year = historyDate.getFullYear();
             const month = historyDate.getMonth();
             const subs = window.subscriptions || [];
@@ -145,8 +154,8 @@ export function initHistory() {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.add('hidden');
-            const btn = document.getElementById('download-btn');
-            if (btn) btn.classList.remove('history-active');
+            const hBtn = document.getElementById('opt-history-btn');
+            if (hBtn) hBtn.classList.remove('history-active');
         }
     });
 
@@ -161,14 +170,16 @@ export function initHistory() {
 
 export function toggleHistoryMode(btn) {
     const modal = document.getElementById('history-modal');
-    const isActive = btn.classList.toggle('history-active');
+    const isCurrentlyHidden = modal.classList.contains('hidden');
 
-    if (isActive) {
+    if (isCurrentlyHidden) {
         modal.classList.remove('hidden');
+        if (btn && btn.classList) btn.classList.add('history-active');
         historyDate = new Date(window.currentDate || new Date());
         renderHistoryCalendar();
     } else {
         modal.classList.add('hidden');
+        if (btn && btn.classList) btn.classList.remove('history-active');
     }
 }
 
@@ -287,66 +298,64 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
     const pop = document.getElementById('history-day-pop');
     if (!pop) return;
 
+    if (window.HapticsService) window.HapticsService.light();
+
     pop.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom:10px;">
-            <div style="display:flex; flex-direction:column;">
-                <b style="font-size:1rem; letter-spacing:-0.02em;">DAY ${day} RECORDS</b>
-                <span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;">Full subscription records</span>
+        <div class="history-pop-header">
+            <div class="history-pop-title-group">
+                <span class="history-pop-subtitle">RECORDS FOR</span>
+                <h3 class="history-pop-title">DAY ${day}</h3>
             </div>
-            <div style="display:flex; gap:8px;">
-                <button id="hist-download-day" class="nav-arrow" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="Export Day History">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <div class="history-pop-actions">
+                <button id="hist-download-day" class="history-pop-btn" title="Export Day History">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 </button>
-                <button onclick="document.getElementById('history-day-pop').classList.add('hidden')" class="nav-arrow" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <button onclick="window.closeHistoryDayPop()" class="history-pop-btn close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
         </div>
-        <div style="max-height: 250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+        <div class="history-pop-list">
             ${subs.map(s => {
-        const domain = s.domain || (s.name.toLowerCase().replace(/\s+/g, '') + '.com');
-        const isPaid = window.isSubPaid(s, historyDate);
-        const isStopped = s.stopped;
-        let p = s.price;
-        const origSymbol = s.symbol || '$';
-        const originalPriceStr = `${origSymbol}${p.toFixed(2)}`;
-        let displayPrice = originalPriceStr;
+                let p = parseFloat(s.price) || 0;
+                const origSymbol = s.symbol || '$';
+                const originalPriceStr = `${origSymbol}${p.toFixed(2)}`;
+                let displayPrice = originalPriceStr;
 
-        if (rates && (s.currency || 'USD') !== targetCurrency) {
-            const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
-            displayPrice = `<span style="opacity:0.6; font-size:0.8rem;">${originalPriceStr}</span> <span style="opacity:0.3; margin:0 2px;">→</span> ${symbol}${converted.toFixed(2)}`;
-        }
+                if (rates && (s.currency || 'USD') !== targetCurrency) {
+                    const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
+                    displayPrice = `<span class="orig-price-small">${originalPriceStr}</span> ${symbol}${converted.toFixed(2)}`;
+                }
 
-        const { end } = calculateSubTimeline(s);
-        const todayStr = new Date().toISOString().split('T')[0];
-        const isEnded = end !== 'N/A' && todayStr > end;
+                // Prepare sub object for the shared template
+                const subToRender = { 
+                    ...s, 
+                    displayPrice, 
+                    // ensure we use the same paid logic
+                    isPaid: window.isSubPaid(s, historyDate) 
+                };
 
-        return `
-                <div class="detail-item ${isStopped ? 'dimmed' : ''}" style="margin:0; width:100%; box-sizing:border-box;">
-                    <div class="detail-logo ${isPaid ? 'paid-logo' : ''}">
-                        <img src="${window.getLogoUrl(domain)}" style="width:100%; height:100%; object-fit:contain;">
+                return window.getSwipeTemplate ? window.getSwipeTemplate(subToRender) : `
+                <div class="notif-item ${s.stopped ? 'dimmed' : ''}" style="margin-bottom: 8px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                    <div class="notif-icon">
+                        <img src="${window.getLogoUrl(s.domain)}" style="width:24px; height:24px; object-fit:contain;">
                     </div>
-                    <div class="detail-info">
-                        <span class="detail-name">${s.name}</span>
-                        <div class="tag-container" style="display: flex; gap: 4px; margin-top: 2px;">
-                            ${isPaid ? '<span class="status-tag tag-paid">PAID</span>' : '<span class="status-tag" style="background:rgba(255,51,51,0.1); color:var(--accent-red);">UNPAID</span>'}
-                            ${isStopped ? '<span class="status-tag tag-stopped">STOPPED</span>' : (isEnded ? '<span class="status-tag tag-ended">ENDED</span>' : '<span class="status-tag tag-active">ACTIVE</span>')}
-                            <span class="detail-type" style="margin-left: 4px; font-size: 0.6rem; opacity: 0.6;">${s.type}</span>
+                    <div class="notif-content">
+                        <div class="notif-top">
+                            <span class="notif-title">${s.name}</span>
+                            <span class="notif-time">${displayPrice}</span>
                         </div>
-                    </div>
-                    <div class="detail-price" style="text-align:right;">
-                        <div style="font-weight:700; font-size:0.9rem;">${displayPrice}</div>
-                        <div style="font-size:0.55rem; color:var(--text-dim); opacity:0.7;">Started: ${(() => {
-                            const d = new Date(s.startDate);
-                            return isNaN(d.getTime()) ? 'N/A' : d.toISOString().split('T')[0];
-                        })()}</div>
                     </div>
                 </div>
                 `;
-    }).join('')}
+            }).join('')}
         </div>
     `;
+
     pop.classList.remove('hidden');
+
+    // Attach swipe events to the newly rendered items
+    if (window.attachSwipeEvents) window.attachSwipeEvents();
 
     const downloadDayBtn = document.getElementById('hist-download-day');
     if (downloadDayBtn) {
@@ -631,6 +640,12 @@ function getHistoryColor(type) {
     };
     return colors[type] || '#7df9ff';
 }
+
+window.closeHistoryDayPop = () => {
+    if (window.HapticsService) window.HapticsService.light();
+    const pop = document.getElementById('history-day-pop');
+    if (pop) pop.classList.add('hidden');
+};
 
 window.toggleHistoryMode = toggleHistoryMode;
 window.calculateSubTimeline = calculateSubTimeline;
