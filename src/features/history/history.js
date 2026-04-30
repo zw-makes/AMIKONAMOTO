@@ -320,12 +320,7 @@ function showHistoryDayPop(day, subs, targetCurrency, symbol, rates) {
                 let p = parseFloat(s.price) || 0;
                 const origSymbol = s.symbol || '$';
                 const originalPriceStr = `${origSymbol}${p.toFixed(2)}`;
-                let displayPrice = originalPriceStr;
-
-                if (rates && (s.currency || 'USD') !== targetCurrency) {
-                    const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
-                    displayPrice = `<span class="orig-price-small">${originalPriceStr}</span> ${symbol}${converted.toFixed(2)}`;
-                }
+                let displayPrice = window.getDisplayPrice ? window.getDisplayPrice(s, targetCurrency, true, rates) : originalPriceStr;
 
                 // Prepare sub object for the shared template
                 const subToRender = { 
@@ -448,7 +443,7 @@ async function downloadPDF(subs, fileName, title) {
         if (rates && (s.currency || 'USD') !== targetCurrency) {
             const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
             total += converted;
-            displayPrice += ` -> ${symbol}${converted.toFixed(2)}`;
+            displayPrice += ` → ${symbol}${converted.toFixed(2)}`;
         } else {
             total += p;
         }
@@ -512,7 +507,7 @@ async function downloadSnapshot(subs, fileName, monthOrDayTitle) {
         if (rates && (s.currency || 'USD') !== targetCurrency) {
             const converted = window.getConvertedPrice(p, s.currency || 'USD', targetCurrency, rates);
             total += converted;
-            displayPrice = `<span style="opacity:0.4; font-size:0.6rem;">${displayPrice}</span> ${symbol}${converted.toFixed(2)}`;
+            displayPrice = `<span style="opacity:0.4; font-size:0.6rem;">${displayPrice}</span> → ${symbol}${converted.toFixed(2)}`;
         } else {
             total += p;
             displayPrice = `${symbol}${p.toFixed(2)}`;

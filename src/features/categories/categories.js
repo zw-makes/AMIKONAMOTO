@@ -529,14 +529,7 @@ export async function renderCategorySubscriptions(catName) {
                     const targetCurrency = report.currency;
                     const targetSymbol = report.symbol;
                     const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
-
-                    let displayPrice = `${sub.symbol || '$'}${parseFloat(sub.price).toFixed(2)}`;
-                    
-                    if (useAutoCurrency && report.rates && (sub.currency || 'USD') !== targetCurrency) {
-                        const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(sub.price), sub.currency || 'USD', targetCurrency, report.rates) : parseFloat(sub.price);
-                        displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
-                    }
-
+                    const displayPrice = window.getDisplayPrice ? window.getDisplayPrice(sub, targetCurrency, useAutoCurrency, report.rates) : `${sub.symbol || '$'}${parseFloat(sub.price).toFixed(2)}`;
                     sub.displayPrice = displayPrice;
 
                     if (window.getSwipeTemplate) {
@@ -553,7 +546,7 @@ export async function renderCategorySubscriptions(catName) {
 
     } catch (err) {
         console.error('[Explorer] Fetch failed:', err.message);
-        list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Remote fetch failed</p>`;
+        list.innerHTML = `<p style="color: var(--accent-red); font-size: 0.8rem; text-align: center; padding: 20px;">Error: ${err.message || 'Unknown error'}</p>`;
     }
 }
 

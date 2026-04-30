@@ -272,14 +272,7 @@ export function renderListView() {
                       return monthEvents.map(event => {
                           const s = event.sub;
                           const useAutoCurrency = settings.autoCurrency !== false || settings.usdTotal;
-                          
-                          let displayPrice = `${s.symbol || '$'}${parseFloat(s.price).toFixed(2)}`;
-                          if (useAutoCurrency && report.rates && (s.currency || 'USD') !== targetCurrency) {
-                              const convertedPrice = window.getConvertedPrice ? window.getConvertedPrice(parseFloat(s.price), s.currency || 'USD', targetCurrency, report.rates) : parseFloat(s.price);
-                              displayPrice = `${displayPrice} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedPrice.toFixed(2)}`;
-                          }
-                          
-                          s.displayPrice = displayPrice;
+                          s.displayPrice = window.getDisplayPrice ? window.getDisplayPrice(s, targetCurrency, useAutoCurrency, report.rates) : `${s.symbol || '$'}${parseFloat(s.price).toFixed(2)}`;
                           s.isCarryOver = false;
                           
                           if (event.isEndEvent) {
@@ -333,7 +326,17 @@ export function renderListView() {
         if (headerH3) headerH3.innerText = `${monthName.toUpperCase()} SPENDING (${targetCurrency})`;
         
         const totalDiv = spendingCard.querySelector('.spending-total');
-        if (totalDiv) totalDiv.innerText = `${targetSymbol}${monthlyTotal.toFixed(2)}`;
+        if (totalDiv) {
+            if (report.rates) {
+                totalDiv.innerHTML = `
+                    <div class="result-price-area" style="align-items: flex-end; gap: 0;">
+                        <div class="result-price-main" style="font-size: 1.4rem;">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
+                    </div>
+                `;
+            } else {
+                totalDiv.innerText = `${targetSymbol}${monthlyTotal.toFixed(2)}`;
+            }
+        }
 
         // Update Y Axis
         const yAxisSpans = spendingCard.querySelectorAll('.chart-y-axis span');
@@ -383,7 +386,13 @@ export function renderListView() {
             <div class="spending-card">
                 <div class="spending-header">
                     <h3>${monthName.toUpperCase()} SPENDING (${targetCurrency})</h3>
-                    <div class="spending-total">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
+                    <div class="spending-total">
+                        ${report.rates ? `
+                            <div class="result-price-area" style="align-items: flex-end; gap: 0;">
+                                <div class="result-price-main" style="font-size: 1.4rem;">${targetSymbol}${monthlyTotal.toFixed(2)}</div>
+                            </div>
+                        ` : `${targetSymbol}${monthlyTotal.toFixed(2)}`}
+                    </div>
                 </div>
                 
                 <div class="chart-container">

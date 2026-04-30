@@ -54,60 +54,50 @@
   justify-content: space-between;
   align-items: center;
   padding: calc(env(safe-area-inset-top, 20px) + 20px) 24px 10px;
-  background: transparent; /* No background for the header itself */
+  background: var(--bg-color);
   z-index: 100;
-  border-bottom: none; /* Removed separator line */
+  border-bottom: none;
 }
 
 /* Matching Pricing Page Back Button exactly */
 .header-back-btn {
-  background: rgba(40, 40, 40, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  color: var(--text-primary);
-  font-weight: 600;
-  font-family: var(--font-main);
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-}
-
-.header-back-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-}
-
-/* Premium Edit Button (Pill Style) */
-.header-edit-btn {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 10px 18px;
+  border-radius: 14px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   color: var(--text-primary);
-  font-weight: 700;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.7rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.header-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Premium Edit Button (Pill Style) */
+.header-edit-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
 .header-edit-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
 }
 
 .header-edit-btn:active {
@@ -130,7 +120,7 @@
 }
 
 /* Horizontal Scroll Track (Like Pricing Page) */
-.detail-scroll-track {
+#detail-scroll-track.detail-scroll-track {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -139,8 +129,9 @@
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    scroll-behavior: auto; /* For manual grabbing feel */
-    padding: 20px 0; /* Identical 20px gap top and bottom */
+    scroll-behavior: auto;
+    padding: 20px 0;
+    background: var(--bg-color) !important;
 }
 
 .detail-scroll-track::-webkit-scrollbar {
@@ -159,22 +150,22 @@
 .detail-premium-card {
   width: 340px; 
   height: 550px; 
-  flex-shrink: 0; /* Important for scroll track */
+  flex-shrink: 0;
   scroll-snap-align: center;
-  scroll-snap-stop: always; /* Force snap on every card (Fixes iOS stuck issue) */
-  margin: 0 10px; /* Gap between cards */
+  scroll-snap-stop: always;
+  margin: 0 10px;
   background: rgba(25, 25, 25, 0.4);
   backdrop-filter: blur(40px) saturate(150%);
   -webkit-backdrop-filter: blur(40px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Very subtle, soft border */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 34px;
   padding: 40px 30px;
-  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
+  box-shadow: none;
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Left aligned content like pricing */
-  overflow: hidden; /* For background text */
+  align-items: flex-start;
+  overflow: hidden;
   isolation: isolate;
   animation: cardPopIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -208,23 +199,22 @@
 .detail-logo-container {
   width: 80px;
   height: 80px;
-  background: rgba(255, 255, 255, 0.08); /* Slightly more visible */
+  background: rgba(255, 255, 255, 0.08);
   border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
-  overflow: hidden; /* Ensure anything inside stays circular */
+  overflow: hidden;
 }
 
 .detail-logo-container img {
-  width: 100%; /* Fill the container */
+  width: 100%;
   height: 100%;
-  object-fit: contain; /* Maintain ratio */
-  border-radius: 50%; /* Force the image ITSELF to be a circle */
+  object-fit: contain;
 }
 
 .detail-sub-name {
@@ -241,7 +231,7 @@
 .detail-card-divider {
   width: 100%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   margin-bottom: 20px;
 }
 
@@ -282,13 +272,13 @@
   color: var(--accent-green);
 }
 
-/* Pagination Dots (Moved to Top) */
+/* Pagination Dots (Moved Below Cards) */
 .detail-dots {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 10px;
-    margin-bottom: 0;
+    margin-top: -10px; /* Pull up into the scroll-track padding */
+    margin-bottom: 82px;
     z-index: 10;
 }
 
@@ -495,28 +485,25 @@
     padding: 0 24px calc(env(safe-area-inset-bottom, 20px) + 20px);
     width: 100%;
     box-sizing: border-box;
+    background: var(--bg-color);
 }
 
 .footer-action-btn {
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(16px) saturate(120%);
-    -webkit-backdrop-filter: blur(16px) saturate(120%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 14px; /* More modern rounded square vibe */
-    padding: 12px 18px;
+    flex: 1;
+    font-family: var(--font-main);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 16px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
     cursor: pointer;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 700;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    min-width: 110px;
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
 }
 
 .footer-action-btn:hover {
@@ -530,44 +517,36 @@
 }
 
 .footer-cancel-btn {
-    color: #ff5555 !important;
-    background: rgba(255, 85, 85, 0.08);
-    border-color: rgba(255, 85, 85, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
 }
 
 .footer-cancel-btn:hover {
-    background: rgba(255, 85, 85, 0.12);
-    border-color: rgba(255, 85, 85, 0.3);
-    box-shadow: 0 4px 20px rgba(255, 85, 85, 0.15);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .footer-paid-btn {
-    color: #50fa7b !important;
-    background: rgba(80, 250, 123, 0.08);
-    border-color: rgba(80, 250, 123, 0.15);
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
 }
 
 .footer-paid-btn:hover {
-    background: rgba(80, 250, 123, 0.12);
-    border-color: rgba(80, 250, 123, 0.3);
-    box-shadow: 0 4px 20px rgba(80, 250, 123, 0.15);
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.02);
 }
 
 .footer-paid-btn.is-paid {
-    opacity: 0.7;
-    background: rgba(255, 255, 255, 0.02);
-    color: #fff !important;
-    border-color: rgba(255, 255, 255, 0.1);
+    opacity: 0.3;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: transparent;
 }
 
-/* Frequency Dots Section (Contribution Graph Style) */
+/* Usage Frequency — hidden for now, preserved for future update */
 .detail-frequency-section {
-    padding: 10px 24px 30px;
-    width: 100%;
-    box-sizing: border-box;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    margin-top: 10px;
-    min-height: 160px; /* Prevents card jumping during swipe */
+    display: none;
 }
 
 .frequency-header {
@@ -635,4 +614,10 @@
     opacity: 0.8;
 }
 
-/* End of styles */
+/* Suppress green paid indicator on the Details card logo */
+.detail-logo-container.paid-logo img {
+  filter: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}

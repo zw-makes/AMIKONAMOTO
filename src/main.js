@@ -1708,13 +1708,7 @@ async function showTooltip(e, subs) {
     const originalPriceStr = `${s.symbol || '$'}${priceNum.toFixed(2)}`;
     let price = s.price;
     let symbol = s.symbol || '$';
-    let displayPrice = originalPriceStr;
-
-    if (useAutoCurrency && targetRates && (s.currency || 'USD') !== targetCurrency) {
-      price = getConvertedPrice(price, s.currency || 'USD', targetCurrency, targetRates);
-      symbol = targetSymbol;
-      displayPrice = `${originalPriceStr} <span style="opacity: 0.6; margin: 0 4px;">→</span> ${symbol}${price.toFixed(2)}`;
-    }
+    let displayPrice = getDisplayPrice(s, targetCurrency, useAutoCurrency, targetRates);
     const isPaidOnThisMonth = window.isSubPaid(s, currentDate);
     return `
       <div class="tooltip-item ${s.stopped ? 'dimmed' : ''}">
@@ -2467,7 +2461,17 @@ async function updateStats() {
     // If more than 9 characters, show only first 8 and append '+' (total 9 chars)
     finalDisplayStr = finalDisplayStr.substring(0, 8) + '+';
   }
-  totalAmountEl.innerText = finalDisplayStr;
+
+  if (mathRates) {
+    totalAmountEl.style.fontSize = 'inherit'; // Let area handle it
+    totalAmountEl.innerHTML = `
+      <div class="result-price-area" style="align-items: flex-end; gap: 0;">
+        <div class="result-price-main" style="font-size: 1.4rem;">${finalSymbol}${totalStr}</div>
+      </div>
+    `;
+  } else {
+    totalAmountEl.innerText = finalDisplayStr;
+  }
 
   // Store globally for List View Sync
   window.lastReport = {
@@ -4016,20 +4020,11 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     }
 
     // Use full price for modal lists, not averaged commitment
-    let itemPrice = parseFloat(s.price) || 0;
-    const originalPriceStr = `${s.symbol || '$'}${itemPrice.toFixed(2)} `;
-    let convertedMathPrice = itemPrice;
-    let symbol = s.symbol || '$';
-    let displayPrice = originalPriceStr;
+    s.displayPrice = getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates || mathRates);
+    let convertedMathPrice = parseFloat(s.price) || 0;
 
     if (mathRates && (s.currency || 'USD') !== targetCurrency) {
-      convertedMathPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, mathRates);
-    }
-
-    if (useAutoCurrency && displayRates && (s.currency || 'USD') !== targetCurrency) {
-      const convertedDisplayPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, displayRates);
-      symbol = targetSymbol || '$';
-      displayPrice = `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${symbol}${convertedDisplayPrice.toFixed(2)} `;
+      convertedMathPrice = getConvertedPrice(convertedMathPrice, s.currency || 'USD', targetCurrency, mathRates);
     }
 
     // For yearly, only count impact if it's the exact month and year it was bought/renews
@@ -4058,7 +4053,7 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
     }
 
     if (isCarryOver) {
-      displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
+      s.displayPrice = `<span style="font-size:0.65rem; opacity:0.6; letter-spacing:0.05em; font-weight:700;">PREVIOUS</span>`;
     }
     s.isCarryOver = isCarryOver;
 
@@ -4066,7 +4061,6 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
       totalImpact += convertedMathPrice;
     }
 
-    s.displayPrice = displayPrice;
     return headerHtml + getSwipeTemplate(s);
   }).join('');
 
@@ -4114,7 +4108,15 @@ window.showMonthlyBreakdown = async function (filter = 'all') {
 
     if (labelEl) labelEl.innerHTML = `<span style="opacity:0.5">${finalSymbol}${sumAll.toFixed(2)}</span> - <span style="color:var(--accent-red)">${finalSymbol}${sumStopped.toFixed(2)}</span> = GRAND TOTAL: `;
     if (amountEl) {
-      amountEl.innerHTML = `${finalSymbol}${grandTotal.toFixed(2)}`;
+      if (mathRates) {
+        amountEl.innerHTML = `
+          <div class="result-price-area" style="align-items: flex-end; gap: 0;">
+            <div class="result-price-main" style="font-size: 1.4rem;">${finalSymbol}${grandTotal.toFixed(2)}</div>
+          </div>
+        `;
+      } else {
+        amountEl.innerHTML = `${finalSymbol}${grandTotal.toFixed(2)}`;
+      }
     }
   } else if (filter === 'stopped') {
     let sumStopped = 0;
@@ -4982,15 +4984,24 @@ window.showSubDetail = function(id, e) {
 
 
 function getDisplayPrice(s, targetCurrency, useAutoCurrency, displayRates) {
-  let itemPrice = s.price;
-  const priceNum = parseFloat(itemPrice) || 0;
-  const originalPriceStr = `${s.symbol || '$'}${priceNum.toFixed(2)}`;
-  if (useAutoCurrency && displayRates && (s.currency || 'USD') !== targetCurrency) {
-    const convertedDisplayPrice = getConvertedPrice(itemPrice, s.currency || 'USD', targetCurrency, displayRates);
+  const itemPrice = parseFloat(s.price) || 0;
+  const subCurrency = s.currency || 'USD';
+  const subSymbol = s.symbol || '$';
+  const originalPriceStr = `${subSymbol}${itemPrice.toFixed(2)}`;
+  
+  let prefPriceHtml = '';
+  if (useAutoCurrency && displayRates && subCurrency !== targetCurrency) {
+    const convertedDisplayPrice = getConvertedPrice(itemPrice, subCurrency, targetCurrency, displayRates);
     const targetSymbol = (CURRENCIES.find(c => c.code === targetCurrency) || {}).symbol || '$';
-    return `${originalPriceStr} <span style="opacity: 0.5; margin: 0 5px;">→</span> ${targetSymbol}${convertedDisplayPrice.toFixed(2)}`;
+    prefPriceHtml = `<div class="result-price-pref">${targetSymbol}${convertedDisplayPrice.toFixed(2)}/mo</div>`;
   }
-  return originalPriceStr;
+  
+  return `
+    <div class="result-price-area">
+      <div class="result-price-main">${originalPriceStr} ${subCurrency}/mo</div>
+      ${prefPriceHtml}
+    </div>
+  `;
 }
 
 function getSwipeTemplate(s) {
@@ -5052,11 +5063,12 @@ function getSwipeTemplate(s) {
             <span class="detail-type" style="margin-left: 4px; font-size: 0.6rem; opacity: 0.6;">${s.type} plan</span>
           </div>
         </div>
-        <div class="detail-price" style="font-size: 0.85rem;">${s.displayPrice || ''}</div>
+        <div class="detail-price">${s.displayPrice || ''}</div>
       </div>
     </div>
   `;
 }
+window.getDisplayPrice = getDisplayPrice;
 window.getSwipeTemplate = getSwipeTemplate;
 window.attachSwipeEvents = attachSwipeEvents;
 

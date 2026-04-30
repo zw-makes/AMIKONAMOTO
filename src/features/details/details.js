@@ -21,22 +21,19 @@ function initModal() {
             <!-- Header -->
             <div class="detail-view-header">
                 <button class="header-back-btn" id="sub-detail-back">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
-                    Back
                 </button>
                 <button class="header-edit-btn" id="sub-detail-edit">
                     Edit
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
             </div>
-
-            <!-- Pagination Dots -->
-            <div class="detail-dots" id="detail-dots"></div>
 
             <!-- Main Content with Scroll Track -->
             <div class="detail-main-content">
@@ -45,12 +42,23 @@ function initModal() {
                 </div>
             </div>
 
+            <!-- Pagination Dots Moved Below Cards -->
+            <div class="detail-dots" id="detail-dots"></div>
+
             <!-- Action Buttons (Restored to Bottom) -->
             <div class="detail-footer-actions">
                 <button class="footer-action-btn footer-cancel-btn" id="sub-detail-cancel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
                     Stop
                 </button>
                 <button class="footer-action-btn footer-paid-btn" id="sub-detail-paid">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                     Pay
                 </button>
             </div>
@@ -187,10 +195,14 @@ function updateFooterButtons(sub) {
     const isPast = (currentViewDate.getFullYear() < today.getFullYear()) || 
                    (currentViewDate.getFullYear() === today.getFullYear() && currentViewDate.getMonth() < today.getMonth());
 
-    cancelBtn.innerText = isStopped ? 'Restart' : 'Stop';
+    cancelBtn.innerHTML = isStopped
+        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg> Restart`
+        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Stop`;
     cancelBtn.classList.toggle('is-stopped', isStopped);
     
-    paidBtn.innerText = isPaid ? 'PAID' : 'PAY';
+    paidBtn.innerHTML = isPaid
+        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Paid`
+        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Pay`;
     paidBtn.classList.toggle('is-paid', isPaid);
 
     if (isPast) {
@@ -371,7 +383,7 @@ function createCardHTML(s, viewDate = new Date()) {
     const billingDate = end ? end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
 
     // Currency Exchange (if applicable)
-    const exchangeInfo = s.displayPrice && s.displayPrice.includes('→') ? s.displayPrice : null;
+    const exchangeInfo = s.displayPrice && s.displayPrice.includes('result-price-pref') ? s.displayPrice : null;
 
     // --- Category Healing & Icon Recovery ---
     const allCats = (window.getCategories && typeof window.getCategories === 'function') ? window.getCategories() : [];
