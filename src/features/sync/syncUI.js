@@ -8,6 +8,20 @@ export const SyncUI = {
         synced: [],
         failed: []
     },
+    swipeCounter: 0,
+    lastSwipeTime: 0,
+    aiPersonalityResponses: [
+        "Wont you stop doing that?",
+        "What's up bro?",
+        "Are you enjoying it?",
+        "The Lion is watching...",
+        "Finger workout in progress?",
+        "I'm literally just a clock.",
+        "Stop it, get some help.",
+        "Persistent, aren't we?",
+        "Error: Sassy AI engaged.",
+        "You're really into swiping."
+    ],
 
     init() {
         window.SyncUI = this;
@@ -51,9 +65,29 @@ export const SyncUI = {
                 // Reset interaction hint
                 this.terminal.style.opacity = '1';
 
-                if (deltaY > 25) { // Increased threshold for smoother/more intentional feel
+                if (deltaY > 25) { 
+                    const now = Date.now();
+                    // If swiped within 3 seconds of last swipe, increment counter
+                    if (now - this.lastSwipeTime < 3000) {
+                        this.swipeCounter++;
+                    } else {
+                        this.swipeCounter = 1;
+                    }
+                    this.lastSwipeTime = now;
+
+                    // If spamming (4+ swipes), trigger Sass Mode
+                    if (this.swipeCounter >= 4) {
+                        const randomIdx = Math.floor(Math.random() * this.aiPersonalityResponses.length);
+                        const sassyMsg = this.aiPersonalityResponses[randomIdx];
+                        
+                        this.showStatus(sassyMsg.toUpperCase(), 'syncing', 3500);
+                        if (window.HapticsService) window.HapticsService.medium();
+                        
+                        this.swipeCounter = 0; // Reset after sass
+                        return;
+                    }
+
                     if (window.showRemindersStatus) {
-                        // Small delay to let the touch release feel natural
                         setTimeout(() => window.showRemindersStatus(), 50);
                     }
                 }

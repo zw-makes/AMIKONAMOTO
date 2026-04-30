@@ -1017,20 +1017,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
           </div>
         </div>
 
-        <div class="stats-body" style="padding: 0 24px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; max-height: 60vh;">
-          <div id="stats-summary" class="stats-summary"
-            style="margin-top: 0; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; display: flex; gap: 8px; justify-content: center; align-items: center;">
-            <span class="filter-active" id="stats-view-all">All</span>
-            <span id="stats-view-paid">Paid</span>
-            <span id="stats-view-unpaid">Unpaid</span>
-          </div>
-          <div id="stats-list" class="detail-list" style="margin-top: 0;">
+        <div class="day-body" style="padding: 0 24px 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; max-height: 60vh;">
+          <div id="detail-list" class="detail-list" style="margin-top: 0;">
             <!-- Items injected via JS -->
           </div>
-          <div class="stats-footer" id="stats-footer"
+          <div class="stats-footer" id="detail-footer"
             style="margin-top: 8px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">TOTAL MONTHLY SPEND:</span>
-            <span id="stats-total-amount"
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">TOTAL FOR THIS DAY:</span>
+            <span id="detail-total-amount"
               style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">$0.00</span>
           </div>
         </div>
