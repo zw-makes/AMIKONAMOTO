@@ -75,8 +75,8 @@ export const SyncUI = {
                     }
                     this.lastSwipeTime = now;
 
-                    // If spamming (4+ swipes), trigger Sass Mode
-                    if (this.swipeCounter >= 4) {
+                    // If spamming (2+ swipes), trigger Sass Mode
+                    if (this.swipeCounter >= 2) {
                         const randomIdx = Math.floor(Math.random() * this.aiPersonalityResponses.length);
                         const sassyMsg = this.aiPersonalityResponses[randomIdx];
                         
