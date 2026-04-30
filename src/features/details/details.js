@@ -90,8 +90,12 @@ function initModal() {
     document.getElementById('app').appendChild(modal);
 
     // Event Listeners
-    document.getElementById('sub-detail-back').onclick = hideSubscriptionDetails;
+    document.getElementById('sub-detail-back').onclick = (e) => {
+        if (window.HapticsService) window.HapticsService.light();
+        hideSubscriptionDetails();
+    };
     document.getElementById('sub-detail-edit').onclick = () => {
+        if (window.HapticsService) window.HapticsService.medium();
         if (currentSub && window.editSubscription) {
             window.editSubscription(currentSub.id);
             hideSubscriptionDetails();
@@ -100,7 +104,10 @@ function initModal() {
 
     // Close on overlay click
     modal.onclick = (e) => {
-        if (e.target.id === modalId) hideSubscriptionDetails();
+        if (e.target.id === modalId) {
+            if (window.HapticsService) window.HapticsService.light();
+            hideSubscriptionDetails();
+        }
     };
 
     // Full Note Modal Close logic
@@ -138,6 +145,7 @@ function initModal() {
 
     // Footer Button Listeners
     document.getElementById('sub-detail-cancel').onclick = (e) => {
+        if (window.HapticsService) window.HapticsService.heavy();
         if (currentSub && window.stopSubscription) {
             window.stopSubscription(currentSub.id, e);
             // Live update: refresh buttons, dots, and card status
@@ -150,6 +158,7 @@ function initModal() {
         }
     };
     document.getElementById('sub-detail-paid').onclick = (e) => {
+        if (window.HapticsService) window.HapticsService.heavy();
         if (currentSub && window.togglePaidStatus) {
             window.togglePaidStatus(currentSub.id, e);
             // Live update: refresh buttons, dots, and card status
@@ -596,7 +605,10 @@ function renderDots(activeSub, daySubs) {
     daySubs.forEach(s => {
         const dot = document.createElement('div');
         dot.className = `detail-dot ${s.id === activeSub.id ? 'active' : ''}`;
-        dot.onclick = () => showSubscriptionDetails(s, daySubs, currentViewDate);
+        dot.onclick = () => {
+            if (window.HapticsService) window.HapticsService.light();
+            showSubscriptionDetails(s, daySubs, currentViewDate);
+        };
         dotsContainer.appendChild(dot);
     });
 }
@@ -608,6 +620,8 @@ export function hideSubscriptionDetails() {
 
 window.showFullNote = function(e) {
     if (e) e.stopPropagation();
+    if (window.HapticsService) window.HapticsService.light();
+    
     const sub = currentSub;
     if (!sub || !sub.notes) return;
 
