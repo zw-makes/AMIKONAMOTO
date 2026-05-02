@@ -43,7 +43,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NSLayoutConstraint.activate([
             hostingController.view.leadingAnchor.constraint(equalTo: hostVC.view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: hostVC.view.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: hostVC.view.bottomAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: hostVC.view.safeAreaLayoutGuide.bottomAnchor),
             hostingController.view.heightAnchor.constraint(equalToConstant: 120)
         ])
 
@@ -126,40 +126,69 @@ struct BottomBarView: View {
             
             HStack(spacing: 12) {
                 // Main Feature Dock
-                HStack(spacing: 0) {
-                    FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
-                    FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
-                    FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-                    FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
-                }
-                .padding(.horizontal, 8)
-                .frame(height: 60)
-                .background(NativeBlurView(style: .systemUltraThinMaterial)) // Native Refraction
+                dock
+                
+                // Add Button
+                addButton
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var dock: some View {
+        let content = HStack(spacing: 0) {
+            FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
+            FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
+            FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
+            FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 60)
+
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer {
+                content
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            }
+        } else {
+            content
+                .background(NativeBlurView(style: .systemUltraThinMaterial))
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
                 )
                 .shadow(color: Color.black.opacity(0.4), radius: 25, x: 0, y: 15)
-                
-                // Add Button
-                Button(action: {
-                    bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
-                    bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
-                        .frame(width: 60, height: 60)
-                        .background(Color.white)
-                        .cornerRadius(20)
-                        .shadow(color: Color.white.opacity(0.2), radius: 10)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
         }
-        .edgesIgnoringSafeArea(.bottom)
+    }
+
+    @ViewBuilder
+    private var addButton: some View {
+        let action = {
+            bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
+            bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
+        }
+
+        if #available(iOS 26.0, *) {
+            Button(action: action) {
+                Image(systemName: "plus")
+                    .font(.system(size: 24, weight: .bold))
+                    .frame(width: 60, height: 60)
+            }
+            .buttonStyle(.glassProminent)
+        } else {
+            Button(action: action) {
+                Image(systemName: "plus")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.black)
+                    .frame(width: 60, height: 60)
+                    .background(Color.white)
+                    .cornerRadius(20)
+                    .shadow(color: Color.white.opacity(0.2), radius: 10)
+            }
+        }
     }
 }
 
