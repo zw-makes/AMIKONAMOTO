@@ -86,14 +86,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 // --- NATIVE LIQUID GLASS BOTTOM BAR ---
 struct BottomBarView: View {
-    @Namespace private var glassNamespace
     var bridge: CAPBridgeViewController?
 
     var body: some View {
         VStack {
             Spacer()
             
-            GlassEffectContainer(spacing: 12) {
+            HStack(spacing: 12) {
+                // Main Feature Dock
                 HStack(spacing: 0) {
                     FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
                     FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
@@ -102,13 +102,20 @@ struct BottomBarView: View {
                 }
                 .padding(.horizontal, 8)
                 .frame(height: 60)
-                .glassEffect(.regular, in: .rect(cornerRadius: 20))
-                .glassEffectID("main-dock", in: glassNamespace)
-                .interactive()
+                .background(.ultraThinMaterial) // Real iOS Liquid Glass (Standard API)
+                .saturation(2.2)
+                .contrast(1.2)
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                )
+                .shadow(color: Color.black.opacity(0.4), radius: 25, x: 0, y: 15)
                 
+                // Native Add Button
                 Button(action: {
                     bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
-                    if let haptics = bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil) {}
+                    bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
                 }) {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
@@ -116,8 +123,8 @@ struct BottomBarView: View {
                         .frame(width: 60, height: 60)
                         .background(Color.white)
                         .cornerRadius(20)
+                        .shadow(color: Color.white.opacity(0.2), radius: 10)
                 }
-                .glassEffectUnion(id: "main-dock", in: glassNamespace)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
