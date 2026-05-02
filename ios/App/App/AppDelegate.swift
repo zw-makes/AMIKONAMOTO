@@ -4,13 +4,15 @@ import SwiftUI
 import WebKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, WKScriptMessageHandler {
 
     var window: UIWindow?
     private var didInjectBottomBar = false
     private weak var bottomBarHostingController: UIViewController?
-    private var bottomBarVisibilityTimer: Timer?
     private var nativeBarsVisible = false
+    private var barsAnimator: UIViewPropertyAnimator?
+    private var didInstallBarsVisibilityBridge = false
+    private let barsVisibilityHandlerName = "nativeBarsVisibility"
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -38,8 +40,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let bottomBarView = BottomBarView(bridge: bridgeVC)
         let hostingController = UIHostingController(rootView: bottomBarView)
         hostingController.view.backgroundColor = .clear
-        hostingController.view.isHidden = true
         hostingController.view.isUserInteractionEnabled = false
+        hostingController.view.alpha = 0
+        hostingController.view.transform = CGAffineTransform(translationX: 0, y: 18)
 
         hostVC.addChild(hostingController)
         hostVC.view.addSubview(hostingController.view)
@@ -55,7 +58,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         didInjectBottomBar = true
         bottomBarHostingController = hostingController
-        startBottomBarVisibilityPolling(webView: bridgeVC.webView)
+        if let webView = bridgeVC.webView {
+            installBarsVisibilityBridge(webView: webView)
+        }
 
         // Hide the web bottom bar/legend (kept in DOM for JS hooks) so native Liquid Glass UI is used.
         bridgeVC.webView?.evaluateJavaScript("""
@@ -71,83 +76,180 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         """, completionHandler: nil)
     }
 
-    private func startBottomBarVisibilityPolling(webView: WKWebView?) {
-        bottomBarVisibilityTimer?.invalidate()
-        guard let webView else { return }
+    private func installBarsVisibilityBridge(webView: WKWebView) {
+        guard !didInstallBarsVisibilityBridge else { return }
+        didInstallBarsVisibilityBridge = true
+
+        let controller = webView.configuration.userContentController
+        controller.add(self, name: barsVisibilityHandlerName)
 
         let js = """
         (function(){
-          const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-          const anyVisible = (selector) => Array.from(document.querySelectorAll(selector)).some(isVisible);
+          if (window.__nativeBarsObserverInstalled) { return; }
+          window.__nativeBarsObserverInstalled = true;
 
-          // Only show in the main dashboard calendar/list views.
-          const app = document.getElementById('app-container');
-          const calendarContainer = document.querySelector('.calendar-container');
-          const calendarGrid = document.getElementById('calendar-grid');
-          const listView = document.getElementById('list-view-container');
+          const handlerName = '\(barsVisibilityHandlerName)';
+          const canPost = () => !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[handlerName]);
+          const post = (visible) => {
+            if (!canPost()) return;
+            try { window.webkit.messageHandlers[handlerName].postMessage({ visible: !!visible, t: Date.now() }); } catch (e) {}
+          };
 
-          const inMainView =
-            isVisible(app) &&
-            isVisible(calendarContainer) &&
-            (isVisible(calendarGrid) || isVisible(listView));
+          const isShown = (el) => {
+            if (!el) return false;
+            if (el.classList && el.classList.contains('hidden')) return false;
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+            if (cs.pointerEvents === 'none') return false;
+            const opacity = parseFloat(cs.opacity || '1');
+            if (!Number.isFinite(opacity) || opacity < 0.02) return false;
+            return true;
+          };
 
-          // Hide during auth/onboarding AND whenever any overlay/modal/page is open.
-          const authBlockersVisible = [
-            'auth-screen',
-            'onboarding-screen',
-            'welcome-screen',
-            'guider-view'
-          ].some(id => isVisible(document.getElementById(id)));
+          const isAnyShown = (selector) => {
+            try {
+              const els = document.querySelectorAll(selector);
+              for (let i = 0; i < els.length; i++) if (isShown(els[i])) return true;
+            } catch (e) {}
+            return false;
+          };
 
-          const overlayVisible =
-            anyVisible('.modal-overlay') ||
-            anyVisible('.profile-page') ||
-            anyVisible('.catalog-modal') ||
-            isVisible(document.getElementById('ai-analyst-overlay')) ||
-            anyVisible('.smart-import-modal') ||
-            isVisible(document.getElementById('add-modal'));
+          const probeIsInMainSurface = () => {
+            const y = Math.max(0, Math.floor(window.innerHeight - 90));
+            const x = Math.floor(window.innerWidth / 2);
+            const el = document.elementFromPoint(x, y);
+            if (!el) return false;
+            const calendarContainer = document.querySelector('.calendar-container');
+            const listView = document.getElementById('list-view-container');
+            if (calendarContainer && calendarContainer.contains(el)) return true;
+            if (listView && listView.contains(el)) return true;
+            return false;
+          };
 
-          const hasBlocker = authBlockersVisible || overlayVisible;
-          return inMainView && !hasBlocker;
+          const computeDesired = () => {
+            const app = document.getElementById('app-container');
+            const calendarContainer = document.querySelector('.calendar-container');
+            const calendarGrid = document.getElementById('calendar-grid');
+            const listView = document.getElementById('list-view-container');
+
+            const inMainView =
+              isShown(app) &&
+              isShown(calendarContainer) &&
+              (isShown(calendarGrid) || isShown(listView)) &&
+              probeIsInMainSurface();
+
+            // Any auth/onboarding surface visible => hide.
+            const authVisible =
+              isShown(document.getElementById('auth-screen')) ||
+              isShown(document.getElementById('onboarding-screen')) ||
+              isShown(document.getElementById('welcome-screen')) ||
+              isShown(document.getElementById('guider-view'));
+
+            // Any overlay/modal/page visible => hide.
+            const overlaysVisible =
+              isAnyShown('.modal-overlay:not(.hidden)') ||
+              isAnyShown('.profile-page:not(.hidden)') ||
+              isShown(document.getElementById('catalog-modal')) ||
+              isAnyShown('.catalog-modal:not(.hidden)') ||
+              isShown(document.getElementById('search-modal-overlay')) ||
+              isShown(document.getElementById('ai-analyst-overlay')) ||
+              isShown(document.getElementById('smart-import-modal')) ||
+              isAnyShown('.smart-import-modal:not(.hidden)') ||
+              isShown(document.getElementById('add-modal')) ||
+              // Strong signal used by some full-screen modals
+              (document.body && document.body.style && document.body.style.overflow === 'hidden');
+
+            return inMainView && !authVisible && !overlaysVisible;
+          };
+
+          let lastSent = null;
+          let showTimer = null;
+
+          const sendIfChanged = (visible) => {
+            if (visible === lastSent) return;
+            lastSent = visible;
+            post(visible);
+          };
+
+          const refresh = () => {
+            const desired = computeDesired();
+            if (!desired) {
+              if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+              sendIfChanged(false);
+              return;
+            }
+            if (showTimer) return;
+            // Show only after the UI is stable for a moment to avoid flicker on transitions.
+            showTimer = setTimeout(() => {
+              showTimer = null;
+              const stillDesired = computeDesired();
+              sendIfChanged(!!stillDesired);
+            }, 240);
+          };
+
+          const schedule = () => requestAnimationFrame(refresh);
+
+          const mo = new MutationObserver(schedule);
+          mo.observe(document.documentElement, { attributes: true, subtree: true, childList: true, attributeFilter: ['class', 'style'] });
+          window.addEventListener('resize', schedule, { passive: true });
+          window.addEventListener('orientationchange', schedule, { passive: true });
+          document.addEventListener('visibilitychange', schedule, { passive: true });
+          window.addEventListener('hashchange', schedule, { passive: true });
+          window.addEventListener('popstate', schedule, { passive: true });
+
+          // Initial state
+          schedule();
         })();
         """
 
-        bottomBarVisibilityTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self, weak webView] _ in
-            guard let self, let webView else { return }
-            webView.evaluateJavaScript(js) { result, _ in
-                guard let shouldShow = result as? Bool else { return }
-                DispatchQueue.main.async {
-                    guard let host = self.bottomBarHostingController else { return }
-                    self.setNativeBarsVisible(shouldShow, hostView: host.view)
-                }
-            }
+        controller.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == barsVisibilityHandlerName else { return }
+        guard let hostView = bottomBarHostingController?.view else { return }
+
+        var desired = false
+        if let dict = message.body as? [String: Any], let v = dict["visible"] as? Bool {
+            desired = v
+        } else if let v = message.body as? Bool {
+            desired = v
         }
-        bottomBarVisibilityTimer?.tolerance = 0.2
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.setNativeBarsVisible(desired, hostView: hostView)
+        }
     }
 
     private func setNativeBarsVisible(_ visible: Bool, hostView: UIView) {
         guard visible != nativeBarsVisible else { return }
         nativeBarsVisible = visible
 
+        barsAnimator?.stopAnimation(true)
+
+        let hiddenTransform = CGAffineTransform(translationX: 0, y: 24).scaledBy(x: 0.985, y: 0.985)
+        let timing = UISpringTimingParameters(dampingRatio: visible ? 0.86 : 1.0, initialVelocity: CGVector(dx: 0, dy: visible ? 0.35 : 0))
+        let animator = UIViewPropertyAnimator(duration: visible ? 0.42 : 0.26, timingParameters: timing)
+
         if visible {
-            hostView.layer.removeAllAnimations()
-            hostView.isHidden = false
             hostView.isUserInteractionEnabled = true
-            hostView.alpha = 0
-            hostView.transform = CGAffineTransform(translationX: 0, y: 18)
-            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-                hostView.alpha = 1
-                hostView.transform = .identity
-            }
-        } else {
-            hostView.isUserInteractionEnabled = false
-            UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseIn, .beginFromCurrentState]) {
-                hostView.alpha = 0
-                hostView.transform = CGAffineTransform(translationX: 0, y: 18)
-            } completion: { _ in
-                hostView.isHidden = true
+        }
+
+        animator.addAnimations {
+            hostView.alpha = visible ? 1 : 0
+            hostView.transform = visible ? .identity : hiddenTransform
+        }
+
+        animator.addCompletion { [weak hostView] _ in
+            if !visible {
+                hostView?.isUserInteractionEnabled = false
             }
         }
+
+        barsAnimator = animator
+        animator.startAnimation()
     }
 
     private func resolvedWindow() -> UIWindow? {
