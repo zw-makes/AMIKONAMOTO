@@ -102,7 +102,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             anyVisible('.modal-overlay') ||
             anyVisible('.profile-page') ||
             anyVisible('.catalog-modal') ||
-            isVisible(document.getElementById('ai-analyst-overlay'));
+            isVisible(document.getElementById('ai-analyst-overlay')) ||
+            isVisible(document.getElementById('add-modal'));
 
           const hasBlocker = authBlockersVisible || overlayVisible;
           return inMainView && !hasBlocker;
