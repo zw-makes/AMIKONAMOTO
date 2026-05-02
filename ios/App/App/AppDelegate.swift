@@ -93,7 +93,7 @@ struct BottomBarView: View {
             Spacer()
             
             HStack(spacing: 12) {
-                // Main Feature Dock with Genuine UIKit Refraction
+                // Main Feature Dock
                 HStack(spacing: 0) {
                     FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
                     FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
@@ -102,7 +102,7 @@ struct BottomBarView: View {
                 }
                 .padding(.horizontal, 8)
                 .frame(height: 60)
-                .background(LiquidGlassView(style: .systemUltraThinMaterial, intensity: 1.0)) // The REAL Apple Glass Engine
+                .background(NativeBlurView(style: .systemUltraThinMaterial)) // Native Refraction
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
@@ -110,7 +110,7 @@ struct BottomBarView: View {
                 )
                 .shadow(color: Color.black.opacity(0.4), radius: 25, x: 0, y: 15)
                 
-                // Native Add Button
+                // Add Button
                 Button(action: {
                     bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
                     bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
@@ -131,16 +131,12 @@ struct BottomBarView: View {
     }
 }
 
-// --- THE REAL APPLE GLASS ENGINE (UIKit Bridge) ---
-struct LiquidGlassView: UIViewRepresentable {
+// Failsafe Native Blur Engine
+struct NativeBlurView: UIViewRepresentable {
     var style: UIBlurEffect.Style
-    var intensity: CGFloat
-
     func makeUIView(context: Context) -> UIVisualEffectView {
-        let view = UIVisualEffectView(effect: UIBlurEffect(style: style))
-        return view
+        return UIVisualEffectView(effect: UIBlurEffect(style: style))
     }
-
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
         uiView.effect = UIBlurEffect(style: style)
     }
@@ -155,7 +151,6 @@ struct FeatureButton: View {
     var body: some View {
         Button(action: {
             bridge?.webView?.evaluateJavaScript(action, completionHandler: nil)
-            // Optional: Trigger a light haptic pulse
             bridge?.webView?.evaluateJavaScript("window.HapticsService.light()", completionHandler: nil)
         }) {
             Group {
