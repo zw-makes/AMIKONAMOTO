@@ -133,24 +133,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 struct BottomBarView: View {
     var bridge: CAPBridgeViewController?
 
-    var body: some View {
-        VStack {
-            Spacer()
-            
-            VStack(spacing: 12) {
-                LegendBarView(bridge: bridge)
+    @State private var shouldShow: Bool = false
 
-                HStack(spacing: 12) {
-                // Main Feature Dock
-                dock
-                
-                // Add Button
-                addButton
+    var body: some View {
+        Group {
+            if shouldShow {
+                VStack {
+                    Spacer()
+
+                    VStack(spacing: 12) {
+                        LegendBarView(bridge: bridge)
+
+                        HStack(spacing: 12) {
+                            dock
+                            addButton
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
         }
+        .task { await pollVisibility() }
     }
 
     @ViewBuilder
@@ -227,6 +231,40 @@ struct BottomBarView: View {
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.white.opacity(0.2), radius: 10)
+            }
+        }
+    }
+
+    private func pollVisibility() async {
+        while !Task.isCancelled {
+            await refreshVisibility()
+            try? await Task.sleep(nanoseconds: 600_000_000)
+        }
+    }
+
+    @MainActor
+    private func refreshVisibility() async {
+        guard let webView = bridge?.webView else {
+            shouldShow = false
+            return
+        }
+
+        let js = """
+        (function(){
+          const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+          const app = document.getElementById('app-container');
+          const auth = document.getElementById('auth-screen');
+          const onboard = document.getElementById('onboarding-screen');
+          const welcome = document.getElementById('welcome-screen');
+          const add = document.getElementById('add-modal');
+          const shouldShow = isVisible(app) && !isVisible(auth) && !isVisible(onboard) && !isVisible(welcome) && !isVisible(add);
+          return shouldShow;
+        })();
+        """
+
+        _ = webView.evaluateJavaScript(js) { result, _ in
+            if let shouldShow = result as? Bool {
+                self.shouldShow = shouldShow
             }
         }
     }
@@ -314,6 +352,7 @@ struct LegendBarView: View {
             }
         }
     }
+
 }
 
 // Failsafe Native Blur Engine
