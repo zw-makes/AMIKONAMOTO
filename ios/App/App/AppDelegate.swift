@@ -157,9 +157,27 @@ struct BottomBarView: View {
     private var dock: some View {
         let content = HStack(spacing: 0) {
             FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
-            FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
-            FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-            FeatureButton(icon: "plus.message.fill", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
+            FeatureButton(icon: "list.bullet", action: """
+            (function(){
+              const btn = document.getElementById('list-btn');
+              if (btn && typeof window.toggleListView === 'function') { window.toggleListView(btn); return; }
+              if (btn) btn.click();
+            })();
+            """, bridge: bridge)
+            FeatureButton(icon: "star", action: """
+            (function(){
+              const btn = document.getElementById('star-btn');
+              if (btn && typeof window.toggleStarMode === 'function') { window.toggleStarMode(btn); return; }
+              if (btn) btn.click();
+            })();
+            """, bridge: bridge)
+            FeatureButton(icon: "plus.message.fill", action: """
+            (function(){
+              const btn = document.getElementById('ai-btn');
+              if (btn) btn.click();
+              else if (typeof window.openAIAnalyst === 'function') window.openAIAnalyst();
+            })();
+            """, bridge: bridge)
         }
         .padding(.horizontal, 8)
         .frame(height: 60)
