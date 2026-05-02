@@ -175,9 +175,14 @@ struct BottomBarView: View {
             Button(action: action) {
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.85))
                     .frame(width: 60, height: 60)
             }
-            .buttonStyle(.glassProminent)
+            .glassEffect(.regular.tint(.white.opacity(0.35)), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(.white.opacity(0.22), lineWidth: 0.75)
+            )
         } else {
             Button(action: action) {
                 Image(systemName: "plus")
