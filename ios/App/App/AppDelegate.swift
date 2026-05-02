@@ -222,18 +222,19 @@ struct LegendBarView: View {
 
     var body: some View {
         let content = VStack(spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 legendItem(color: .green, label: "MONTHLY")
                 legendItem(color: .blue, label: "YEARLY")
-                legendItem(color: .orange, label: "TRIAL")
-                legendItem(color: .gray, label: "OTS")
+                legendItem(color: .red, label: "TRIAL")
+                legendItem(color: .purple, label: "OTS")
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
 
             Text("\(subCountText) SUBSCRIPTIONS / \(activeCountText) ACTIVE")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.white.opacity(0.78))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
