@@ -142,7 +142,7 @@ struct BottomBarView: View {
             FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
             FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
             FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-            FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
+            FeatureButton(assetImageName: "SublifyLogo", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
         }
         .padding(.horizontal, 8)
         .frame(height: 60)
@@ -211,6 +211,7 @@ struct NativeBlurView: UIViewRepresentable {
 struct FeatureButton: View {
     var icon: String? = nil
     var text: String? = nil
+    var assetImageName: String? = nil
     var action: String
     var bridge: CAPBridgeViewController?
     
@@ -226,6 +227,12 @@ struct FeatureButton: View {
                 } else if let text = text {
                     Text(text)
                         .font(.system(size: 22, weight: .black))
+                } else if let assetImageName = assetImageName {
+                    Image(assetImageName)
+                        .resizable()
+                        .scaledToFit()
+                        .renderingMode(.original)
+                        .frame(width: 22, height: 22)
                 }
             }
             .foregroundColor(.white.opacity(0.85))
