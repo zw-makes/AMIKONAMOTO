@@ -77,12 +77,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let js = """
         (function(){
           const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+
+          // Only show in the main dashboard calendar/list views.
           const app = document.getElementById('app-container');
-          const auth = document.getElementById('auth-screen');
-          const onboard = document.getElementById('onboarding-screen');
-          const welcome = document.getElementById('welcome-screen');
-          const add = document.getElementById('add-modal');
-          return isVisible(app) && !isVisible(auth) && !isVisible(onboard) && !isVisible(welcome) && !isVisible(add);
+          const calendarContainer = document.querySelector('.calendar-container');
+          const calendarGrid = document.getElementById('calendar-grid');
+          const listView = document.getElementById('list-view-container');
+
+          const inMainView =
+            isVisible(app) &&
+            isVisible(calendarContainer) &&
+            (isVisible(calendarGrid) || isVisible(listView));
+
+          // Hide during any onboarding/auth/overlay flows.
+          const blockers = [
+            'auth-screen',
+            'onboarding-screen',
+            'welcome-screen',
+            'guider-view',
+            'add-modal',
+            'day-detail-modal',
+            'stats-modal',
+            'pricing-modal'
+          ];
+
+          const hasBlocker = blockers.some(id => isVisible(document.getElementById(id)));
+          return inMainView && !hasBlocker;
         })();
         """
 
