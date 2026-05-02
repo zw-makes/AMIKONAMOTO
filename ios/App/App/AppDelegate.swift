@@ -142,7 +142,7 @@ struct BottomBarView: View {
             FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
             FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
             FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-            FeatureButton(icon: "square.and.pencil", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
+            FeatureButton(icon: "plus.message.fill", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
         }
         .padding(.horizontal, 8)
         .frame(height: 60)
