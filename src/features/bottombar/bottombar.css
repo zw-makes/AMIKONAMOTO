@@ -13,9 +13,9 @@
     pointer-events: none;
 }
 
-/* Hide web bar on iOS to use the 'Real' SwiftUI Liquid Glass version */
-.ios .bottom-bar-container,
-[platform="ios"] .bottom-bar-container {
+/* Hide ONLY the buttons on iOS to use the 'Real' SwiftUI Liquid Glass version */
+.ios .bottom-controls-row,
+[platform="ios"] .bottom-controls-row {
     display: none !important;
 }
 

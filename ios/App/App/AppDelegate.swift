@@ -12,8 +12,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Wait for the window to be ready, then inject SwiftUI Bottom Bar
         DispatchQueue.main.async {
-            if let rootVC = self.window?.rootViewController {
-                let bottomBarView = BottomBarView()
+            var bridgeVC: CAPBridgeViewController? = self.window?.rootViewController as? CAPBridgeViewController
+            
+            // If it's inside a Nav Controller, find the bridge
+            if bridgeVC == nil {
+                if let nav = self.window?.rootViewController as? UINavigationController {
+                    bridgeVC = nav.viewControllers.first as? CAPBridgeViewController
+                }
+            }
+
+            if let bridge = bridgeVC {
+                let bottomBarView = BottomBarView(bridge: bridge)
                 let hostingController = UIHostingController(rootView: bottomBarView)
                 
                 // Set background to clear so we only see the bar
@@ -77,31 +86,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 // --- NATIVE LIQUID GLASS BOTTOM BAR ---
 struct BottomBarView: View {
+    @Namespace private var glassNamespace
+    var bridge: CAPBridgeViewController?
+
     var body: some View {
         VStack {
             Spacer()
             
-            HStack(spacing: 12) {
-                // Main Feature Buttons Pill
+            GlassEffectContainer(spacing: 12) {
                 HStack(spacing: 0) {
-                    FeatureButton(icon: "magnifyingglass")
-                    FeatureButton(icon: "list.bullet")
-                    FeatureButton(icon: "star")
-                    FeatureButton(text: "S") // AI Assistant
+                    FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
+                    FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
+                    FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
+                    FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
                 }
                 .padding(.horizontal, 8)
                 .frame(height: 60)
-                .background(.ultraThinMaterial) // Real iOS Liquid Glass
-                .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
-                )
-                .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                .glassEffectID("main-dock", in: glassNamespace)
+                .interactive()
                 
-                // Classic White Add Button
                 Button(action: {
-                    // Logic to trigger web app's add function
+                    bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
+                    if let haptics = bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil) {}
                 }) {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
@@ -109,8 +116,8 @@ struct BottomBarView: View {
                         .frame(width: 60, height: 60)
                         .background(Color.white)
                         .cornerRadius(20)
-                        .shadow(color: Color.white.opacity(0.2), radius: 10)
                 }
+                .glassEffectUnion(id: "main-dock", in: glassNamespace)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
@@ -122,10 +129,14 @@ struct BottomBarView: View {
 struct FeatureButton: View {
     var icon: String? = nil
     var text: String? = nil
+    var action: String
+    var bridge: CAPBridgeViewController?
     
     var body: some View {
         Button(action: {
-            // Logic to trigger web app functions
+            bridge?.webView?.evaluateJavaScript(action, completionHandler: nil)
+            // Optional: Trigger a light haptic pulse
+            bridge?.webView?.evaluateJavaScript("window.HapticsService.light()", completionHandler: nil)
         }) {
             Group {
                 if let icon = icon {
