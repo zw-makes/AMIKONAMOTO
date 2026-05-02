@@ -224,18 +224,19 @@ struct FeatureButton: View {
                 if let icon = icon {
                     Image(systemName: icon)
                         .font(.system(size: 22))
+                        .foregroundColor(.white.opacity(0.85))
                 } else if let text = text {
                     Text(text)
                         .font(.system(size: 22, weight: .black))
+                        .foregroundColor(.white.opacity(0.85))
                 } else if let assetImageName = assetImageName {
                     Image(assetImageName)
+                        .renderingMode(.original)
                         .resizable()
                         .scaledToFit()
-                        .renderingMode(.original)
                         .frame(width: 22, height: 22)
                 }
             }
-            .foregroundColor(.white.opacity(0.85))
             .frame(maxWidth: .infinity)
             .frame(height: 50)
         }
