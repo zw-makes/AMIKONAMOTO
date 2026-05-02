@@ -489,11 +489,10 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             </button>
           </div>
         </div>
-        <button id="add-sub-btn" class="add-btn" aria-label="Add Subscription">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
+        <div class="grand-total-container glass" id="total-bar-trigger">
+          <span class="total-label">GRAND TOTAL:</span>
+          <span id="total-amount" class="total-amount">$0.00</span>
+        </div>
       </header>
 
       <!-- Calendar Body -->
@@ -599,11 +598,12 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
             </button>
           </div>
 
-          <!-- Grand Total Box (Right) -->
-          <div class="grand-total-container glass" id="total-bar-trigger">
-            <span class="total-label">GRAND TOTAL:</span>
-            <span id="total-amount" class="total-amount">$0.00</span>
-          </div>
+          <!-- Add Subscription Box (Right) -->
+          <button id="add-sub-btn" class="add-btn" aria-label="Add Subscription">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

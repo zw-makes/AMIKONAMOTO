@@ -14,7 +14,7 @@ export function initBottomBar() {
     initHistory();
 
     // The separate grand total container acts as the trigger for the stats modal
-    const grandTotalTrigger = container.querySelector('.grand-total-container');
+    const grandTotalTrigger = document.querySelector('.grand-total-container');
     const statsModal = document.getElementById('stats-modal');
 
     if (grandTotalTrigger && statsModal) {
