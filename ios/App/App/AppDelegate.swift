@@ -1,12 +1,15 @@
 import UIKit
 import Capacitor
 import SwiftUI
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     private var didInjectBottomBar = false
+    private weak var bottomBarHostingController: UIViewController?
+    private var bottomBarVisibilityTimer: Timer?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -34,6 +37,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let bottomBarView = BottomBarView(bridge: bridgeVC)
         let hostingController = UIHostingController(rootView: bottomBarView)
         hostingController.view.backgroundColor = .clear
+        hostingController.view.isHidden = true
+        hostingController.view.isUserInteractionEnabled = false
 
         hostVC.addChild(hostingController)
         hostVC.view.addSubview(hostingController.view)
@@ -48,6 +53,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ])
 
         didInjectBottomBar = true
+        bottomBarHostingController = hostingController
+        startBottomBarVisibilityPolling(webView: bridgeVC.webView)
 
         // Hide the web bottom bar/legend (kept in DOM for JS hooks) so native Liquid Glass UI is used.
         bridgeVC.webView?.evaluateJavaScript("""
@@ -61,6 +68,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
           document.head && document.head.appendChild(style);
         })();
         """, completionHandler: nil)
+    }
+
+    private func startBottomBarVisibilityPolling(webView: WKWebView?) {
+        bottomBarVisibilityTimer?.invalidate()
+        guard let webView else { return }
+
+        let js = """
+        (function(){
+          const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+          const app = document.getElementById('app-container');
+          const auth = document.getElementById('auth-screen');
+          const onboard = document.getElementById('onboarding-screen');
+          const welcome = document.getElementById('welcome-screen');
+          const add = document.getElementById('add-modal');
+          return isVisible(app) && !isVisible(auth) && !isVisible(onboard) && !isVisible(welcome) && !isVisible(add);
+        })();
+        """
+
+        bottomBarVisibilityTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self, weak webView] _ in
+            guard let self, let webView else { return }
+            webView.evaluateJavaScript(js) { result, _ in
+                guard let shouldShow = result as? Bool else { return }
+                DispatchQueue.main.async {
+                    guard let host = self.bottomBarHostingController else { return }
+                    host.view.isHidden = !shouldShow
+                    host.view.isUserInteractionEnabled = shouldShow
+                }
+            }
+        }
+        bottomBarVisibilityTimer?.tolerance = 0.2
     }
 
     private func resolvedWindow() -> UIWindow? {
@@ -133,28 +170,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 struct BottomBarView: View {
     var bridge: CAPBridgeViewController?
 
-    @State private var shouldShow: Bool = false
-
     var body: some View {
-        Group {
-            if shouldShow {
-                VStack {
-                    Spacer()
+        VStack {
+            Spacer()
 
-                    VStack(spacing: 12) {
-                        LegendBarView(bridge: bridge)
+            VStack(spacing: 12) {
+                LegendBarView(bridge: bridge)
 
-                        HStack(spacing: 12) {
-                            dock
-                            addButton
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+                HStack(spacing: 12) {
+                    dock
+                    addButton
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
-        .task { await pollVisibility() }
     }
 
     @ViewBuilder
@@ -231,40 +261,6 @@ struct BottomBarView: View {
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.white.opacity(0.2), radius: 10)
-            }
-        }
-    }
-
-    private func pollVisibility() async {
-        while !Task.isCancelled {
-            await refreshVisibility()
-            try? await Task.sleep(nanoseconds: 600_000_000)
-        }
-    }
-
-    @MainActor
-    private func refreshVisibility() async {
-        guard let webView = bridge?.webView else {
-            shouldShow = false
-            return
-        }
-
-        let js = """
-        (function(){
-          const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-          const app = document.getElementById('app-container');
-          const auth = document.getElementById('auth-screen');
-          const onboard = document.getElementById('onboarding-screen');
-          const welcome = document.getElementById('welcome-screen');
-          const add = document.getElementById('add-modal');
-          const shouldShow = isVisible(app) && !isVisible(auth) && !isVisible(onboard) && !isVisible(welcome) && !isVisible(add);
-          return shouldShow;
-        })();
-        """
-
-        _ = webView.evaluateJavaScript(js) { result, _ in
-            if let shouldShow = result as? Bool {
-                self.shouldShow = shouldShow
             }
         }
     }
