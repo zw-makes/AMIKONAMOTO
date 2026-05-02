@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import SwiftUI
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -8,6 +9,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        // Wait for the window to be ready, then inject SwiftUI Bottom Bar
+        DispatchQueue.main.async {
+            if let rootVC = self.window?.rootViewController {
+                let bottomBarView = BottomBarView()
+                let hostingController = UIHostingController(rootView: bottomBarView)
+                
+                // Set background to clear so we only see the bar
+                hostingController.view.backgroundColor = .clear
+                
+                // Add as child
+                rootVC.addChild(hostingController)
+                rootVC.view.addSubview(hostingController.view)
+                hostingController.didMove(toParent: rootVC)
+                
+                // Layout constraints for the bottom bar
+                hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    hostingController.view.leadingAnchor.constraint(equalTo: rootVC.view.leadingAnchor),
+                    hostingController.view.trailingAnchor.constraint(equalTo: rootVC.view.trailingAnchor),
+                    hostingController.view.bottomAnchor.constraint(equalTo: rootVC.view.bottomAnchor),
+                    hostingController.view.heightAnchor.constraint(equalToConstant: 120) // Adjust height as needed
+                ])
+            }
+        }
+        
         return true
     }
 

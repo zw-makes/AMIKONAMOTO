@@ -13,6 +13,12 @@
     pointer-events: none;
 }
 
+/* Hide web bar on iOS to use the 'Real' SwiftUI Liquid Glass version */
+.ios .bottom-bar-container,
+[platform="ios"] .bottom-bar-container {
+    display: none !important;
+}
+
 /* --- LEGEND BOX (Above Bar) - Original Glass Style --- */
 .calendar-legend-box {
     pointer-events: auto;
