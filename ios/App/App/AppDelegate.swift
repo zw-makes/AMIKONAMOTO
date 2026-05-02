@@ -6,48 +6,77 @@ import SwiftUI
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    private var didInjectBottomBar = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         
-        // Wait for the window to be ready, then inject SwiftUI Bottom Bar
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            guard let rootViewController = self.window?.rootViewController else { return }
-
-            var bridgeVC: CAPBridgeViewController? = rootViewController as? CAPBridgeViewController
-            
-            // If it's inside a Nav Controller, find the bridge
-            if bridgeVC == nil {
-                if let nav = rootViewController as? UINavigationController {
-                    bridgeVC = nav.viewControllers.first as? CAPBridgeViewController
-                }
-            }
-
-            if let bridgeVC {
-                let bottomBarView = BottomBarView(bridge: bridgeVC)
-                let hostingController = UIHostingController(rootView: bottomBarView)
-                
-                // Set background to clear so we only see the bar
-                hostingController.view.backgroundColor = .clear
-                
-                // Add as child
-                bridgeVC.addChild(hostingController)
-                bridgeVC.view.addSubview(hostingController.view)
-                hostingController.didMove(toParent: bridgeVC)
-                
-                // Layout constraints for the bottom bar
-                hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-                NSLayoutConstraint.activate([
-                    hostingController.view.leadingAnchor.constraint(equalTo: bridgeVC.view.leadingAnchor),
-                    hostingController.view.trailingAnchor.constraint(equalTo: bridgeVC.view.trailingAnchor),
-                    hostingController.view.bottomAnchor.constraint(equalTo: bridgeVC.view.bottomAnchor),
-                    hostingController.view.heightAnchor.constraint(equalToConstant: 120) // Adjust height as needed
-                ])
-            }
-        }
+        // Inject SwiftUI Bottom Bar once the real root VC exists (storyboard/Capacitor can set it after launch).
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(tryInjectBottomBar),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        DispatchQueue.main.async { [weak self] in self?.tryInjectBottomBar() }
         
         return true
+    }
+
+    @objc private func tryInjectBottomBar() {
+        guard !didInjectBottomBar else { return }
+        guard let window = resolvedWindow() else { return }
+        guard let rootViewController = window.rootViewController else { return }
+        guard let bridgeVC = findBridgeViewController(in: rootViewController) else { return }
+
+        // Host on the root container so it's visible even if the bridge is embedded (nav/tab/etc).
+        let hostVC = rootViewController
+        let bottomBarView = BottomBarView(bridge: bridgeVC)
+        let hostingController = UIHostingController(rootView: bottomBarView)
+        hostingController.view.backgroundColor = .clear
+
+        hostVC.addChild(hostingController)
+        hostVC.view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: hostVC)
+
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: hostVC.view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: hostVC.view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: hostVC.view.bottomAnchor),
+            hostingController.view.heightAnchor.constraint(equalToConstant: 120)
+        ])
+
+        didInjectBottomBar = true
+    }
+
+    private func resolvedWindow() -> UIWindow? {
+        if let window { return window }
+        return UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: { $0.isKeyWindow })
+    }
+
+    private func findBridgeViewController(in root: UIViewController) -> CAPBridgeViewController? {
+        if let bridge = root as? CAPBridgeViewController { return bridge }
+        if let nav = root as? UINavigationController {
+            for vc in nav.viewControllers {
+                if let found = findBridgeViewController(in: vc) { return found }
+            }
+        }
+        if let tab = root as? UITabBarController {
+            for vc in tab.viewControllers ?? [] {
+                if let found = findBridgeViewController(in: vc) { return found }
+            }
+        }
+        if let presented = root.presentedViewController, let found = findBridgeViewController(in: presented) {
+            return found
+        }
+        for child in root.children {
+            if let found = findBridgeViewController(in: child) { return found }
+        }
+        return nil
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
