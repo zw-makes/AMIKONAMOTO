@@ -38,6 +38,9 @@ window.populatePaymentCardsDropdown = populatePaymentCardsDropdown;
 import { initCategories, getCategories } from './features/categories/categories.js';
 window.getCategories = getCategories;
 
+import { initTotalView } from './features/totalview/totalview.js';
+import './features/totalview/totalview.css';
+
 import { App } from '@capacitor/app';
 
 // --- Capacitor Deep Link Handling for Auth ---
@@ -443,6 +446,7 @@ const PAID_AVATARS = [
 // --- State Management ---
 let currentUser = null;
 let subscriptions = [];
+window.subscriptions = subscriptions;
 const cachedInitial = localStorage.getItem('subscriptions');
 if (cachedInitial) {
   try { subscriptions = JSON.parse(cachedInitial); } catch(e) {}
@@ -2492,6 +2496,8 @@ async function updateStats() {
     rates: displayRates || mathRates
   };
 
+  if (window.updateTotalView) window.updateTotalView();
+  
   // Re-render list view if it's active
   if (typeof window.renderListView === 'function') {
     window.renderListView();
@@ -5528,3 +5534,4 @@ window.addEventListener('online',  syncProfileFieldsToNetworkState);
 // Handled in src/features/catalog/catalog.js
 
 initFilter();
+initTotalView();

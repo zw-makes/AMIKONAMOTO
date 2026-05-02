@@ -155,25 +155,27 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    height: 52px; /* Slightly shorter for header */
-    padding: 0 16px;
-    border-radius: 20px;
+    align-items: flex-end; /* Align numbers to the right/end */
+    height: 52px;
+    padding: 0;
     flex: 0 0 auto;
     white-space: nowrap;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.03) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
+    background: none !important; /* Remove the button look */
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .total-label {
+    display: block; /* Show it again */
     font-family: 'Inter', sans-serif;
-    font-size: 0.6rem;
+    font-size: 8px; /* Tiny and precise */
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.3); /* Very muted */
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 2px;
+    letter-spacing: 0.15em;
+    margin-bottom: -2px; /* Pull the numbers closer */
 }
 
 .total-amount {

@@ -1,0 +1,39 @@
+.grand-total-container {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.total-label, .total-amount {
+    display: block !important; /* Critical for transform to work */
+    width: 100%;
+    text-align: right;
+}
+
+.grand-total-container.rolling .total-label,
+.grand-total-container.rolling .total-amount {
+    animation: rollOut 0.2s forwards ease-in;
+}
+
+/* When NOT rolling, animate IN */
+.grand-total-container.rolling-in .total-label,
+.grand-total-container.rolling-in .total-amount {
+    animation: rollIn 0.2s forwards ease-out;
+}
+
+@keyframes rollOut {
+    0% { transform: translateY(0); opacity: 1; filter: blur(0); }
+    100% { transform: translateY(-40px); opacity: 0; filter: blur(4px); }
+}
+
+@keyframes rollIn {
+    0% { transform: translateY(40px); opacity: 0; filter: blur(4px); }
+    100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+.grand-total-container.yearly-mode .total-amount {
+    color: var(--accent-blue, #60a5fa);
+    text-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+}
