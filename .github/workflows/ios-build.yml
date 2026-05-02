@@ -12,11 +12,16 @@ env:
 jobs:
   build_ios:
     name: Build iOS App + Widget
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -200,15 +205,18 @@ jobs:
       - name: Build Main App (unsigned)
         run: |
           cd ios/App
+          set -o pipefail
           xcodebuild build \
             -project App.xcodeproj \
-            -scheme App \
+            -target App \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -resultBundlePath "${RUNNER_TEMP}/AppBuild.xcresult" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build"
+            CONFIGURATION_BUILD_DIR="$(pwd)/build" | tee "${GITHUB_WORKSPACE}/xcodebuild-app.log"
 
       - name: Build Widget Extension (unsigned)
         run: |
@@ -218,6 +226,7 @@ jobs:
             -target SubTrackWidget \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -247,3 +256,12 @@ jobs:
         with:
           name: Sublify-iOS-App
           path: ios/App/build/Sublify.ipa
+
+      - name: Upload Xcode Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: |
+            xcodebuild-app.log
+            ${{ runner.temp }}/AppBuild.xcresult
