@@ -48,6 +48,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ])
 
         didInjectBottomBar = true
+
+        // Hide the web bottom bar/legend (kept in DOM for JS hooks) so native Liquid Glass UI is used.
+        bridgeVC.webView?.evaluateJavaScript("""
+        (function () {
+          if (document.getElementById('__native_glass_hide_css')) return;
+          const style = document.createElement('style');
+          style.id = '__native_glass_hide_css';
+          style.textContent = `
+            .bottom-bar-container { display: none !important; }
+          `;
+          document.head && document.head.appendChild(style);
+        })();
+        """, completionHandler: nil)
     }
 
     private func resolvedWindow() -> UIWindow? {
@@ -124,12 +137,16 @@ struct BottomBarView: View {
         VStack {
             Spacer()
             
-            HStack(spacing: 12) {
+            VStack(spacing: 12) {
+                LegendBarView(bridge: bridge)
+
+                HStack(spacing: 12) {
                 // Main Feature Dock
                 dock
                 
                 // Add Button
                 addButton
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
@@ -192,6 +209,89 @@ struct BottomBarView: View {
                     .background(Color.white)
                     .cornerRadius(20)
                     .shadow(color: Color.white.opacity(0.2), radius: 10)
+            }
+        }
+    }
+}
+
+struct LegendBarView: View {
+    var bridge: CAPBridgeViewController?
+
+    @State private var subCountText: String = "0"
+    @State private var activeCountText: String = "0"
+
+    var body: some View {
+        let content = VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                legendItem(color: .green, label: "MONTHLY")
+                legendItem(color: .blue, label: "YEARLY")
+                legendItem(color: .orange, label: "TRIAL")
+                legendItem(color: .gray, label: "OTS")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("\(subCountText) SUBSCRIPTIONS / \(activeCountText) ACTIVE")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white.opacity(0.78))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+
+        Group {
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer {
+                    content
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                }
+            } else {
+                content
+                    .background(NativeBlurView(style: .systemUltraThinMaterial))
+                    .cornerRadius(22)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                    )
+            }
+        }
+        .task { await pollCounts() }
+    }
+
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+                .shadow(color: color.opacity(0.6), radius: 6)
+            Text(label)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white.opacity(0.7))
+        }
+    }
+
+    private func pollCounts() async {
+        while !Task.isCancelled {
+            await refreshCounts()
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+        }
+    }
+
+    @MainActor
+    private func refreshCounts() async {
+        guard let webView = bridge?.webView else { return }
+
+        let js = """
+        (function(){
+          const s = document.getElementById('sub-count');
+          const a = document.getElementById('new-count');
+          return { sub: (s ? s.textContent : '0'), active: (a ? a.textContent : '0') };
+        })();
+        """
+
+        _ = webView.evaluateJavaScript(js) { result, _ in
+            if let dict = result as? [String: Any] {
+                if let sub = dict["sub"] as? String { self.subCountText = sub.trimmingCharacters(in: .whitespacesAndNewlines) }
+                if let active = dict["active"] as? String { self.activeCountText = active.trimmingCharacters(in: .whitespacesAndNewlines) }
             }
         }
     }
