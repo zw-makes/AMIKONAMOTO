@@ -10,6 +10,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private var didInjectBottomBar = false
     private weak var bottomBarHostingController: UIViewController?
     private var bottomBarVisibilityTimer: Timer?
+    private var nativeBarsVisible = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -103,6 +104,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             anyVisible('.profile-page') ||
             anyVisible('.catalog-modal') ||
             isVisible(document.getElementById('ai-analyst-overlay')) ||
+            anyVisible('.smart-import-modal') ||
             isVisible(document.getElementById('add-modal'));
 
           const hasBlocker = authBlockersVisible || overlayVisible;
@@ -110,18 +112,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         })();
         """
 
-        bottomBarVisibilityTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self, weak webView] _ in
+        bottomBarVisibilityTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self, weak webView] _ in
             guard let self, let webView else { return }
             webView.evaluateJavaScript(js) { result, _ in
                 guard let shouldShow = result as? Bool else { return }
                 DispatchQueue.main.async {
                     guard let host = self.bottomBarHostingController else { return }
-                    host.view.isHidden = !shouldShow
-                    host.view.isUserInteractionEnabled = shouldShow
+                    self.setNativeBarsVisible(shouldShow, hostView: host.view)
                 }
             }
         }
         bottomBarVisibilityTimer?.tolerance = 0.2
+    }
+
+    private func setNativeBarsVisible(_ visible: Bool, hostView: UIView) {
+        guard visible != nativeBarsVisible else { return }
+        nativeBarsVisible = visible
+
+        if visible {
+            hostView.layer.removeAllAnimations()
+            hostView.isHidden = false
+            hostView.isUserInteractionEnabled = true
+            hostView.alpha = 0
+            hostView.transform = CGAffineTransform(translationX: 0, y: 18)
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
+                hostView.alpha = 1
+                hostView.transform = .identity
+            }
+        } else {
+            hostView.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseIn, .beginFromCurrentState]) {
+                hostView.alpha = 0
+                hostView.transform = CGAffineTransform(translationX: 0, y: 18)
+            } completion: { _ in
+                hostView.isHidden = true
+            }
+        }
     }
 
     private func resolvedWindow() -> UIWindow? {
