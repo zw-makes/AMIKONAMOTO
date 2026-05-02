@@ -11,34 +11,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         
         // Wait for the window to be ready, then inject SwiftUI Bottom Bar
-        DispatchQueue.main.async {
-            var bridgeVC: CAPBridgeViewController? = self.window?.rootViewController as? CAPBridgeViewController
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            guard let rootViewController = self.window?.rootViewController else { return }
+
+            var bridgeVC: CAPBridgeViewController? = rootViewController as? CAPBridgeViewController
             
             // If it's inside a Nav Controller, find the bridge
             if bridgeVC == nil {
-                if let nav = self.window?.rootViewController as? UINavigationController {
+                if let nav = rootViewController as? UINavigationController {
                     bridgeVC = nav.viewControllers.first as? CAPBridgeViewController
                 }
             }
 
-            if let bridge = bridgeVC {
-                let bottomBarView = BottomBarView(bridge: bridge)
+            if let bridgeVC {
+                let bottomBarView = BottomBarView(bridge: bridgeVC)
                 let hostingController = UIHostingController(rootView: bottomBarView)
                 
                 // Set background to clear so we only see the bar
                 hostingController.view.backgroundColor = .clear
                 
                 // Add as child
-                rootVC.addChild(hostingController)
-                rootVC.view.addSubview(hostingController.view)
-                hostingController.didMove(toParent: rootVC)
+                bridgeVC.addChild(hostingController)
+                bridgeVC.view.addSubview(hostingController.view)
+                hostingController.didMove(toParent: bridgeVC)
                 
                 // Layout constraints for the bottom bar
                 hostingController.view.translatesAutoresizingMaskIntoConstraints = false
                 NSLayoutConstraint.activate([
-                    hostingController.view.leadingAnchor.constraint(equalTo: rootVC.view.leadingAnchor),
-                    hostingController.view.trailingAnchor.constraint(equalTo: rootVC.view.trailingAnchor),
-                    hostingController.view.bottomAnchor.constraint(equalTo: rootVC.view.bottomAnchor),
+                    hostingController.view.leadingAnchor.constraint(equalTo: bridgeVC.view.leadingAnchor),
+                    hostingController.view.trailingAnchor.constraint(equalTo: bridgeVC.view.trailingAnchor),
+                    hostingController.view.bottomAnchor.constraint(equalTo: bridgeVC.view.bottomAnchor),
                     hostingController.view.heightAnchor.constraint(equalToConstant: 120) // Adjust height as needed
                 ])
             }
