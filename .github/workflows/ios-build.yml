@@ -205,16 +205,18 @@ jobs:
       - name: Build Main App (unsigned)
         run: |
           cd ios/App
+          set -o pipefail
           xcodebuild build \
             -project App.xcodeproj \
             -target App \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -resultBundlePath "${RUNNER_TEMP}/AppBuild.xcresult" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CONFIGURATION_BUILD_DIR="$(pwd)/build"
+            CONFIGURATION_BUILD_DIR="$(pwd)/build" | tee "${GITHUB_WORKSPACE}/xcodebuild-app.log"
 
       - name: Build Widget Extension (unsigned)
         run: |
@@ -254,3 +256,12 @@ jobs:
         with:
           name: Sublify-iOS-App
           path: ios/App/build/Sublify.ipa
+
+      - name: Upload Xcode Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: |
+            xcodebuild-app.log
+            ${{ runner.temp }}/AppBuild.xcresult
