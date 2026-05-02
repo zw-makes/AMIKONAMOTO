@@ -304,6 +304,16 @@ initCalendarSyncBanner();
 // Initialize Pull to Refresh (Calendar & List View root)
 initPullToRefresh();
 
+// --- FAILSAFE: Hide Web Bottom Bar on iOS (to use SwiftUI version) ---
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const webBar = document.querySelector('.bottom-bar-container');
+        if (webBar) {
+            webBar.style.setProperty('display', 'none', 'important');
+        }
+    });
+}
+
 
 // --- World Currencies ---
 const CURRENCIES = [
