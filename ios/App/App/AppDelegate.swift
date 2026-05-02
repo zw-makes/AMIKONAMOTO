@@ -86,74 +86,63 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 // --- NATIVE LIQUID GLASS BOTTOM BAR ---
 struct BottomBarView: View {
-    @Namespace private var glassNamespace
     var bridge: CAPBridgeViewController?
 
     var body: some View {
         VStack {
             Spacer()
             
-            if #available(iOS 26.0, *) {
-                // GENUINE LIQUID GLASS (Native Apple API)
-                GlassEffectContainer(spacing: 12) {
-                    HStack(spacing: 0) {
-                        FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
-                        FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
-                        FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-                        FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
-                    }
-                    .padding(.horizontal, 8)
-                    .frame(height: 60)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
-                    .glassEffectID("main-dock", in: glassNamespace)
-                    .interactive()
-                    
-                    Button(action: {
-                        bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
-                        bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(width: 60, height: 60)
-                            .background(Color.white)
-                            .cornerRadius(20)
-                    }
-                    .glassEffectUnion(id: "main-dock", in: glassNamespace)
+            HStack(spacing: 12) {
+                // Main Feature Dock with Genuine UIKit Refraction
+                HStack(spacing: 0) {
+                    FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
+                    FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
+                    FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
+                    FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-            } else {
-                // Fallback for Build Servers (Replica)
-                HStack(spacing: 12) {
-                    HStack(spacing: 0) {
-                        FeatureButton(icon: "magnifyingglass", action: "document.getElementById('search-btn').click()", bridge: bridge)
-                        FeatureButton(icon: "list.bullet", action: "window.toggleListView()", bridge: bridge)
-                        FeatureButton(icon: "star", action: "document.getElementById('star-mode-btn').click()", bridge: bridge)
-                        FeatureButton(text: "S", action: "document.getElementById('ai-analyst-btn').click()", bridge: bridge)
-                    }
-                    .padding(.horizontal, 8)
-                    .frame(height: 60)
-                    .background(.ultraThinMaterial)
-                    .saturation(2.2)
-                    .cornerRadius(20)
-                    
-                    Button(action: {
-                        bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.black)
-                            .frame(width: 60, height: 60)
-                            .background(Color.white)
-                            .cornerRadius(20)
-                    }
+                .padding(.horizontal, 8)
+                .frame(height: 60)
+                .background(LiquidGlassView(style: .systemUltraThinMaterial, intensity: 1.0)) // The REAL Apple Glass Engine
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                )
+                .shadow(color: Color.black.opacity(0.4), radius: 25, x: 0, y: 15)
+                
+                // Native Add Button
+                Button(action: {
+                    bridge?.webView?.evaluateJavaScript("document.getElementById('add-sub-btn').click()", completionHandler: nil)
+                    bridge?.webView?.evaluateJavaScript("window.HapticsService.medium()", completionHandler: nil)
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(width: 60, height: 60)
+                        .background(Color.white)
+                        .cornerRadius(20)
+                        .shadow(color: Color.white.opacity(0.2), radius: 10)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
         }
         .edgesIgnoringSafeArea(.bottom)
+    }
+}
+
+// --- THE REAL APPLE GLASS ENGINE (UIKit Bridge) ---
+struct LiquidGlassView: UIViewRepresentable {
+    var style: UIBlurEffect.Style
+    var intensity: CGFloat
+
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: style))
+        return view
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: style)
     }
 }
 
