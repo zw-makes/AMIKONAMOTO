@@ -178,10 +178,10 @@ struct BottomBarView: View {
                     .foregroundStyle(.black.opacity(0.85))
                     .frame(width: 60, height: 60)
             }
-            .glassEffect(.regular.tint(.white.opacity(0.35)), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .glassEffect(.clear.tint(.white.opacity(0.85)), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(.white.opacity(0.22), lineWidth: 0.75)
+                    .stroke(.white.opacity(0.38), lineWidth: 1)
             )
         } else {
             Button(action: action) {
