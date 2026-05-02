@@ -77,6 +77,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let js = """
         (function(){
           const isVisible = (el) => !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+          const anyVisible = (selector) => Array.from(document.querySelectorAll(selector)).some(isVisible);
 
           // Only show in the main dashboard calendar/list views.
           const app = document.getElementById('app-container');
@@ -89,19 +90,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             isVisible(calendarContainer) &&
             (isVisible(calendarGrid) || isVisible(listView));
 
-          // Hide during any onboarding/auth/overlay flows.
-          const blockers = [
+          // Hide during auth/onboarding AND whenever any overlay/modal/page is open.
+          const authBlockersVisible = [
             'auth-screen',
             'onboarding-screen',
             'welcome-screen',
-            'guider-view',
-            'add-modal',
-            'day-detail-modal',
-            'stats-modal',
-            'pricing-modal'
-          ];
+            'guider-view'
+          ].some(id => isVisible(document.getElementById(id)));
 
-          const hasBlocker = blockers.some(id => isVisible(document.getElementById(id)));
+          const overlayVisible =
+            anyVisible('.modal-overlay') ||
+            anyVisible('.profile-page') ||
+            anyVisible('.catalog-modal') ||
+            isVisible(document.getElementById('ai-analyst-overlay'));
+
+          const hasBlocker = authBlockersVisible || overlayVisible;
           return inMainView && !hasBlocker;
         })();
         """
