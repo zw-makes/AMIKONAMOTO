@@ -1192,7 +1192,6 @@ function renderHeader() {
     const currentMonthView = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // Strictly allow adding ONLY in the present month (not past, not future)
     if (currentMonthView.getTime() !== thisMonth.getTime()) {
       addBtn.classList.add('dimmed');
       addBtn.disabled = true;

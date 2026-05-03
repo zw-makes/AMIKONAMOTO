@@ -321,6 +321,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, WKScriptMessageHandler {
 // --- NATIVE LIQUID GLASS BOTTOM BAR ---
 struct BottomBarView: View {
     var bridge: CAPBridgeViewController?
+    @State private var isAddEnabled: Bool = true
 
     var body: some View {
         VStack {
@@ -336,6 +337,25 @@ struct BottomBarView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
+        }
+        .task { await pollAddButtonState() }
+    }
+
+    private func pollAddButtonState() async {
+        while !Task.isCancelled {
+            await refreshAddButtonState()
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // Poll every 1s
+        }
+    }
+
+    @MainActor
+    private func refreshAddButtonState() async {
+        guard let webView = bridge?.webView else { return }
+        let js = "document.getElementById('add-sub-btn') ? !document.getElementById('add-sub-btn').disabled : true"
+        webView.evaluateJavaScript(js) { result, _ in
+            if let enabled = result as? Bool {
+                self.isAddEnabled = enabled
+            }
         }
     }
 
@@ -396,24 +416,26 @@ struct BottomBarView: View {
             Button(action: action) {
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.85))
+                    .foregroundStyle(.black.opacity(isAddEnabled ? 0.85 : 0.3))
                     .frame(width: 60, height: 60)
             }
-            .glassEffect(.clear.tint(.white.opacity(0.85)), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .glassEffect(.clear.tint(.white.opacity(isAddEnabled ? 0.85 : 0.4)), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(.white.opacity(0.38), lineWidth: 1)
+                    .stroke(.white.opacity(isAddEnabled ? 0.38 : 0.1), lineWidth: 1)
             )
+            .disabled(!isAddEnabled)
         } else {
             Button(action: action) {
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.black.opacity(isAddEnabled ? 1.0 : 0.4))
                     .frame(width: 60, height: 60)
-                    .background(Color.white)
+                    .background(isAddEnabled ? Color.white : Color.white.opacity(0.4))
                     .cornerRadius(20)
-                    .shadow(color: Color.white.opacity(0.2), radius: 10)
+                    .shadow(color: Color.white.opacity(isAddEnabled ? 0.2 : 0), radius: 10)
             }
+            .disabled(!isAddEnabled)
         }
     }
 }
