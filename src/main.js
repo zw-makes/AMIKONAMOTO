@@ -1192,10 +1192,11 @@ function renderHeader() {
     const currentMonthView = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    if (currentMonthView < thisMonth) {
+    // Strictly allow adding ONLY in the present month (not past, not future)
+    if (currentMonthView.getTime() !== thisMonth.getTime()) {
       addBtn.classList.add('dimmed');
       addBtn.disabled = true;
-      addBtn.title = "You cannot add subscriptions to a past month.";
+      addBtn.title = "You can only add subscriptions to the present month.";
     } else {
       addBtn.classList.remove('dimmed');
       addBtn.disabled = false;
@@ -2457,7 +2458,7 @@ async function updateStats() {
 
   // Sync label for clarity
   const footerLabelEl = document.querySelector('.total-label');
-  if (footerLabelEl) footerLabelEl.innerText = "GRAND TOTAL:";
+  if (footerLabelEl) footerLabelEl.innerText = "MONTHLY";
 
   // IMPORTANT: Choose symbol based on whether conversion actually happened
   let finalSymbol = '$';
@@ -2476,16 +2477,8 @@ async function updateStats() {
     finalDisplayStr = finalDisplayStr.substring(0, 8) + '+';
   }
 
-  if (mathRates) {
-    totalAmountEl.style.fontSize = 'inherit'; // Let area handle it
-    totalAmountEl.innerHTML = `
-      <div class="result-price-area" style="align-items: flex-end; gap: 0;">
-        <div class="result-price-main" style="font-size: 1.4rem;">${finalSymbol}${totalStr}</div>
-      </div>
-    `;
-  } else {
-    totalAmountEl.innerText = finalDisplayStr;
-  }
+  // TotalView handles the premium rolling header separately
+  if (window.updateTotalView) window.updateTotalView();
 
   // Store globally for List View Sync
   window.lastReport = {
@@ -2495,8 +2488,6 @@ async function updateStats() {
     currency: targetCurrency,
     rates: displayRates || mathRates
   };
-
-  if (window.updateTotalView) window.updateTotalView();
   
   // Re-render list view if it's active
   if (typeof window.renderListView === 'function') {
@@ -2945,21 +2936,8 @@ let _statsBackdropInitialized = false;
 let _dayDragInitialized = false;
 let _dayBackdropInitialized = false;
 
-const totalAmountBtn = document.getElementById('total-amount');
-const monthlyTotalContainer = document.querySelector('.grand-total-container');
-
-const openStats = () => {
-  if (window.HapticsService) window.HapticsService.medium();
-  console.log("Opening Monthly Breakdown...");
-  currentStatsFilter = 'all'; // Default to show all when opening
-  showMonthlyBreakdown('all');
-};
-
-if (monthlyTotalContainer) monthlyTotalContainer.addEventListener('click', openStats);
-if (totalAmountBtn) totalAmountBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  openStats();
-});
+// Monthly Breakdown & Day Detail Modals are now handled by their respective buttons
+// and the Grand Total toggle is handled by the TotalView feature.
 
 document.getElementById('close-stats').addEventListener('click', () => {
   document.getElementById('stats-modal').classList.add('hidden');
@@ -5471,6 +5449,7 @@ window.showSyncDetails = function() {
 
 
 // --- Feature Init ---
+initTotalView();
 initNotifications();
 initPricing();
 initBottomBar();
@@ -5534,4 +5513,3 @@ window.addEventListener('online',  syncProfileFieldsToNetworkState);
 // Handled in src/features/catalog/catalog.js
 
 initFilter();
-initTotalView();

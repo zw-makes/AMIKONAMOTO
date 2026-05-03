@@ -490,8 +490,14 @@ Return ONLY the raw JSON array. NO code blocks, NO text.`;
           </div>
         </div>
         <div class="grand-total-container" id="total-bar-trigger">
-          <span class="total-label">MONTHLY</span>
-          <span id="total-amount" class="total-amount">$0.00</span>
+          <div class="total-view-stage monthly-stage">
+            <span class="total-label">MONTHLY</span>
+            <span id="total-amount-monthly" class="total-amount">$0.00</span>
+          </div>
+          <div class="total-view-stage yearly-stage">
+            <span class="total-label">YEARLY</span>
+            <span id="total-amount-yearly" class="total-amount">$0.00</span>
+          </div>
         </div>
       </header>
 

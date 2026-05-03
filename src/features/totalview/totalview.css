@@ -1,39 +1,97 @@
+/**
+ * TotalView Premium Roll System
+ * Hardware-Accelerated, Snappy & Growing (Yuki Style)
+ */
+
 .grand-total-container {
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    position: relative !important;
+    height: 36px !important;
+    width: 140px !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    background: none !important;
+    border: none !important;
+    will-change: transform;
 }
 
-.total-label, .total-amount {
-    display: block !important; /* Critical for transform to work */
-    width: 100%;
-    text-align: right;
+.total-view-stage {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 36px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    will-change: transform, opacity;
+    
+    /* Transition includes SCALE for the 'Growing' effect */
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                opacity 0.4s ease,
+                filter 0.4s ease !important;
 }
 
-.grand-total-container.rolling .total-label,
-.grand-total-container.rolling .total-amount {
-    animation: rollOut 0.2s forwards ease-in;
+/* --- State: Monthly Active --- */
+.grand-total-container:not(.yearly-mode) .monthly-stage {
+    transform: translateY(0) scale(1) !important;
+    opacity: 1 !important;
+    filter: blur(0px) !important;
+    z-index: 2 !important;
 }
 
-/* When NOT rolling, animate IN */
-.grand-total-container.rolling-in .total-label,
-.grand-total-container.rolling-in .total-amount {
-    animation: rollIn 0.2s forwards ease-out;
+.grand-total-container:not(.yearly-mode) .yearly-stage {
+    transform: translateY(36px) scale(0.7) !important; /* Start small and below */
+    opacity: 0 !important;
+    filter: blur(4px) !important;
+    z-index: 1 !important;
 }
 
-@keyframes rollOut {
-    0% { transform: translateY(0); opacity: 1; filter: blur(0); }
-    100% { transform: translateY(-40px); opacity: 0; filter: blur(4px); }
+/* --- State: Yearly Active --- */
+.grand-total-container.yearly-mode .monthly-stage {
+    transform: translateY(-36px) scale(0.7) !important; /* Shrink and slide up */
+    opacity: 0 !important;
+    filter: blur(4px) !important;
+    z-index: 1 !important;
 }
 
-@keyframes rollIn {
-    0% { transform: translateY(40px); opacity: 0; filter: blur(4px); }
-    100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+.grand-total-container.yearly-mode .yearly-stage {
+    transform: translateY(0) scale(1) !important; /* Grow and center */
+    opacity: 1 !important;
+    filter: blur(0px) !important;
+    z-index: 2 !important;
 }
 
-.grand-total-container.yearly-mode .total-amount {
-    color: var(--accent-blue, #60a5fa);
-    text-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+/* --- Visual Styling (Pure Monochrome) --- */
+.yearly-stage .total-amount,
+.monthly-stage .total-amount {
+    color: #ffffff !important;
+    text-shadow: none !important;
+}
+
+.yearly-stage .total-label,
+.monthly-stage .total-label {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.total-label {
+    display: block !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 8px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.15em !important;
+    margin-bottom: -2px !important;
+    text-transform: uppercase !important;
+}
+
+.total-amount {
+    display: block !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
 }
